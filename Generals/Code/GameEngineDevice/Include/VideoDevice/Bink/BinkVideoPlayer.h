@@ -50,6 +50,10 @@
 //----------------------------------------------------------------------------
 
 #include "GameClient/VideoPlayer.h"
+#ifndef GEN_ENABLE_BINK
+#define GEN_ENABLE_BINK 1
+#endif
+#if GEN_ENABLE_BINK
 #include "bink.h"
 
 //----------------------------------------------------------------------------
@@ -140,4 +144,15 @@ class BinkVideoPlayer : public VideoPlayer
 //----------------------------------------------------------------------------
 
 
+#else
+// Preserve the video subsystem and INI metadata when movie playback is disabled.
+class BinkVideoPlayer : public VideoPlayer
+{
+public:
+    virtual VideoStreamInterface *open(AsciiString movieTitle);
+    virtual VideoStreamInterface *load(AsciiString movieTitle);
+    virtual void notifyVideoPlayerOfNewProvider(Bool nowHasValid);
+    virtual void initializeBinkWithMiles();
+};
+#endif // GEN_ENABLE_BINK
 #endif // __VIDEODEVICE_BINKDEVICE_H_

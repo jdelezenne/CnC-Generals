@@ -49,7 +49,9 @@
 #include "Common/GameSounds.h"
 #include "Common/Debug.h"
 #include "Common/GameMemory.h"
+#ifdef DO_COPY_PROTECTION
 #include "Common/SafeDisc/CdaPfn.h"
+#endif
 #include "Common/StackDump.h"
 #include "Common/MessageStream.h"
 #include "Common/Registry.h"
@@ -757,10 +759,14 @@ static Bool initializeAppWindows( HINSTANCE hInstance, Int nCmdShow, Bool runWin
 }  // end initializeAppWindows
 
 void munkeeFunc(void);
+#ifdef DO_COPY_PROTECTION
 CDAPFN_DECLARE_GLOBAL(munkeeFunc, CDAPFN_OVERHEAD_L5, CDAPFN_CONSTRAINT_NONE);
+#endif
 void munkeeFunc(void)
 {
+#ifdef DO_COPY_PROTECTION
 	CDAPFN_ENDMARK(munkeeFunc);
+#endif
 }
 
 void checkProtection(void)

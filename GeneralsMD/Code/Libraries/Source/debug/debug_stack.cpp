@@ -27,7 +27,11 @@
 // Stack walker
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#if defined(_MSC_VER) && _MSC_VER == 1200
+#include <imagehlp.h>
+#else
 #include "dbghelp.h"
+#endif
 
 // Definitions to allow run-time linking to the dbghelp.dll functions.
 

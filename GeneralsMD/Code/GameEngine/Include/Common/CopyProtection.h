@@ -33,7 +33,9 @@
 #define COPYPROTECTION_H
 
 // Comment out the following line to disable copy protection checks
+#if !defined(GEN_ENABLE_SAFEDISC) || GEN_ENABLE_SAFEDISC
 #define DO_COPY_PROTECTION
+#endif
 
 #ifdef DO_COPY_PROTECTION
 

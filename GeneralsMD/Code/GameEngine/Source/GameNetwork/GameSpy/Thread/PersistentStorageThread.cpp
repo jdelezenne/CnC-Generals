@@ -471,6 +471,9 @@ GameSpyPSMessageQueue::~GameSpyPSMessageQueue()
 
 void GameSpyPSMessageQueue::startThread( void )
 {
+#if defined(GEN_ENABLE_GAMESPY) && !GEN_ENABLE_GAMESPY
+	return;
+#endif
 	if (!m_thread)
 	{
 		m_thread = NEW PSThreadClass;

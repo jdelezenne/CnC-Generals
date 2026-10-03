@@ -119,6 +119,9 @@ GameResultsQueue::~GameResultsQueue()
 
 void GameResultsQueue::startThreads( void )
 {
+#if defined(GEN_ENABLE_GAMESPY) && !GEN_ENABLE_GAMESPY
+	return;
+#endif
 	endThreads();
 	for (Int i=0; i<NumWorkerThreads; ++i)
 	{

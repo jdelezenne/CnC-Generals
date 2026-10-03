@@ -510,6 +510,10 @@ void MainMenuInit( WindowLayout *layout, void *userData )
 	buttonMultiPlayer = TheWindowManager->winGetWindowFromId( parentMainMenu, buttonMultiPlayerID );
 	buttonSkirmish = TheWindowManager->winGetWindowFromId( parentMainMenu, skirmishID );
 	buttonOnline = TheWindowManager->winGetWindowFromId( parentMainMenu, onlineID );
+#if defined(GEN_ENABLE_GAMESPY) && !GEN_ENABLE_GAMESPY
+	if (buttonOnline)
+		buttonOnline->winEnable(FALSE);
+#endif
 	buttonNetwork = TheWindowManager->winGetWindowFromId( parentMainMenu, networkID );
 	buttonOptions = TheWindowManager->winGetWindowFromId( parentMainMenu, optionsID );
 	buttonExit = TheWindowManager->winGetWindowFromId( parentMainMenu, exitID );

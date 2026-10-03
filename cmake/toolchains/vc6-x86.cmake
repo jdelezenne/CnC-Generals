@@ -1,0 +1,13 @@
+# Run from a VC6 developer command prompt (VCVARS32.BAT).
+if(NOT CMAKE_HOST_WIN32)
+    message(FATAL_ERROR "The VC6 toolchain must run on Windows.")
+endif()
+foreach(tool cl link lib rc nmake midl)
+    find_program(GEN_VC6_${tool} NAMES ${tool} REQUIRED)
+endforeach()
+set(CMAKE_C_COMPILER "${GEN_VC6_cl}" CACHE FILEPATH "VC6 C compiler")
+set(CMAKE_CXX_COMPILER "${GEN_VC6_cl}" CACHE FILEPATH "VC6 C++ compiler")
+set(CMAKE_LINKER "${GEN_VC6_link}" CACHE FILEPATH "VC6 linker")
+set(CMAKE_AR "${GEN_VC6_lib}" CACHE FILEPATH "VC6 librarian")
+set(CMAKE_RC_COMPILER "${GEN_VC6_rc}" CACHE FILEPATH "Win32 resource compiler")
+set(CMAKE_MAKE_PROGRAM "${GEN_VC6_nmake}" CACHE FILEPATH "VC6 NMake")

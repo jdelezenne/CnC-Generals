@@ -555,6 +555,9 @@ GameSpyPeerMessageQueue::~GameSpyPeerMessageQueue()
 
 void GameSpyPeerMessageQueue::startThread( void )
 {
+#if defined(GEN_ENABLE_GAMESPY) && !GEN_ENABLE_GAMESPY
+	return;
+#endif
 	if (!m_thread)
 	{
 		m_thread = NEW PeerThreadClass;
@@ -1171,7 +1174,9 @@ void PeerThreadClass::Thread_Function()
 	//callbacks.readyChanged = readyChangedCallback;
 	callbacks.roomMessage = roomMessageCallback;
 	callbacks.playerMessage = playerMessageCallback;
+#if !defined(GEN_ENABLE_GAMESPY) || GEN_ENABLE_GAMESPY
 	callbacks.gameStarted = gameStartedCallback;
+#endif
 	callbacks.playerJoined = playerJoinedCallback;
 	callbacks.playerLeft = playerLeftCallback;
 	callbacks.playerChangedNick = playerChangedNickCallback;
@@ -1325,7 +1330,9 @@ void PeerThreadClass::Thread_Function()
 		}
 		IPlist = IPlist->getNext();
 	}
+#if !defined(GEN_ENABLE_GAMESPY) || GEN_ENABLE_GAMESPY
 	chatSetLocalIP(preferredIP);
+#endif
 
 	UnsignedInt preferredQRPort = 0;
 	AsciiString selectedQRPort = pref["GameSpyQRPort"];

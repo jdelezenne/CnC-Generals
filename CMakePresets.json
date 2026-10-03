@@ -1,0 +1,21 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "vc6", "hidden": true, "generator": "NMake Makefiles",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/vc6-x86.cmake"
+    },
+    { "name": "generals-debug", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "Generals", "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "generals-release", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "Generals", "CMAKE_BUILD_TYPE": "Release" } },
+    { "name": "zerohour-debug", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "ZeroHour", "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "zerohour-release", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "ZeroHour", "CMAKE_BUILD_TYPE": "Release" } }
+  ],
+  "buildPresets": [
+    { "name": "generals-debug", "configurePreset": "generals-debug" },
+    { "name": "generals-release", "configurePreset": "generals-release" },
+    { "name": "zerohour-debug", "configurePreset": "zerohour-debug" },
+    { "name": "zerohour-release", "configurePreset": "zerohour-release" }
+  ]
+}
