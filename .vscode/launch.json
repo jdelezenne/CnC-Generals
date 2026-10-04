@@ -5,7 +5,7 @@
       "name": "Generals Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/Binaries/Generals/Debug/RTSD.exe",
+      "program": "${workspaceFolder}/Binaries/Generals/Debug/Generals.exe",
       "cwd": "${config:generals.gameDirectory}",
       "args": [],
       "environment": [
@@ -20,7 +20,7 @@
       "name": "Generals Release",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/Binaries/Generals/Release/RTS.exe",
+      "program": "${workspaceFolder}/Binaries/Generals/Release/Generals.exe",
       "cwd": "${config:generals.gameDirectory}",
       "args": [],
       "environment": [
@@ -35,7 +35,7 @@
       "name": "Zero Hour Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/Binaries/ZeroHour/Debug/RTSD.exe",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/Debug/GeneralsZH.exe",
       "cwd": "${config:zeroHour.gameDirectory}",
       "args": [],
       "environment": [
@@ -50,7 +50,7 @@
       "name": "Zero Hour Release",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/Binaries/ZeroHour/Release/RTS.exe",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/Release/GeneralsZH.exe",
       "cwd": "${config:zeroHour.gameDirectory}",
       "args": [],
       "environment": [

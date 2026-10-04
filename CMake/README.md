@@ -11,7 +11,7 @@ cmake --build --preset Generals-Debug
 ```
 
 Other presets: `Generals-Release`, `ZeroHour-Debug`, `ZeroHour-Release`.
-Binaries: `Binaries/<game>/Debug/RTSD.exe` (Debug) or `Binaries/<game>/Release/RTS.exe` (Release).
+Binaries: `Binaries/Generals/<configuration>/Generals.exe` or `Binaries/ZeroHour/<configuration>/GeneralsZH.exe`.
 Set the working directory to the corresponding game's retail data directory.
 Bink playback uses `Vendors/LibBinkDec`.
 SDL3, OpenAL Soft, and dr_libs are fetched by CMake.
