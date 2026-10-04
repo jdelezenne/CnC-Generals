@@ -1,20 +1,41 @@
+# Avoid the obsolete Windows platform headers bundled with the DX8 SDK.
+set(directx_headers "${CMAKE_BINARY_DIR}/generated/directx8")
+file(MAKE_DIRECTORY "${directx_headers}")
+file(GLOB dx8_headers "${GEN_DIRECTX_INCLUDE_DIR}/d3d8*.h" "${GEN_DIRECTX_INCLUDE_DIR}/dxfile.h"
+    "${GEN_DIRECTX_INCLUDE_DIR}/d3dx8*.h" "${GEN_DIRECTX_INCLUDE_DIR}/d3dx8*.inl")
+foreach(header IN LISTS dx8_headers)
+    get_filename_component(filename "${header}" NAME)
+    configure_file("${header}" "${directx_headers}/${filename}" COPYONLY)
+endforeach()
+set(GEN_DIRECTX_INCLUDE_DIR "${directx_headers}")
+file(CONFIGURE OUTPUT "${directx_headers}/D3DXMath.h" CONTENT "#include <d3dx8math.h>\n" @ONLY)
+
 function(gen_legacy_settings name)
-    # STLport must precede both the VC6 STL and SDK includes in every C++ TU.
-    target_include_directories(${name} BEFORE PRIVATE "${GEN_STLPORT_INCLUDE_DIR}")
+    target_include_directories(${name} BEFORE PRIVATE
+        "${PROJECT_SOURCE_DIR}/vendors/STLport-4.5.3/stlport" "${stlport_support}")
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
         "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include")
     if(GEN_MILES_INCLUDE_DIR)
         target_include_directories(${name} PRIVATE "${GEN_MILES_INCLUDE_DIR}")
     endif()
-    target_compile_definitions(${name} PRIVATE ${GEN_${name}_DEFINES})
-    foreach(flag IN LISTS GEN_${name}_OPTIONS)
-        # VC6 emits unsuppressible CodeView truncation warnings for some STL
-        # types in the game. Keep the original code generation settings.
-        if(flag STREQUAL "/WX" AND name MATCHES "^(gameengine|gameenginedevice|generals)$")
-            continue()
-        endif()
-        target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:${flag}>")
+    if(GEN_ENABLE_BINK)
+        target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/shared")
+    endif()
+    foreach(config DEBUG RELEASE)
+        string(TOLOWER "${config}" config_lower)
+        target_compile_definitions(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_DEFINES_${config}}>")
+        target_compile_options(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_OPTIONS_${config}}>")
     endforeach()
+    target_compile_definitions(${name} PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
+        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _USE_32BIT_TIME_T _STLP_NO_IOSTREAMS _CONST_RETURN=)
+    # Preserve VC6 x87 code generation and avoid EBX stack alignment in legacy assembly.
+    target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4;/arch:IA32>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/Zc:forScope-;/Zc:wchar_t-;/Zc:twoPhase-;/wd4430;/FI${PROJECT_SOURCE_DIR}/cmake/msvc2026-compat.h>")
+    target_compile_features(${name} PRIVATE cxx_std_17)
+    if(name MATCHES "^(wwdownload|compression|gameengine|gameenginedevice|generals|profile|eadebug|wwshade)$")
+        set_property(TARGET ${name} PROPERTY MSVC_RUNTIME_CHECKS
+            "$<$<CONFIG:Debug>:StackFrameErrorCheck;UninitializedVariable>")
+    endif()
     set_target_properties(${name} PROPERTIES DEBUG_POSTFIX Debug)
 endfunction()
 
@@ -29,6 +50,8 @@ set_target_properties(wwmath PROPERTIES OUTPUT_NAME WWMath)
 set_target_properties(wwutil PROPERTIES OUTPUT_NAME WWUtil)
 set_target_properties(wwsaveload PROPERTIES OUTPUT_NAME WWSaveLoad)
 set_target_properties(wwdownload PROPERTIES OUTPUT_NAME WWDownload)
+set_source_files_properties("${GEN_CODE_DIR}/Libraries/Source/WWVegas/WW3D2/dx8webbrowser.cpp"
+    PROPERTIES VS_SETTINGS "MultiProcessorCompilation=false")
 if(GEN_CORE_ONLY)
     return()
 endif()
@@ -64,6 +87,7 @@ endif()
 
 # Keep generated COM files in the build directory, leaving the source tree clean.
 set(browser_dir "${CMAKE_BINARY_DIR}/generated/EABrowserDispatch")
+find_program(GEN_MIDL NAMES midl REQUIRED)
 if(GEN_GAME STREQUAL "ZeroHour" AND GEN_ENABLE_SAFEDISC)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated/Common/SafeDisc")
     file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/generated/Common/SafeDisc/CdaPfn.h"
@@ -72,7 +96,7 @@ endif()
 file(MAKE_DIRECTORY "${browser_dir}")
 add_custom_command(
     OUTPUT "${browser_dir}/BrowserDispatch_i.c" "${browser_dir}/BrowserDispatch.h" "${browser_dir}/BrowserDispatch.tlb"
-    COMMAND "${GEN_VC6_midl}" /out "${browser_dir}" /tlb BrowserDispatch.tlb
+    COMMAND "${GEN_MIDL}" /out "${browser_dir}" /tlb BrowserDispatch.tlb
         /h BrowserDispatch.h /iid BrowserDispatch_i.c /mktyplib203 /win32
         "${GEN_CODE_DIR}/Libraries/Source/EABrowserDispatch/BrowserDispatch.idl"
     DEPENDS "${GEN_CODE_DIR}/Libraries/Source/EABrowserDispatch/BrowserDispatch.idl"
@@ -81,21 +105,13 @@ add_library(eabrowserdispatch STATIC "${browser_dir}/BrowserDispatch_i.c")
 target_include_directories(eabrowserdispatch PUBLIC "${CMAKE_BINARY_DIR}/generated")
 
 if(GEN_ENABLE_GAMESPY)
+    include("${PROJECT_SOURCE_DIR}/cmake/GameSpySources.cmake")
+    add_library(gamespy STATIC ${GEN_gamespy_SOURCES})
+    target_include_directories(gamespy PRIVATE "${GEN_GAMESPY_ROOT}")
+    target_compile_definitions(gamespy PRIVATE WIN32 _WINDOWS _MBCS
+        "$<$<CONFIG:Debug>:_DEBUG>" "$<$<CONFIG:Release>:NDEBUG>")
     foreach(sdk HTTP Patching Peer Presence Stats)
-        # SDK project paths retain the original source membership; no directory glob.
-        get_filename_component(sdk_dir "${GEN_GAMESPY_${sdk}_PROJECT}" DIRECTORY)
-        file(STRINGS "${GEN_GAMESPY_${sdk}_PROJECT}" sdk_sources REGEX "^SOURCE=.*[.][cC]$")
-        set(sources "")
-        foreach(line IN LISTS sdk_sources)
-            string(REGEX REPLACE "^SOURCE=" "" path "${line}")
-            string(REPLACE "\\" "/" path "${path}")
-            cmake_path(ABSOLUTE_PATH path BASE_DIRECTORY "${sdk_dir}" NORMALIZE OUTPUT_VARIABLE path)
-            list(APPEND sources "${path}")
-        endforeach()
-        add_library(gamespy${sdk} STATIC ${sources})
-        target_include_directories(gamespy${sdk} PRIVATE "${GEN_GAMESPY_ROOT}" "${sdk_dir}")
-        target_compile_definitions(gamespy${sdk} PRIVATE WIN32 _WINDOWS _MBCS
-            "$<$<CONFIG:Debug>:_DEBUG>" "$<$<CONFIG:Release>:NDEBUG>")
+        add_library(gamespy${sdk} ALIAS gamespy)
     endforeach()
 else()
     add_library(gamespyoffline STATIC "${PROJECT_SOURCE_DIR}/cmake/stubs/gamespy-disabled.cpp")
@@ -143,7 +159,13 @@ if(GEN_ENABLE_BENCHMARK)
     target_include_directories(benchmark PUBLIC "${GEN_BENCHMARK_ROOT}")
 endif()
 
-if(NOT GEN_ENABLE_BINK)
+if(GEN_ENABLE_BINK)
+    add_library(binkcompat STATIC "${PROJECT_SOURCE_DIR}/shared/bink.cpp")
+    target_include_directories(binkcompat PUBLIC "${PROJECT_SOURCE_DIR}/shared")
+    target_link_libraries(binkcompat PRIVATE Vendor::BinkDecoder winmm)
+    target_compile_definitions(binkcompat PRIVATE NOMINMAX)
+    target_compile_features(binkcompat PRIVATE cxx_std_17)
+else()
     list(FILTER GEN_gameenginedevice_SOURCES EXCLUDE REGEX "/VideoDevice/Bink/")
     list(APPEND GEN_gameenginedevice_SOURCES "${PROJECT_SOURCE_DIR}/cmake/stubs/bink-disabled.cpp")
 endif()
@@ -161,7 +183,8 @@ foreach(name gameengine gameenginedevice)
     endif()
 endforeach()
 set_target_properties(gameengine PROPERTIES OUTPUT_NAME GameEngine)
-target_precompile_headers(gameengine PRIVATE "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
+target_precompile_headers(gameengine PRIVATE "${PROJECT_SOURCE_DIR}/cmake/msvc2026-compat.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
 set_target_properties(gameenginedevice PROPERTIES OUTPUT_NAME GameEngineDevice)
 # Use the DLL ABI, including SDK distributions which also support static Miles.
 target_compile_definitions(gameenginedevice PRIVATE A1_NO_STATIC)
@@ -170,8 +193,7 @@ if(GEN_MILES_CLEANUP_SOURCE)
     target_sources(gameenginedevice PRIVATE "${GEN_MILES_CLEANUP_SOURCE}")
 endif()
 if(GEN_ENABLE_BINK)
-    target_include_directories(gameenginedevice PUBLIC "${GEN_BINK_INCLUDE_DIR}")
-    target_link_libraries(gameenginedevice PRIVATE "${GEN_BINK_LIBRARY}")
+    target_link_libraries(gameenginedevice PRIVATE binkcompat)
 endif()
 if(GEN_ENABLE_BENCHMARK)
     target_link_libraries(gameenginedevice PRIVATE benchmark)
@@ -218,6 +240,8 @@ target_link_libraries(generals PRIVATE gameengine gameenginedevice compression $
     "${GEN_DIRECTX_dinput8_LIBRARY}" "${GEN_DIRECTX_dxguid_LIBRARY}" "${GEN_DIRECTX_dsound_LIBRARY}"
     kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid
     odbc32 odbccp32 winmm vfw32 wsock32 imm32 wininet)
+target_link_options(generals PRIVATE /NODEFAULTLIB:libci /NODEFAULTLIB:libc)
+target_link_libraries(generals PRIVATE legacy_stdio_definitions)
 if(TARGET profile)
     target_link_libraries(generals PRIVATE profile eadebug wwshade)
 endif()

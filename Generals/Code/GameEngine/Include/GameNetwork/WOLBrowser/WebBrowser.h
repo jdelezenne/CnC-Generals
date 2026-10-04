@@ -112,9 +112,9 @@ class WebBrowser :
 	// IUnknown methods
 	//---------------------------------------------------------------------------
 	protected:
-		HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject);
-		ULONG STDMETHODCALLTYPE AddRef(void);
-		ULONG STDMETHODCALLTYPE Release(void);
+		HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) throw();
+		ULONG STDMETHODCALLTYPE AddRef(void) throw();
+		ULONG STDMETHODCALLTYPE Release(void) throw();
 
 	//---------------------------------------------------------------------------
 	// IBrowserDispatch methods

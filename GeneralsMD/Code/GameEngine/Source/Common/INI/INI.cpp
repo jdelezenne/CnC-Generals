@@ -1505,7 +1505,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 				{
 					int offset = 0;
 					void* userData = 0;
-					INIFieldParseProc parse = findFieldParse(parseTableList.getNthFieldParse(ptIdx), field, offset, userData);
+					INIFieldParseProc parse = findFieldParse(parseTableList.getNthFieldParse(ptIdx), field, offset, const_cast<const void*&>(userData));
 					if (parse)
 					{
 						// parse this block and check for parse errors

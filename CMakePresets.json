@@ -1,21 +1,68 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 2,
+    "patch": 0
+  },
   "configurePresets": [
     {
-      "name": "vc6", "hidden": true, "generator": "NMake Makefiles",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/vc6-x86.cmake"
+      "name": "msvc2026",
+      "hidden": true,
+      "generator": "Visual Studio 18 2026",
+      "architecture": "Win32",
+      "toolset": "v145,host=x64",
+      "binaryDir": "${sourceDir}/out/build/msvc2026/${presetName}"
     },
-    { "name": "generals-debug", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "Generals", "CMAKE_BUILD_TYPE": "Debug" } },
-    { "name": "generals-release", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "Generals", "CMAKE_BUILD_TYPE": "Release" } },
-    { "name": "zerohour-debug", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "ZeroHour", "CMAKE_BUILD_TYPE": "Debug" } },
-    { "name": "zerohour-release", "inherits": "vc6", "cacheVariables": { "GEN_GAME": "ZeroHour", "CMAKE_BUILD_TYPE": "Release" } }
+    {
+      "name": "generals-debug",
+      "inherits": "msvc2026",
+      "cacheVariables": {
+        "GEN_GAME": "Generals"
+      }
+    },
+    {
+      "name": "generals-release",
+      "inherits": "msvc2026",
+      "cacheVariables": {
+        "GEN_GAME": "Generals"
+      }
+    },
+    {
+      "name": "zerohour-debug",
+      "inherits": "msvc2026",
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour"
+      }
+    },
+    {
+      "name": "zerohour-release",
+      "inherits": "msvc2026",
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour"
+      }
+    }
   ],
   "buildPresets": [
-    { "name": "generals-debug", "configurePreset": "generals-debug" },
-    { "name": "generals-release", "configurePreset": "generals-release" },
-    { "name": "zerohour-debug", "configurePreset": "zerohour-debug" },
-    { "name": "zerohour-release", "configurePreset": "zerohour-release" }
+    {
+      "name": "generals-debug",
+      "configurePreset": "generals-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "generals-release",
+      "configurePreset": "generals-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "zerohour-debug",
+      "configurePreset": "zerohour-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "zerohour-release",
+      "configurePreset": "zerohour-release",
+      "configuration": "Release"
+    }
   ]
 }

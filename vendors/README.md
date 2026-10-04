@@ -16,3 +16,7 @@
   Headers only, for the offline build. License: `gamespy-2011/LICENSE`.
 
 DirectX, Miles and enabled proprietary integrations remain external SDKs.
+
+* `libbinkdec`: [upstream commit 083d22b](https://github.com/FriskTheFallenHuman/libbinkdec/tree/083d22bf352f734e35d20e756a8397396b1f2777),
+  with the decoder and CMake fixes from Renegade's `cmake-msvc2026-build`.
+  License: LGPL-2.1-or-later (`libbinkdec/COPYING`).

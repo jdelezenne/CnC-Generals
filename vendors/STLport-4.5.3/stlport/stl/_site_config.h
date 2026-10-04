@@ -80,7 +80,9 @@
  * link with third-part libraries compiled with different standard library implementation.
  */
 // #  define _STLP_USE_OWN_NAMESPACE 1
+# if !defined(_MSC_VER) || _MSC_VER < 1950
 #  define _STLP_NO_OWN_NAMESPACE  1
+# endif
 
 
 /* 
@@ -192,4 +194,3 @@
 // with the option to be turned off later in compiler-specific file
 
 # define _STLP_INCOMPLETE_EXCEPTION_HEADER
-

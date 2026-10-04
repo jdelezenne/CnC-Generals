@@ -330,6 +330,11 @@ void GetFunctionDetails(void *pointer, char*name, char*filename, unsigned int* l
 //*****************************************************************************
 void FillStackAddresses(void**addresses, unsigned int count, unsigned int skip)
 {
+#if _MSC_VER >= 1950
+    unsigned short captured = CaptureStackBackTrace(skip + 1, count, addresses, NULL);
+    memset(addresses + captured, 0, (count - captured) * sizeof(*addresses));
+    return;
+#endif
 	InitSymbolInfo();
 
 	STACKFRAME	stack_frame;

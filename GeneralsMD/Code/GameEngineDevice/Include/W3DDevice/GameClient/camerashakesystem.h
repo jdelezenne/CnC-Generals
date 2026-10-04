@@ -54,6 +54,7 @@ class CameraClass;
 */
 class CameraShakeSystemClass
 {
+	template<class T, int BLOCK_SIZE> friend class AutoPoolClass;
 public:
 
 	CameraShakeSystemClass(void);

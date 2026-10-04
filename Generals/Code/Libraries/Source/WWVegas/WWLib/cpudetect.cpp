@@ -1261,6 +1261,9 @@ void Get_OS_Info(
 	unsigned OSVersionNumberMinor,
 	unsigned OSVersionBuildNumber)
 {
+#if _MSC_VER >= 1950
+	os_info.Code = "UNKNOWN";
+#endif
 	unsigned build_major=(OSVersionBuildNumber&0xff000000)>>24;
 	unsigned build_minor=(OSVersionBuildNumber&0xff0000)>>16;
 	unsigned build_sub=(OSVersionBuildNumber&0xffff);

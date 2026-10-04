@@ -4,6 +4,9 @@
 
 
 // Common features for VC++ 4.0 and higher
+# if _MSC_VER >= 1950
+#  include <config/stl_msvc2026.h>
+# else
 # ifdef _M_IA64
 #  define _STLP_NATIVE_HEADER(x) <../crt/##x>
 #  define _STLP_NATIVE_C_HEADER(x) <../crt/##x>
@@ -201,7 +204,7 @@
 #    endif
 
 #   include <config/vc_select_lib.h>
-
+# endif // _MSC_VER >= 1950
 
 
 

@@ -44,7 +44,7 @@
 #  define stderr	(&_STLP_VENDOR_CSTD::__files[2])
 # endif
 
-#  if defined (_STLP_MSVC) || defined (__ICL)
+#  if (defined (_STLP_MSVC) && _STLP_MSVC < 1900) || defined (__ICL)
 inline
 int vsnprintf(char *s1, size_t n, const char *s2, va_list v)
 {
@@ -96,7 +96,9 @@ using _STLP_VENDOR_CSTD::fwrite;
  using _STLP_VENDOR_CSTD::putchar;
 #   endif
 
+#if !defined(_MSC_VER) || _MSC_VER < 1900
 using _STLP_VENDOR_CSTD::gets;
+#endif
 using _STLP_VENDOR_CSTD::perror;
 using _STLP_VENDOR_CSTD::printf;
 using _STLP_VENDOR_CSTD::puts;
