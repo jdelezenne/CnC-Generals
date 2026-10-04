@@ -153,7 +153,8 @@ public:
 	uint32_t GetNumFrames();
 	uint32_t GetCurrentFrameNum();
 	float GetFrameRate();
-	void GetNextFrame( YUVbuffer yuv );
+	void GetNextFrame( YUVbuffer yuv, bool decodeAudio = true );
+	void GetNextAudioFrame();
 	void GotoFrame( uint32_t frameNum );
 
 	AudioInfo GetAudioTrackDetails( uint32_t trackIndex );
@@ -161,6 +162,7 @@ public:
 	uint32_t GetAudioData( uint32_t trackIndex, int16_t* audioBuffer );
 
 private:
+	void ReadFrameAudio( uint32_t& frameSize, bool decodeAudio = true );
 
 	BinkCommon::FileStream file;
 

@@ -2,93 +2,111 @@
 #include "Bink.h"
 #include "BinkDecoder.h"
 #include <windows.h>
-#include <mmsystem.h>
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include <array>
 #include <vector>
+#include <atomic>
+#include <mutex>
 
 struct BinkStreamState
 {
-    struct AudioBuffer {
-        WAVEHDR header{};
-        std::vector<int16_t> samples;
-        bool prepared = false;
-    };
     BinkDecoder decoder;
+    BinkDecoder audioDecoder;
     YUVbuffer planes{};
     int decodedFrame = -1;
     ULONGLONG startTime = GetTickCount64();
     ULONGLONG pauseTime = 0;
-    HWAVEOUT audio = nullptr;
+    SDL_AudioStream* audio = nullptr;
+    bool audioInitialized = false;
     unsigned audioBytes = 0;
     unsigned blockAlign = 0;
-    std::array<AudioBuffer, 16> buffers;
+    std::vector<int16_t> samples;
+    SDL_Thread* audioThread = nullptr;
+    std::atomic<bool> audioRunning{false};
+    std::mutex audioMutex;
+    unsigned audioQueueLimit = 0;
 
     ~BinkStreamState() { closeAudio(); }
 
     void closeAudio()
     {
-        if (!audio) return;
-        waveOutReset(audio);
-        for (auto &buffer : buffers) {
-            if (buffer.prepared) waveOutUnprepareHeader(audio, &buffer.header, sizeof(WAVEHDR));
-            buffer.prepared = false;
-        }
-        waveOutClose(audio);
+        audioRunning = false;
+        if (audioThread) SDL_WaitThread(audioThread, nullptr);
+        audioThread = nullptr;
+        if (audio) SDL_DestroyAudioStream(audio);
         audio = nullptr;
+        if (audioInitialized) SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        audioInitialized = false;
     }
 
-    AudioBuffer *freeAudioBuffer()
+    bool queueAudioFrame()
     {
-        for (auto &buffer : buffers) {
-            if (!buffer.prepared) return &buffer;
-            if ((buffer.header.dwFlags & WHDR_DONE) &&
-                waveOutUnprepareHeader(audio, &buffer.header, sizeof(WAVEHDR)) == MMSYSERR_NOERROR) {
-                buffer.prepared = false;
-                return &buffer;
-            }
-        }
-        return nullptr;
+        audioDecoder.GetNextAudioFrame();
+        unsigned bytes = std::min(audioDecoder.GetAudioData(0, samples.data()), audioBytes);
+        bytes -= bytes % blockAlign;
+        return !bytes || SDL_PutAudioStreamData(audio, samples.data(), static_cast<int>(bytes));
     }
 
-    void openAudio()
+    static int mixAudio(void* context)
+    {
+        auto& stream = *static_cast<BinkStreamState*>(context);
+        SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+        while (stream.audioRunning) {
+            {
+                std::lock_guard<std::mutex> lock(stream.audioMutex);
+                if (stream.audioDecoder.GetCurrentFrameNum() < stream.audioDecoder.GetNumFrames() &&
+                    SDL_GetAudioStreamQueued(stream.audio) < static_cast<int>(stream.audioQueueLimit)) {
+                    if (!stream.queueAudioFrame()) stream.audioRunning = false;
+                    continue;
+                }
+            }
+            SDL_Delay(1);
+        }
+        return 0;
+    }
+
+    void openAudio(const char* filename)
     {
         if (!decoder.GetNumAudioTracks()) return;
+        if (!audioDecoder.Open(filename)) return;
         const AudioInfo info = decoder.GetAudioTrackDetails(0);
         if (!info.sampleRate || !info.idealBufferSize || (info.nChannels != 1 && info.nChannels != 2)) return;
-        WAVEFORMATEX format{};
-        format.wFormatTag = WAVE_FORMAT_PCM;
-        format.nChannels = static_cast<WORD>(info.nChannels);
-        format.nSamplesPerSec = info.sampleRate;
-        format.wBitsPerSample = 16;
-        format.nBlockAlign = format.nChannels * sizeof(int16_t);
-        format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
-        if (waveOutOpen(&audio, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
-            audio = nullptr;
-            return;
-        }
-        audioBytes = info.idealBufferSize;
-        blockAlign = format.nBlockAlign;
-        for (auto &buffer : buffers) buffer.samples.resize((audioBytes + 1) / 2);
-    }
-
-    void queueAudio()
-    {
-        if (!audio) return;
-        AudioBuffer *buffer = freeAudioBuffer();
-        if (!buffer) return;
-        unsigned bytes = std::min(decoder.GetAudioData(0, buffer->samples.data()), audioBytes);
-        bytes -= bytes % blockAlign;
-        if (!bytes) return;
-        buffer->header = {};
-        buffer->header.lpData = reinterpret_cast<LPSTR>(buffer->samples.data());
-        buffer->header.dwBufferLength = bytes;
-        if (waveOutPrepareHeader(audio, &buffer->header, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
+        audioInitialized = SDL_InitSubSystem(SDL_INIT_AUDIO);
+        if (!audioInitialized) return;
+        SDL_AudioSpec format{SDL_AUDIO_S16, static_cast<int>(info.nChannels), static_cast<int>(info.sampleRate)};
+        audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &format, nullptr, nullptr);
+        if (!audio) {
             closeAudio();
             return;
         }
-        buffer->prepared = true;
-        if (waveOutWrite(audio, &buffer->header, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) closeAudio();
+        audioBytes = info.idealBufferSize;
+        blockAlign = info.nChannels * sizeof(int16_t);
+        samples.resize((audioBytes + 1) / 2);
+        audioQueueLimit = info.sampleRate * blockAlign;
+        // Prime the paused device before playback; subsequent packets are decoded
+        // independently of the game's video rendering thread.
+        if (!queueAudioFrame() || !SDL_ResumeAudioStreamDevice(audio)) {
+            closeAudio();
+            return;
+        }
+        audioRunning = true;
+        audioThread = SDL_CreateThread(mixAudio, "Bink audio", this);
+        if (!audioThread) closeAudio();
+    }
+
+    void seekAudio(unsigned frame)
+    {
+        if (!audio) return;
+        std::lock_guard<std::mutex> lock(audioMutex);
+        SDL_PauseAudioStreamDevice(audio);
+        SDL_ClearAudioStream(audio);
+        audioDecoder.GotoFrame(0);
+        // Decode overlap history, but do not play packets before the seek target.
+        while (audioDecoder.GetCurrentFrameNum() < frame)
+            audioDecoder.GetNextAudioFrame();
+        if (audioDecoder.GetCurrentFrameNum() < audioDecoder.GetNumFrames()) queueAudioFrame();
+        SDL_ResumeAudioStreamDevice(audio);
     }
 };
 
@@ -106,7 +124,7 @@ HBINK BinkOpen(const char* filename, unsigned)
         delete stream;
         return nullptr;
     }
-    if (soundEnabled) stream->openAudio();
+    if (soundEnabled) stream->openAudio(filename);
     stream->startTime = GetTickCount64();
     return new BINK{stream->decoder.frameWidth, stream->decoder.frameHeight,
         stream->decoder.GetNumFrames(), 1, stream};
@@ -124,8 +142,7 @@ int BinkWait(HBINK handle)
     if (!handle) return 1;
     auto& stream = state(handle);
     return (handle->FrameNum - 1) / stream.decoder.GetFrameRate() >
-        (GetTickCount64() - stream.startTime) / 1000.0 ||
-        (stream.audio && !stream.freeAudioBuffer());
+        (GetTickCount64() - stream.startTime) / 1000.0;
 }
 
 void BinkDoFrame(HBINK handle)
@@ -135,9 +152,8 @@ void BinkDoFrame(HBINK handle)
     const unsigned frame = handle->FrameNum - 1;
     if (stream.decodedFrame == static_cast<int>(frame)) return;
     while (stream.decoder.GetCurrentFrameNum() <= frame)
-        stream.decoder.GetNextFrame(stream.planes);
+        stream.decoder.GetNextFrame(stream.planes, false);
     stream.decodedFrame = static_cast<int>(frame);
-    stream.queueAudio();
 }
 
 void BinkCopyToBuffer(HBINK handle, void* destination, int pitch, unsigned height,
@@ -195,7 +211,7 @@ void BinkGoto(HBINK handle, unsigned frame, unsigned)
     if (frame < stream.decoder.GetCurrentFrameNum()) stream.decoder.GotoFrame(0);
     handle->FrameNum = frame + 1;
     stream.decodedFrame = -1;
-    if (stream.audio) waveOutReset(stream.audio);
+    stream.seekAudio(frame);
     stream.startTime = GetTickCount64() -
         static_cast<ULONGLONG>(frame * 1000.0 / stream.decoder.GetFrameRate());
 }
@@ -203,8 +219,7 @@ void BinkGoto(HBINK handle, unsigned frame, unsigned)
 void BinkSetVolume(HBINK handle, unsigned, int volume)
 {
     if (!handle || !state(handle).audio) return;
-    const DWORD level = static_cast<DWORD>(std::clamp(volume, 0, 32768) * 65535LL / 32768);
-    waveOutSetVolume(state(handle).audio, level | (level << 16));
+    SDL_SetAudioStreamGain(state(handle).audio, std::clamp(volume, 0, 32768) / 32768.0f);
 }
 
 int BinkSoundUseDirectSound(void* driver)

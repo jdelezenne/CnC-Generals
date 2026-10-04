@@ -1,5 +1,11 @@
 add_library(binkcompat STATIC Bink/Bink.cpp)
 target_include_directories(binkcompat PUBLIC Bink)
-target_link_libraries(binkcompat PRIVATE Vendor::BinkDecoder winmm)
+target_link_libraries(binkcompat PRIVATE Vendor::BinkDecoder SDL3::SDL3-static)
 target_compile_definitions(binkcompat PRIVATE NOMINMAX)
 target_compile_features(binkcompat PRIVATE cxx_std_17)
+
+add_library(gen_audio STATIC Audio/Miles.cpp)
+target_include_directories(gen_audio PUBLIC Audio/Include)
+target_compile_features(gen_audio PRIVATE cxx_std_23)
+target_compile_definitions(gen_audio PRIVATE _CRT_SECURE_NO_WARNINGS AL_ALEXT_PROTOTYPES)
+target_link_libraries(gen_audio PRIVATE SDL3::SDL3-static OpenAL::OpenAL gen_audio_decoders)

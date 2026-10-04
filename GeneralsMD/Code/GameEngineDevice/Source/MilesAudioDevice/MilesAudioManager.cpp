@@ -38,7 +38,6 @@
 /*		7/18/2002 : Initial creation                                           */
 /*---------------------------------------------------------------------------*/
 
-#include <dsound.h>
 #include "Lib/Basetype.h"
 #include "MilesAudioDevice/MilesAudioManager.h"
 
@@ -483,6 +482,7 @@ void MilesAudioManager::reset()
 //-------------------------------------------------------------------------------------------------
 void MilesAudioManager::update()
 {
+	Audio_Service();
 	AudioManager::update();
 	setDeviceListenerPosition();
 	processRequestList();
@@ -1447,7 +1447,6 @@ void MilesAudioManager::openDevice( void )
 		return;
 	}
 	
-	AIL_set_redist_directory("MSS\\");
 	AIL_startup();
 	Int retval = 0;
 
@@ -1676,46 +1675,8 @@ void MilesAudioManager::selectProvider( UnsignedInt providerNdx )
 		unselectProvider();
 	}
 
-	LPDIRECTSOUND lpDirectSoundInfo;
-	AIL_get_DirectSound_info( NULL, (void**)&lpDirectSoundInfo, NULL );
-	Bool useDolby = FALSE;
-	if( lpDirectSoundInfo )
-	{
-		DWORD speakerConfig;
-		lpDirectSoundInfo->GetSpeakerConfig( &speakerConfig );
-		switch( DSSPEAKER_CONFIG( speakerConfig ) )
-		{
-			case DSSPEAKER_DIRECTOUT:
-				m_selectedSpeakerType = AIL_3D_2_SPEAKER;
-				break;
-			case DSSPEAKER_MONO:     
-				m_selectedSpeakerType = AIL_3D_2_SPEAKER;
-				break;
-			case DSSPEAKER_STEREO:   
-				m_selectedSpeakerType = AIL_3D_2_SPEAKER;
-				break;
-			case DSSPEAKER_HEADPHONE:
-				m_selectedSpeakerType = AIL_3D_HEADPHONE;
-				useDolby = TRUE;
-				break;
-			case DSSPEAKER_QUAD:     
-				m_selectedSpeakerType = AIL_3D_4_SPEAKER;
-				useDolby = TRUE;
-				break;
-			case DSSPEAKER_SURROUND:
-				m_selectedSpeakerType = AIL_3D_SURROUND;
-				useDolby = TRUE;
-				break;
-			case DSSPEAKER_5POINT1:  
-				m_selectedSpeakerType = AIL_3D_51_SPEAKER;
-				useDolby = TRUE;
-				break;
-			case DSSPEAKER_7POINT1:  
-				m_selectedSpeakerType = AIL_3D_71_SPEAKER;
-				useDolby = TRUE;
-				break;
-		}
-	}
+	m_selectedSpeakerType = Audio_GetSpeakerType(m_selectedSpeakerType);
+	Bool useDolby = m_selectedSpeakerType != AIL_3D_2_SPEAKER;
 
 	Bool success = FALSE;
 	if( useDolby )
@@ -2977,9 +2938,7 @@ void *MilesAudioManager::getHandleForBink( void )
 		m_binkHandle = aud;
 	}
 	
-	AILLPDIRECTSOUND lpDS;
-	AIL_get_DirectSound_info(m_binkHandle->m_sample, &lpDS, NULL);
-	return lpDS;
+	return m_digitalHandle;
 }
 
 //-------------------------------------------------------------------------------------------------

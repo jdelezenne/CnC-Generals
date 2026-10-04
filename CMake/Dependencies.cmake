@@ -9,7 +9,6 @@ endfunction()
 
 function(gen_find_dependencies)
     gen_sdk_root(DIRECTX "${GEN_CODE_DIR}/Libraries/DX90SDK")
-    gen_sdk_root(MILES "${PROJECT_SOURCE_DIR}/Vendors/Miles65")
     gen_sdk_root(GAMESPY "${GEN_CODE_DIR}/Libraries/Source/GameSpy")
     if(NOT GEN_ENABLE_GAMESPY)
         set(GEN_GAMESPY_ROOT "${PROJECT_SOURCE_DIR}/CMake/Stubs")
@@ -24,14 +23,6 @@ function(gen_find_dependencies)
         find_library(GEN_DIRECTX_${lib}_LIBRARY NAMES ${lib}
             PATHS "${GEN_DIRECTX_ROOT}/lib" "${GEN_DIRECTX_ROOT}/lib/x86" NO_DEFAULT_PATH)
     endforeach()
-    find_path(GEN_MILES_INCLUDE_DIR mss.h
-        PATHS "${GEN_MILES_ROOT}/Include" "${GEN_MILES_ROOT}/include" NO_DEFAULT_PATH)
-    find_library(GEN_MILES_LIBRARY NAMES mss32
-        PATHS "${GEN_MILES_ROOT}/Lib/Win" "${GEN_MILES_ROOT}/Lib"
-            "${GEN_MILES_ROOT}/lib/win" "${GEN_MILES_ROOT}/lib" "${GEN_MILES_ROOT}/win" NO_DEFAULT_PATH)
-    find_file(GEN_MILES_CLEANUP_SOURCE NAMES Cleanup.c cleanup.c
-        PATHS "${GEN_MILES_ROOT}/Win" "${GEN_MILES_ROOT}/win" "${GEN_MILES_ROOT}" NO_DEFAULT_PATH)
-
     set(missing "")
     foreach(item DIRECTX_INCLUDE_DIR DIRECTX_d3dx8_LIBRARY DIRECTX_d3d8_LIBRARY
             DIRECTX_dinput8_LIBRARY DIRECTX_dxguid_LIBRARY DIRECTX_dsound_LIBRARY)
@@ -39,7 +30,7 @@ function(gen_find_dependencies)
             list(APPEND missing "GEN_${item}")
         endif()
     endforeach()
-    foreach(item MILES_INCLUDE_DIR MILES_LIBRARY DBGHELP_LIBRARY)
+    foreach(item DBGHELP_LIBRARY)
         if(NOT GEN_${item})
             list(APPEND missing "GEN_${item}")
         endif()

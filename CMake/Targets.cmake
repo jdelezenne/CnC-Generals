@@ -15,9 +15,7 @@ function(gen_legacy_settings name)
         "${PROJECT_SOURCE_DIR}/Vendors/STLport-4.5.3/stlport" "${stlport_support}")
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
         "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include")
-    if(GEN_MILES_INCLUDE_DIR)
-        target_include_directories(${name} PRIVATE "${GEN_MILES_INCLUDE_DIR}")
-    endif()
+    target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Audio/Include")
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Bink")
     foreach(config DEBUG RELEASE)
         string(TOLOWER "${config}" config_lower)
@@ -130,7 +128,7 @@ gen_legacy_settings(compression)
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Generated/ZLib")
 file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/ZLib/zlib.h" CONTENT "#include \"${GEN_ZLIB_ROOT}/zlib.h\"\n" @ONLY)
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Generated/MSS")
-file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/MSS/MSS.h" CONTENT "#include \"${GEN_MILES_INCLUDE_DIR}/mss.h\"\n" @ONLY)
+file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/MSS/MSS.h" CONTENT "#include \"${PROJECT_SOURCE_DIR}/Platform/Audio/Include/Mss.h\"\n" @ONLY)
 target_include_directories(compression PRIVATE "${CMAKE_BINARY_DIR}/Generated")
 
 foreach(name gameengine gameenginedevice)
@@ -146,13 +144,7 @@ set_target_properties(gameengine PROPERTIES OUTPUT_NAME GameEngine)
 target_precompile_headers(gameengine PRIVATE "${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h"
     "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
 set_target_properties(gameenginedevice PROPERTIES OUTPUT_NAME GameEngineDevice)
-# Use the DLL ABI, including SDK distributions which also support static Miles.
-target_compile_definitions(gameenginedevice PRIVATE A1_NO_STATIC)
-if(GEN_MILES_CLEANUP_SOURCE)
-    # Import libraries generated from a runtime DLL lack this SDK helper.
-    target_sources(gameenginedevice PRIVATE "${GEN_MILES_CLEANUP_SOURCE}")
-endif()
-target_link_libraries(gameenginedevice PRIVATE binkcompat)
+target_link_libraries(gameenginedevice PRIVATE binkcompat gen_audio)
 
 if(GEN_GAME STREQUAL "Generals")
     set(default_version "1.8")
@@ -191,7 +183,7 @@ target_include_directories(generals PRIVATE "${GEN_CODE_DIR}/Main")
 target_link_options(generals PRIVATE /DEBUG /MACHINE:I386)
 target_link_libraries(generals PRIVATE gameengine gameenginedevice compression ${GEN_CORE_LIBRARIES}
     gamespyHTTP gamespyPatching gamespyPeer gamespyPresence gamespyStats eabrowserdispatch
-    "${GEN_MILES_LIBRARY}" "${GEN_DBGHELP_LIBRARY}" "${GEN_DIRECTX_d3dx8_LIBRARY}" "${GEN_DIRECTX_d3d8_LIBRARY}"
+    "${GEN_DBGHELP_LIBRARY}" "${GEN_DIRECTX_d3dx8_LIBRARY}" "${GEN_DIRECTX_d3d8_LIBRARY}"
     "${GEN_DIRECTX_dinput8_LIBRARY}" "${GEN_DIRECTX_dxguid_LIBRARY}" "${GEN_DIRECTX_dsound_LIBRARY}"
     kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid
     odbc32 odbccp32 winmm vfw32 wsock32 imm32 wininet)

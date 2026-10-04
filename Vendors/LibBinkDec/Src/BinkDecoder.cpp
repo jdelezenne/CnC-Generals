@@ -406,11 +406,11 @@ bool BinkDecoder::Open( const std::string& fileName )
 	return true;
 }
 
-void BinkDecoder::GetNextFrame( YUVbuffer yuv )
+void BinkDecoder::ReadFrameAudio( uint32_t& frameSize, bool decodeAudio )
 {
 	// seek to fame offset
 	file.Seek( frames[currentFrame].offset );
-	uint32_t frameSize = frames[currentFrame].size;
+	frameSize = frames[currentFrame].size;
 
 	for( uint32_t trackIndex = 0; trackIndex < audioTracks.size(); trackIndex++ )
 	{
@@ -421,6 +421,11 @@ void BinkDecoder::GetNextFrame( YUVbuffer yuv )
 		uint32_t audioPacketSize = file.ReadUint32LE();
 
 		frameSize -= 4 + audioPacketSize;
+		if( !decodeAudio )
+		{
+			file.Skip( audioPacketSize );
+			continue;
+		}
 
 		if( audioPacketSize >= 4 )
 		{
@@ -437,6 +442,19 @@ void BinkDecoder::GetNextFrame( YUVbuffer yuv )
 		}
 	}
 
+}
+
+void BinkDecoder::GetNextAudioFrame()
+{
+	uint32_t frameSize;
+	ReadFrameAudio( frameSize );
+	currentFrame++;
+}
+
+void BinkDecoder::GetNextFrame( YUVbuffer yuv, bool decodeAudio )
+{
+	uint32_t frameSize;
+	ReadFrameAudio( frameSize, decodeAudio );
 	// get video packet
 	VideoPacket( frameSize );
 
