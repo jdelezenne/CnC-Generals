@@ -587,7 +587,7 @@ public:
 		MSG_REMOVE_BEACON,
 		MSG_SET_BEACON_TEXT,
 		MSG_SET_REPLAY_CAMERA,											///< Track camera pos for replays
-		MSG_SELF_DESTRUCT,													///< Destroys a player's units (for copy protection or to quit to observer)
+		MSG_SELF_DESTRUCT,													///< Destroys a player's units (to quit to observer)
 		MSG_CREATE_FORMATION,												///< Creates a formation.
 		MSG_LOGIC_CRC,															///< CRC from the logic passed around in a network game :)
 		MSG_SET_MINE_CLEARING_DETAIL,								///< CRC from the logic passed around in a network game :)

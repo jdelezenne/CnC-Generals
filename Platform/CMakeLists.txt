@@ -1,0 +1,5 @@
+add_library(binkcompat STATIC Bink/Bink.cpp)
+target_include_directories(binkcompat PUBLIC Bink)
+target_link_libraries(binkcompat PRIVATE Vendor::BinkDecoder winmm)
+target_compile_definitions(binkcompat PRIVATE NOMINMAX)
+target_compile_features(binkcompat PRIVATE cxx_std_17)

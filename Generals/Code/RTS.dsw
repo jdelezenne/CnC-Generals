@@ -42,18 +42,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "DatGen"=.\Tools\Launcher\DatGen\DatGen.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "DebugWindow"=.\Tools\DebugWindow\DebugWindow.dsp - Package Owner=<4>
 
 Package=<5>

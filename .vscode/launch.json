@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Generals Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/Generals/Debug/RTSD.exe",
+      "cwd": "${config:generals.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:generals.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Generals Debug"
+    },
+    {
+      "name": "Generals Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/Generals/Release/RTS.exe",
+      "cwd": "${config:generals.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:generals.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Generals Release"
+    },
+    {
+      "name": "Zero Hour Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/Debug/RTSD.exe",
+      "cwd": "${config:zeroHour.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:zeroHour.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Zero Hour Debug"
+    },
+    {
+      "name": "Zero Hour Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/Release/RTS.exe",
+      "cwd": "${config:zeroHour.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:zeroHour.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Zero Hour Release"
+    }
+  ]
+}

@@ -53,7 +53,6 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "Common/BattleHonors.h"
-#include "Common/CopyProtection.h"
 #include "Common/GameEngine.h"
 #include "Common/GameLOD.h"
 #include "Common/GameState.h"
@@ -72,7 +71,6 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/VictoryConditions.h"
-#include "GameClient/CDCheck.h"
 #include "GameClient/Display.h"
 #include "GameClient/GUICallbacks.h"
 #include "GameClient/WindowLayout.h"
@@ -471,7 +469,7 @@ WindowMsgHandledType ScoreScreenSystem( GameWindow *window, UnsignedInt msg,
 					}
 					else
 					{
-						CheckForCDAtGameStart( startNextCampaignGame );
+						startNextCampaignGame();
 					}
 				}
 #endif
@@ -685,11 +683,7 @@ void initSinglePlayer( void )
 
 void finishSinglePlayerInit( void )
 {
-	Bool copyProtectOK = TRUE;
-#ifdef DO_COPY_PROTECTION
-	copyProtectOK = CopyProtect::validate();
-#endif
-	if(copyProtectOK && TheCampaignManager->isVictorious())
+	if(TheCampaignManager->isVictorious())
 	{
 		TheCampaignManager->gotoNextMission();
 

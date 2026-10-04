@@ -44,13 +44,8 @@ public:
 	virtual void reset( void );
 	virtual void postProcessLoad( void );
 
-	// ArchiveFile operations
-	virtual void closeAllArchiveFiles( void );											///< Close all Archivefiles currently open
-
 	// File operations
 	virtual ArchiveFile * openArchiveFile(const Char *filename);
-	virtual void closeArchiveFile(const Char *filename);
-	virtual void closeAllFiles( void );															///< Close all files associated with ArchiveFiles
 
 	virtual Bool loadBigFilesFromDirectory(AsciiString dir, AsciiString fileMask, Bool overwrite = FALSE);
 protected:

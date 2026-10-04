@@ -138,9 +138,6 @@ public:
 
 	Bool createDirectory(AsciiString directory); ///< create a directory of the given name.
 
-	Bool areMusicFilesOnCD();
-	void loadMusicFilesFromCD();
-	void unloadMusicFilesFromCD();
 protected:
   mutable std::map<unsigned,bool> m_fileExist;
 };

@@ -27,11 +27,9 @@
 /////////////////////////////////////////////////////////////
 
 #include <winsock2.h>
-#include "Common/AudioAffect.h"
 #include "Common/ArchiveFile.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/File.h"
-#include "Common/GameAudio.h"
 #include "Common/GameMemory.h"
 #include "Common/LocalFileSystem.h"
 #include "Win32Device/Common/Win32BIGFile.h"
@@ -182,33 +180,6 @@ ArchiveFile * Win32BIGFileSystem::openArchiveFile(const Char *filename) {
 	// leave fp open as the archive file will be using it.
 
 	return archiveFile;
-}
-
-void Win32BIGFileSystem::closeArchiveFile(const Char *filename) {
-	// Need to close the specified big file
-	ArchiveFileMap::iterator it =  m_archiveFileMap.find(filename);
-	if (it == m_archiveFileMap.end()) {
-		return;
-	}
-
-	if (stricmp(filename, MUSIC_BIG) == 0) {
-		// Stop the current audio
-		TheAudio->stopAudio(AudioAffect_Music);
-
-		// No need to turn off other audio, as the lookups will just fail.
-	}
-	DEBUG_ASSERTCRASH(stricmp(filename, MUSIC_BIG) == 0, ("Attempting to close Archive file '%s', need to add code to handle its shutdown correctly.", filename));
-
-	// may need to do some other processing here first.
-	
-	delete (it->second);
-	m_archiveFileMap.erase(it);
-}
-
-void Win32BIGFileSystem::closeAllArchiveFiles() {
-}
-
-void Win32BIGFileSystem::closeAllFiles() {
 }
 
 Bool Win32BIGFileSystem::loadBigFilesFromDirectory(AsciiString dir, AsciiString fileMask, Bool overwrite) {

@@ -54,7 +54,7 @@
 #define GEN_ENABLE_BINK 1
 #endif
 #if GEN_ENABLE_BINK
-#include "bink.h"
+#include "Bink.h"
 
 //----------------------------------------------------------------------------
 //           Forward References

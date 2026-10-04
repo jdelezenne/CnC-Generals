@@ -218,22 +218,6 @@ SOURCE=.\Toolkit\Storage\Rights.h
 SOURCE=.\Toolkit\Storage\Stream.h
 # End Source File
 # End Group
-# Begin Group "SafeDisk"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\SafeDisk\CdaPfn.h
-# End Source File
-# End Group
-# Begin Source File
-
-SOURCE=.\BFISH.CPP
-# End Source File
-# Begin Source File
-
-SOURCE=.\BFISH.H
-# End Source File
 # Begin Source File
 
 SOURCE=.\dialog.cpp
@@ -297,14 +281,6 @@ SOURCE=.\process.cpp
 # Begin Source File
 
 SOURCE=.\process.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Protect.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Protect.h
 # End Source File
 # Begin Source File
 

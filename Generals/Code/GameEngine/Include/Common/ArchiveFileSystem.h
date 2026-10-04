@@ -46,7 +46,6 @@
 #ifndef __ARCHIVEFILESYSTEM_H_
 #define __ARCHIVEFILESYSTEM_H_
 
-#define MUSIC_BIG "Music.big"
 
 //----------------------------------------------------------------------------
 //           Includes                                                      
@@ -157,12 +156,9 @@ class ArchiveFileSystem : public SubsystemInterface
 
 	// ArchiveFile operations
 	virtual ArchiveFile*	openArchiveFile( const Char *filename ) = 0;		///< Create new or return existing Archive file from file name
-	virtual void					closeArchiveFile( const Char *filename ) = 0;		///< Close the one specified big file.
-	virtual void					closeAllArchiveFiles( void ) = 0;								///< Close all Archivefiles currently open
 
 	// File operations
 	virtual File*					openFile( const Char *filename, Int access = 0);	///< Search Archive files for specified file name and open it if found
-	virtual void					closeAllFiles( void ) = 0;									///< Close all files associated with ArchiveFiles
 	virtual Bool					doesFileExist(const Char *filename) const;		///< return true if that file exists in an archive file somewhere.
 
 	void					getFileListInDirectory(const AsciiString& currentDirectory, const AsciiString& originalDirectory, const AsciiString& searchName, FilenameList &filenameList, Bool searchSubdirectories) const; ///< search the given directory for files matching the searchName (egs. *.ini, *.rep).  Possibly search subdirectories.  Scans each Archive file.
@@ -170,7 +166,6 @@ class ArchiveFileSystem : public SubsystemInterface
 	
 	virtual Bool	loadBigFilesFromDirectory(AsciiString dir, AsciiString fileMask, Bool overwrite = FALSE) = 0;
 
-	// Unprotected this for copy-protection routines
 	AsciiString						getArchiveFilenameForFile(const AsciiString& filename) const;
 	
 	void loadMods( void );

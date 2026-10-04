@@ -1,0 +1,66 @@
+include_guard(GLOBAL)
+
+function(gen_sdk_root name default_path)
+    if(DEFINED ENV{GEN_${name}_ROOT})
+        set(default_path "$ENV{GEN_${name}_ROOT}")
+    endif()
+    set(GEN_${name}_ROOT "${default_path}" CACHE PATH "Root of the original ${name} SDK")
+endfunction()
+
+function(gen_find_dependencies)
+    gen_sdk_root(DIRECTX "${GEN_CODE_DIR}/Libraries/DX90SDK")
+    gen_sdk_root(MILES "${PROJECT_SOURCE_DIR}/Vendors/Miles65")
+    gen_sdk_root(GAMESPY "${GEN_CODE_DIR}/Libraries/Source/GameSpy")
+    if(NOT GEN_ENABLE_GAMESPY)
+        set(GEN_GAMESPY_ROOT "${PROJECT_SOURCE_DIR}/CMake/Stubs")
+    endif()
+    gen_sdk_root(ZLIB "${PROJECT_SOURCE_DIR}/Vendors/ZLib-1.1.4")
+    gen_sdk_root(PLATFORM_SDK "")
+    find_library(GEN_DBGHELP_LIBRARY NAMES dbghelp
+        PATHS "${GEN_PLATFORM_SDK_ROOT}/Lib" "${GEN_PLATFORM_SDK_ROOT}/Lib/x86" ENV LIB)
+
+    find_path(GEN_DIRECTX_INCLUDE_DIR d3dx8.h PATHS "${GEN_DIRECTX_ROOT}/include" NO_DEFAULT_PATH)
+    foreach(lib d3dx8 d3d8 dinput8 dxguid dsound)
+        find_library(GEN_DIRECTX_${lib}_LIBRARY NAMES ${lib}
+            PATHS "${GEN_DIRECTX_ROOT}/lib" "${GEN_DIRECTX_ROOT}/lib/x86" NO_DEFAULT_PATH)
+    endforeach()
+    find_path(GEN_MILES_INCLUDE_DIR mss.h
+        PATHS "${GEN_MILES_ROOT}/Include" "${GEN_MILES_ROOT}/include" NO_DEFAULT_PATH)
+    find_library(GEN_MILES_LIBRARY NAMES mss32
+        PATHS "${GEN_MILES_ROOT}/Lib/Win" "${GEN_MILES_ROOT}/Lib"
+            "${GEN_MILES_ROOT}/lib/win" "${GEN_MILES_ROOT}/lib" "${GEN_MILES_ROOT}/win" NO_DEFAULT_PATH)
+    find_file(GEN_MILES_CLEANUP_SOURCE NAMES Cleanup.c cleanup.c
+        PATHS "${GEN_MILES_ROOT}/Win" "${GEN_MILES_ROOT}/win" "${GEN_MILES_ROOT}" NO_DEFAULT_PATH)
+
+    set(missing "")
+    foreach(item DIRECTX_INCLUDE_DIR DIRECTX_d3dx8_LIBRARY DIRECTX_d3d8_LIBRARY
+            DIRECTX_dinput8_LIBRARY DIRECTX_dxguid_LIBRARY DIRECTX_dsound_LIBRARY)
+        if(NOT GEN_${item})
+            list(APPEND missing "GEN_${item}")
+        endif()
+    endforeach()
+    foreach(item MILES_INCLUDE_DIR MILES_LIBRARY DBGHELP_LIBRARY)
+        if(NOT GEN_${item})
+            list(APPEND missing "GEN_${item}")
+        endif()
+    endforeach()
+    if(GEN_ENABLE_GAMESPY)
+        foreach(header GameSpy/Peer/peer.h GameSpy/GP/gp.h GameSpy/ghttp/ghttp.h
+                GameSpy/gstats/gstats.h GameSpy/gstats/gpersist.h GameSpy/pt/pt.h
+                GameSpy/serverbrowsing/sb_serverbrowsing.h GameSpy/qr2/qr2.h)
+            if(NOT EXISTS "${GEN_GAMESPY_ROOT}/${header}")
+                list(APPEND missing "${GEN_GAMESPY_ROOT}/${header}")
+            endif()
+        endforeach()
+    endif()
+    foreach(source adler32.c compress.c crc32.c deflate.c gzio.c infblock.c infcodes.c
+            inffast.c inflate.c inftrees.c infutil.c trees.c uncompr.c zutil.c zlib.h zconf.h)
+        if(NOT EXISTS "${GEN_ZLIB_ROOT}/${source}")
+            list(APPEND missing "${GEN_ZLIB_ROOT}/${source}")
+        endif()
+    endforeach()
+    if(missing)
+        list(JOIN missing "\n  " details)
+        message(FATAL_ERROR "Missing original SDK files:\n  ${details}\nSet GEN_<SDK>_ROOT.")
+    endif()
+endfunction()

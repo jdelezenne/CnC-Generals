@@ -46,7 +46,6 @@
 #include "Common/FileSystem.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/LocalFileSystem.h"
-#include "Common/CDManager.h"
 #include "Common/GlobalData.h"
 #include "Common/PerfTimer.h"
 #include "Common/RandomValue.h"
@@ -424,16 +423,7 @@ void GameEngine::init( int argc, char *argv[] )
 		initSubsystem(TheTerrainTypes,"TheTerrainTypes", MSGNEW("GameEngineSubsystem") TerrainTypeCollection(), &xferCRC, "Data\\INI\\Default\\Terrain.ini", "Data\\INI\\Terrain.ini");
 		initSubsystem(TheTerrainRoads,"TheTerrainRoads", MSGNEW("GameEngineSubsystem") TerrainRoadCollection(), &xferCRC, "Data\\INI\\Default\\Roads.ini", "Data\\INI\\Roads.ini");
 		initSubsystem(TheGlobalLanguageData,"TheGlobalLanguageData",MSGNEW("GameEngineSubsystem") GlobalLanguage, NULL); // must be before the game text
-		initSubsystem(TheCDManager,"TheCDManager", CreateCDManager(), NULL);
-	#ifdef DUMP_PERF_STATS///////////////////////////////////////////////////////////////////////////
-	GetPrecisionTimer(&endTime64);//////////////////////////////////////////////////////////////////
-	sprintf(Buf,"----------------------------------------------------------------------------After TheCDManager = %f seconds \n",((double)(endTime64-startTime64)/(double)(freq64)));
-  startTime64 = endTime64;//Reset the clock ////////////////////////////////////////////////////////
-	DEBUG_LOG(("%s", Buf));////////////////////////////////////////////////////////////////////////////
-	#endif/////////////////////////////////////////////////////////////////////////////////////////////
 		initSubsystem(TheAudio,"TheAudio", createAudioManager(), NULL);
-		if (!TheAudio->isMusicAlreadyLoaded())
-			setQuitting(TRUE);
 
 	#ifdef DUMP_PERF_STATS///////////////////////////////////////////////////////////////////////////
 	GetPrecisionTimer(&endTime64);//////////////////////////////////////////////////////////////////
@@ -766,7 +756,6 @@ void GameEngine::update( void )
 				TheNetwork->UPDATE();
 			}
 			 
-			TheCDManager->UPDATE();
 		}
 
 

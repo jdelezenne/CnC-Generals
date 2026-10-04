@@ -152,8 +152,7 @@ AudioManager::AudioManager() :
 	m_music(NULL), 
 	m_sound(NULL),
 	m_surroundSpeakers(FALSE),
-	m_hardwareAccel(FALSE),
-	m_musicPlayingFromCD(FALSE)
+	m_hardwareAccel(FALSE)
 {
 	// Added by Sadullah Nader
 	m_adjustedVolumes.clear();
@@ -232,35 +231,6 @@ void AudioManager::init()
 
 	// do the miscellaneous sound files last so that we find the audioeventrts associated with the events.
 	ini.load( AsciiString( "Data\\INI\\MiscAudio.ini" ), INI_LOAD_OVERWRITE, NULL);
-	
-	// determine if one of the music tracks exists. Since their now BIGd, one implies all.
-	// If they don't exist, then attempt to load them from the CD. 
-	if (!isMusicAlreadyLoaded()) 
-	{
-		m_musicPlayingFromCD = TRUE;
-		while (TRUE) 
-		{
-			// @todo Unload any files from CD first. - jkmcd
-
-			TheFileSystem->loadMusicFilesFromCD();
-			if (isMusicAlreadyLoaded()) 
-			{
-				break;
-			}
-			// We loop infinitely on the splash screen if we don't allow breaking out of this loop.
-//#if !defined( _DEBUG ) && !defined( _INTERNAL )
-			else
-			{
-				// Display the warning.
-				
-				if (OSDisplayWarningBox("GUI:InsertCDPrompt", "GUI:InsertCDMessage", OSDBT_OK | OSDBT_CANCEL, OSDOF_SYSTEMMODAL | OSDOF_EXCLAMATIONICON) == OSDBT_CANCEL) {
-					//TheGameEngine->setQuitting(TRUE);  // Can't do this to WorldBuilder
-					break;
-				}
-			}
-//#endif
-		}
-	}
 	
 	m_music = NEW MusicManager;
 	m_sound = NEW SoundManager;
@@ -905,33 +875,6 @@ Real AudioManager::getAudioLengthMS( const AudioEventRTS *event )
 	return getFileLengthMS(tmpEvent.getAttackFilename()) + 
 				 getFileLengthMS(tmpEvent.getFilename()) + 
 				 getFileLengthMS(tmpEvent.getDecayFilename());
-}
-
-//-------------------------------------------------------------------------------------------------
-Bool AudioManager::isMusicAlreadyLoaded(void) const
-{
-	const AudioEventInfo *musicToLoad = NULL;
-	AudioEventInfoHash::const_iterator it;
-	for (it = m_allAudioEventInfo.begin(); it != m_allAudioEventInfo.end(); ++it) {
-		if (it->second) {
-			const AudioEventInfo *aet = it->second;
-			if (aet->m_soundType == AT_Music) {
-				musicToLoad = aet;
-			}
-		}
-	}
-
-	if (!musicToLoad) {
-		return FALSE;
-	}
-
-	AudioEventRTS aud;
-	aud.setAudioEventInfo(musicToLoad);
-	aud.generateFilename();
-
-	AsciiString astr = aud.getFilename();
-
-	return (TheFileSystem->doesFileExist(astr.str()));
 }
 
 //-------------------------------------------------------------------------------------------------

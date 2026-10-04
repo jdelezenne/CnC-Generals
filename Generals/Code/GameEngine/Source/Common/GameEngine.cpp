@@ -46,7 +46,6 @@
 #include "Common/FileSystem.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/LocalFileSystem.h"
-#include "Common/CDManager.h"
 #include "Common/GlobalData.h"
 #include "Common/PerfTimer.h"
 #include "Common/RandomValue.h"
@@ -338,10 +337,7 @@ void GameEngine::init( int argc, char *argv[] )
 		initSubsystem(TheTerrainTypes,"TheTerrainTypes", MSGNEW("GameEngineSubsystem") TerrainTypeCollection(), &xferCRC, "Data\\INI\\Default\\Terrain.ini", "Data\\INI\\Terrain.ini");
 		initSubsystem(TheTerrainRoads,"TheTerrainRoads", MSGNEW("GameEngineSubsystem") TerrainRoadCollection(), &xferCRC, "Data\\INI\\Default\\Roads.ini", "Data\\INI\\Roads.ini");
 		initSubsystem(TheGlobalLanguageData,"TheGlobalLanguageData",MSGNEW("GameEngineSubsystem") GlobalLanguage, NULL); // must be before the game text
-		initSubsystem(TheCDManager,"TheCDManager", CreateCDManager(), NULL);
 		initSubsystem(TheAudio,"TheAudio", createAudioManager(), NULL);
-		if (!TheAudio->isMusicAlreadyLoaded())
-			setQuitting(TRUE);
 		initSubsystem(TheFunctionLexicon,"TheFunctionLexicon", createFunctionLexicon(), NULL);
 		initSubsystem(TheModuleFactory,"TheModuleFactory", createModuleFactory(), NULL);
 		initSubsystem(TheMessageStream,"TheMessageStream", createMessageStream(), NULL);
@@ -587,7 +583,6 @@ void GameEngine::update( void )
 				TheNetwork->UPDATE();
 			}
 			 
-			TheCDManager->UPDATE();
 		}
 
 

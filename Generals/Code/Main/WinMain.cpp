@@ -42,16 +42,12 @@
 // USER INCLUDES //////////////////////////////////////////////////////////////
 #include "WinMain.h"
 #include "Lib/BaseType.h"
-#include "Common/CopyProtection.h"
 #include "Common/CriticalSection.h"
 #include "Common/GlobalData.h"
 #include "Common/GameEngine.h"
 #include "Common/GameSounds.h"
 #include "Common/Debug.h"
 #include "Common/GameMemory.h"
-#ifdef DO_COPY_PROTECTION
-#include "Common/SafeDisc/CdaPfn.h"
-#endif
 #include "Common/StackDump.h"
 #include "Common/MessageStream.h"
 #include "Common/Team.h"
@@ -318,10 +314,6 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message,
 			}
 		}
 		
-#ifdef DO_COPY_PROTECTION
-		// Check for messages from the launcher
-		CopyProtect::checkForMessage(message, lParam);
-#endif
 
 #ifdef	DEBUG_WINDOWS_MESSAGES
 		static msgCount=0;
@@ -597,36 +589,6 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message,
 				break;
 			}
 
-// Well, it was a nice idea, but we don't get a message for an ejection. 
-// (Really unforunate, actually.) I'm leaving this in in-case some one wants
-// to trap a different device change (for instance, removal of a mouse) - jkmcd
-#if 0
-			case WM_DEVICECHANGE: 
-			{
-				if (((UINT) wParam) == DBT_DEVICEREMOVEPENDING) 
-				{
-					DEV_BROADCAST_HDR *hdr = (DEV_BROADCAST_HDR*) lParam;
-					if (!hdr) {
-						break;
-					}
-
-					if (hdr->dbch_devicetype != DBT_DEVTYP_VOLUME)  {
-						break;
-					}
-
-					// Lets discuss how Windows is a flaming pile of poo. I'm now casting the header
-					// directly into the structure, because its the one I want, and this is just how
-					// its done. I hate Windows. - jkmcd
-					DEV_BROADCAST_VOLUME *vol = (DEV_BROADCAST_VOLUME*) (hdr);
-
-					// @todo - Yikes. This could cause us all kinds of pain. I don't really want 
-					// to even think about the stink this could cause us.
-					TheFileSystem->unloadMusicFilesFromCD(vol->dbcv_unitmask);
-					return TRUE;
-				}
-				break;
-			}
-#endif
 		}  // end switch
 
 	}
@@ -736,31 +698,6 @@ static Bool initializeAppWindows( HINSTANCE hInstance, Int nCmdShow, Bool runWin
 
 }  // end initializeAppWindows
 
-void munkeeFunc(void);
-#ifdef DO_COPY_PROTECTION
-CDAPFN_DECLARE_GLOBAL(munkeeFunc, CDAPFN_OVERHEAD_L5, CDAPFN_CONSTRAINT_NONE);
-#endif
-void munkeeFunc(void)
-{
-#ifdef DO_COPY_PROTECTION
-	CDAPFN_ENDMARK(munkeeFunc);
-#endif
-}
-
-void checkProtection(void)
-{
-#ifdef _INTERNAL
-	__try
-	{
-		munkeeFunc();
-	}
-	__except(EXCEPTION_EXECUTE_HANDLER)
-	{
-		exit(0); // someone is messing with us.
-	}
-#endif
-}
-
 // strtrim ====================================================================
 /** Trim leading and trailing whitespace from a character string (in place). */
 //=============================================================================
@@ -858,40 +795,15 @@ static CriticalSection critSec1, critSec2, critSec3, critSec4, critSec5;
 Int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
                       LPSTR lpCmdLine, Int nCmdShow )
 {
-	checkProtection();
 
 	try {
 
 		_set_se_translator( DumpExceptionInfo ); // Hook that allows stack trace.
-		//
-		// there is something about checkin in and out the .dsp and .dsw files 
-		// that blows the working directory information away on each of the 
-		// developers machines so we're going to hack it for a while and set our
-		// working directory to the directory with the .exe since that's not the
-		// default in a DevStudio project
-		//
-
 		TheAsciiStringCriticalSection = &critSec1;
 		TheUnicodeStringCriticalSection = &critSec2;
 		TheDmaCriticalSection = &critSec3;
 		TheMemoryPoolCriticalSection = &critSec4;
 		TheDebugLogCriticalSection = &critSec5;
-
-		/// @todo remove this force set of working directory later
-		Char buffer[ _MAX_PATH ];
-		GetModuleFileName( NULL, buffer, sizeof( buffer ) );
-		Char *pEnd = buffer + strlen( buffer );
-		while( pEnd != buffer ) 
-		{
-			if( *pEnd == '\\' ) 
-			{
-				*pEnd = 0;
-				break;
-			}
-			pEnd--;
-		}
-		::SetCurrentDirectory(buffer);
-
 
 		/*
 		** Convert WinMain arguments to simple main argc and argv
@@ -969,17 +881,6 @@ Int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			AsciiString(VERSION_BUILDUSER), AsciiString(VERSION_BUILDLOC),
 			AsciiString(__TIME__), AsciiString(__DATE__));
 
-#ifdef DO_COPY_PROTECTION
-		if (!CopyProtect::isLauncherRunning())
-		{
-			DEBUG_LOG(("Launcher is not running - about to bail\n"));
-			delete TheVersion;
-			TheVersion = NULL;
-			shutdownMemoryManager();
-			DEBUG_SHUTDOWN();
-			return 0;
-		}
-#endif
 
 
 		//Create a mutex with a unique name to Generals in order to determine if
@@ -1009,27 +910,12 @@ Int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		}
 		DEBUG_LOG(("Create GeneralsMutex okay.\n"));
 
-#ifdef DO_COPY_PROTECTION
-		if (!CopyProtect::notifyLauncher())
-		{
-			DEBUG_LOG(("Could not talk to the launcher - about to bail\n"));
-			delete TheVersion;
-			TheVersion = NULL;
-			shutdownMemoryManager();
-			DEBUG_SHUTDOWN();
-			return 0;
-		}
-#endif
 
 		DEBUG_LOG(("CRC message is %d\n", GameMessage::MSG_LOGIC_CRC));
 
 		// run the game main loop
 		GameMain(argc, argv);
 
-#ifdef DO_COPY_PROTECTION
-		// Clean up copy protection
-		CopyProtect::shutdown();
-#endif
 
 		delete TheVersion;
 		TheVersion = NULL;

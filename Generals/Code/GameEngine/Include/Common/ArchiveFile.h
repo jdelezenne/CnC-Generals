@@ -55,7 +55,6 @@ public:
 
 	virtual Bool					getFileInfo( const AsciiString& filename, FileInfo *fileInfo) const = 0;	///< fill in the fileInfo struct with info about the file requested.
 	virtual File*					openFile( const Char *filename, Int access = 0) = 0;	///< Open the specified file within the archive file
-	virtual void					closeAllFiles( void ) = 0;									///< Close all file opened in this archive file
 	virtual AsciiString		getName( void ) = 0;												///< Returns the name of the archive file
 	virtual AsciiString		getPath( void ) = 0;												///< Returns full path and name of archive file
 	virtual void					setSearchPriority( Int new_priority ) = 0;	///< Set this archive file's search priority

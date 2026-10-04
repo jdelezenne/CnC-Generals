@@ -40,7 +40,6 @@
 #include "Common/FileSystem.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/LocalFileSystem.h"
-#include "Common/CDManager.h"
 #include "Common/Debug.h"
 #include "Common/StackDump.h"
 #include "Common/GameMemory.h"
@@ -397,11 +396,7 @@ BOOL CWorldBuilderApp::InitInstance()
 	//  [2/11/2003]
 	ini.load( AsciiString( "Data\\Scripts\\Scripts.ini" ), INI_LOAD_OVERWRITE, NULL );
 
-	// need this before TheAudio in case we're running off of CD - TheAudio can try to open Music.big on the CD...
-	initSubsystem(TheCDManager, CreateCDManager(), NULL);
 	initSubsystem(TheAudio, (AudioManager*)new MilesAudioManager());
-	if (!TheAudio->isMusicAlreadyLoaded())
-		return FALSE;
 
 	initSubsystem(TheVideoPlayer, (VideoPlayerInterface*)(new VideoPlayer()));
 	initSubsystem(TheModuleFactory, (ModuleFactory*)(new W3DModuleFactory()));
