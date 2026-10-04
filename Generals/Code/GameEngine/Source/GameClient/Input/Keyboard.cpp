@@ -33,6 +33,7 @@
 #include "Common/GameEngine.h"
 #include "Common/MessageStream.h"
 #include "GameClient/Keyboard.h"
+#include "Platform/Input.h"
 #include "GameClient/KeyDefs.h"
 
 
@@ -329,16 +330,9 @@ void Keyboard::initKeyNames( void )
 
 	_set_keyname_(L' ',		L' ',		L'\0',	KEY_SPACE  );
 
-	HKL kLayout = GetKeyboardLayout(0);
-
-	Int low = (UnsignedInt)kLayout & 0xFFFF;
-	LanguageID currentLanguage = OurLanguage;
-	if(low == 0x040c
-		 || low == 0x080c
-		 || low == 0x0c0c
-		 || low == 0x100c
-		 || low == 0x140c)
-		currentLanguage = LANGUAGE_ID_FRENCH;
+    LanguageID currentLanguage = OurLanguage;
+    if (Platform::FrenchKeyboardLayout())
+        currentLanguage = LANGUAGE_ID_FRENCH;
 
 	switch( currentLanguage )
 	{

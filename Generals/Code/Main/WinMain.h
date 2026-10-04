@@ -1,3 +1,4 @@
+#include "Platform/Windows/Window.h"
 /*
 **	Command & Conquer Generals(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -41,7 +42,6 @@
 
 // EXTERNAL ///////////////////////////////////////////////////////////////////
 extern HINSTANCE ApplicationHInstance;  ///< our application instance
-extern HWND ApplicationHWnd;  ///< our application window handle
 extern Win32Mouse *TheWin32Mouse;  ///< global for win32 mouse only!
 
 #endif  // end __WINMAIN_H_

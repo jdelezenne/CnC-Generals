@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Bink.h"
 #include "BinkDecoder.h"
-#include <windows.h>
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <array>
@@ -15,8 +14,7 @@ struct BinkStreamState
     BinkDecoder audioDecoder;
     YUVbuffer planes{};
     int decodedFrame = -1;
-    ULONGLONG startTime = GetTickCount64();
-    ULONGLONG pauseTime = 0;
+    Uint64 startTime = SDL_GetTicks();
     SDL_AudioStream* audio = nullptr;
     bool audioInitialized = false;
     unsigned audioBytes = 0;
@@ -125,7 +123,7 @@ HBINK BinkOpen(const char* filename, unsigned)
         return nullptr;
     }
     if (soundEnabled) stream->openAudio(filename);
-    stream->startTime = GetTickCount64();
+    stream->startTime = SDL_GetTicks();
     return new BINK{stream->decoder.frameWidth, stream->decoder.frameHeight,
         stream->decoder.GetNumFrames(), 1, stream};
 }
@@ -142,7 +140,7 @@ int BinkWait(HBINK handle)
     if (!handle) return 1;
     auto& stream = state(handle);
     return (handle->FrameNum - 1) / stream.decoder.GetFrameRate() >
-        (GetTickCount64() - stream.startTime) / 1000.0;
+        (SDL_GetTicks() - stream.startTime) / 1000.0;
 }
 
 void BinkDoFrame(HBINK handle)
@@ -212,8 +210,8 @@ void BinkGoto(HBINK handle, unsigned frame, unsigned)
     handle->FrameNum = frame + 1;
     stream.decodedFrame = -1;
     stream.seekAudio(frame);
-    stream.startTime = GetTickCount64() -
-        static_cast<ULONGLONG>(frame * 1000.0 / stream.decoder.GetFrameRate());
+    stream.startTime = SDL_GetTicks() -
+        static_cast<Uint64>(frame * 1000.0 / stream.decoder.GetFrameRate());
 }
 
 void BinkSetVolume(HBINK handle, unsigned, int volume)

@@ -310,16 +310,6 @@ set(GEN_ww3d2_SOURCES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/decalmsh.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/decalsys.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/distlod.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8caps.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8fvf.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8indexbuffer.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8polygonrenderer.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8renderer.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8rendererdebugger.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8texman.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8vertexbuffer.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8webbrowser.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dx8wrapper.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/dynamesh.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/font3d.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WW3D2/formconv.cpp"
@@ -1221,14 +1211,6 @@ set(GEN_gameenginedevice_SOURCES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/W3DDevice/GameClient/W3dWaypointBuffer.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/W3DDevice/GameClient/W3DWebBrowser.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/W3DDevice/GameClient/WorldHeightMap.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32BIGFile.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32BIGFileSystem.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32GameEngine.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32LocalFile.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32LocalFileSystem.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/Common/Win32OSDisplay.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/GameClient/Win32DIKeyboard.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/Win32Device/GameClient/Win32Mouse.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/VideoDevice/Bink/BinkVideoPlayer.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Source/MilesAudioDevice/MilesAudioManager.cpp"
 )
@@ -1271,8 +1253,6 @@ set(GEN_gameenginedevice_OPTIONS_RELEASE
 )
 
 set(GEN_generals_SOURCES
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Main/WinMain.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Main/RTS.RC"
 )
 set(GEN_generals_INCLUDES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Include"

@@ -21,7 +21,6 @@
 #define DR_MP3_IMPLEMENTATION
 #define DR_MP3_NO_STDIO
 #include <dr_mp3.h>
-#include <windows.h>
 #include <Mss.h>
 
 namespace {
@@ -237,7 +236,7 @@ std::shared_ptr<AudioData> Decode(const void* image, size_t bytes)
     data->PCM.assign(pcm, pcm + data->Frames * data->Channels);
     if (wave) {
         AILSOUNDINFO info{};
-        if (AIL_WAV_info(image, &info) && info.format == WAVE_FORMAT_IMA_ADPCM) {
+        if (AIL_WAV_info(image, &info) && info.format == DR_WAVE_FORMAT_DVI_ADPCM) {
             data->Frames = info.samples;
             data->PCM.resize(data->Frames * data->Channels, 0.0f);
         }
@@ -515,23 +514,23 @@ extern "C" S32 AILCALL AIL_set_preference(U32 number, S32 value)
     S32 previous = Preferences[number]; Preferences[number] = value; return previous;
 }
 
-extern "C" S32 AILCALL AIL_waveOutOpen(HDIGDRIVER* driver, LPHWAVEOUT*, S32, LPWAVEFORMAT format)
+extern "C" S32 AILCALL Audio_OpenDigitalDriver(HDIGDRIVER* driver, U32 sampleRate, S32 channels)
 {
     StopMixerThread();
     std::lock_guard guard(AudioMutex);
-    if (!driver || !format || format->nSamplesPerSec == 0 || format->nChannels < 1 || format->nChannels > 2) return 1;
+    if (!driver || sampleRate == 0 || channels < 1 || channels > 2) return 1;
     *driver = nullptr; CloseDevice();
     Device = alcLoopbackOpenDeviceSOFT(nullptr);
     if (!Device) { SetError("Cannot create OpenAL software mixer"); return 1; }
-    OutputChannels = format->nChannels;
-    OutputRate = format->nSamplesPerSec;
+    OutputChannels = channels;
+    OutputRate = sampleRate;
     ALCint attributes[] = { ALC_FORMAT_CHANNELS_SOFT, OutputChannels == 1 ? ALC_MONO_SOFT : ALC_STEREO_SOFT,
-        ALC_FORMAT_TYPE_SOFT, ALC_FLOAT_SOFT, ALC_FREQUENCY, static_cast<ALCint>(format->nSamplesPerSec),
+        ALC_FORMAT_TYPE_SOFT, ALC_FLOAT_SOFT, ALC_FREQUENCY, static_cast<ALCint>(sampleRate),
         ALC_MONO_SOURCES, 256, ALC_STEREO_SOURCES, 256, 0 };
     Context = alcCreateContext(Device, attributes);
     if (!Context || !alcMakeContextCurrent(Context)) { SetError("Cannot create OpenAL audio context"); CloseDevice(); return 1; }
     alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED); alSpeedOfSound(355.0f); alDopplerFactor(0);
-    SDL_AudioSpec spec{ SDL_AUDIO_F32, OutputChannels.load(), static_cast<int>(format->nSamplesPerSec) };
+    SDL_AudioSpec spec{ SDL_AUDIO_F32, OutputChannels.load(), static_cast<int>(sampleRate) };
     Output = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
     if (!Output) { SetError(SDL_GetError()); CloseDevice(); return 1; }
     SDL_AudioSpec deviceFormat{};
@@ -547,7 +546,7 @@ extern "C" S32 AILCALL AIL_waveOutOpen(HDIGDRIVER* driver, LPHWAVEOUT*, S32, LPW
     MixerThread = SDL_CreateThread(MixAudio, "Audio mixer", nullptr);
     if (!MixerThread) { MixerRunning = false; SetError(SDL_GetError()); CloseDevice(); return 1; }
     Driver = new DIG_DRIVER{};
-    Driver->emulated_ds = FALSE;
+    Driver->emulated_ds = 0;
     *driver = Driver; Error[0] = 0; return AIL_NO_ERROR;
 }
 extern "C" void AILCALL AIL_waveOutClose(HDIGDRIVER driver)
@@ -984,12 +983,8 @@ extern "C" void AILCALL AIL_mem_free_lock(void* data) { drwav_free(data, nullptr
 extern "C" S32 AILCALL AIL_quick_startup(S32 digital, S32, U32 rate, S32 bits, S32 channels)
 {
     if (!digital || !AIL_startup()) return 0;
-    WAVEFORMATEX format{};
-    format.wFormatTag = WAVE_FORMAT_PCM; format.nChannels = static_cast<WORD>(channels);
-    format.nSamplesPerSec = rate; format.wBitsPerSample = static_cast<WORD>(bits);
-    format.nBlockAlign = static_cast<WORD>(channels * bits / 8); format.nAvgBytesPerSec = rate * format.nBlockAlign;
     HDIGDRIVER driver = nullptr;
-    return AIL_waveOutOpen(&driver, nullptr, WAVE_MAPPER, reinterpret_cast<LPWAVEFORMAT>(&format)) == AIL_NO_ERROR;
+    return Audio_OpenDigitalDriver(&driver, rate, channels) == AIL_NO_ERROR;
 }
 extern "C" void AILCALL AIL_quick_handles(HDIGDRIVER* driver, void** midi, void** dls)
 {

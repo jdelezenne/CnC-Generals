@@ -32,10 +32,10 @@
 #include <windows.h>
 #include "Win32Device/Common/Win32GameEngine.h"
 #include "Common/PerfTimer.h"
+#include "Platform/Input.h"
+#include "Platform/Window.h"
 
 #include "GameNetwork/LANAPICallbacks.h"
-
-extern DWORD TheMessageTime;
 
 //-------------------------------------------------------------------------------------------------
 /** Constructor for Win32GameEngine */
@@ -52,6 +52,7 @@ Win32GameEngine::Win32GameEngine()
 Win32GameEngine::~Win32GameEngine()
 {
 	// restore it (this isn't really necessary, but feels good.)
+	Platform::ShutdownInput();
 	SetErrorMode( m_previousErrorMode );
 }
 
@@ -59,11 +60,11 @@ Win32GameEngine::~Win32GameEngine()
 //-------------------------------------------------------------------------------------------------
 /** Initialize the game engine */
 //-------------------------------------------------------------------------------------------------
-void Win32GameEngine::init( void )
+void Win32GameEngine::init( int argc, char *argv[] )
 {
 
 	// extending functionality
-	GameEngine::init();
+	GameEngine::init(argc, argv);
 
 }  // end init
 
@@ -88,10 +89,8 @@ void Win32GameEngine::update( void )
 
 	// call the engine normal update
 	GameEngine::update();
-
-	extern HWND ApplicationHWnd;
-	if (ApplicationHWnd && ::IsIconic(ApplicationHWnd)) {
-		while (ApplicationHWnd && ::IsIconic(ApplicationHWnd)) {
+	if (Platform::WindowMinimized()) {
+		while (Platform::WindowMinimized()) {
 			// We are alt-tabbed out here.  Sleep a bit, & process windows
 			// so that we can become un-alt-tabbed out.
 			Sleep(5);
@@ -126,38 +125,5 @@ void Win32GameEngine::update( void )
 //-------------------------------------------------------------------------------------------------
 void Win32GameEngine::serviceWindowsOS( void )
 {
-	MSG msg;
-  Int returnValue;
-
-	//
-	// see if we have any messages to process, a NULL window handle tells the
-	// OS to look at the main window associated with the calling thread, us!
-	//
-	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
-	{
-
-		// get the message
-		returnValue = GetMessage( &msg, NULL, 0, 0 );
-
-		// this is one possible way to check for quitting conditions as a message
-		// of WM_QUIT will cause GetMessage() to return 0
-/*
-		if( returnValue == 0 )
-		{
-
-			setQuitting( true );
-			break;
-
-		}
-*/
-
-		TheMessageTime = msg.time;
-		// translate and dispatch the message
-		TranslateMessage( &msg );
-		DispatchMessage( &msg );
-		TheMessageTime = 0;
-			
-	}  // end while
-
-}  // end ServiceWindowsOS
-
+	Platform::PumpInput();
+}

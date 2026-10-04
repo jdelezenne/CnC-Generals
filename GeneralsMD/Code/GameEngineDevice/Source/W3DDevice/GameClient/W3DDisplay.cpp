@@ -35,6 +35,7 @@ static void drawFramerateBar(void);
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include <stdlib.h>
+#include "Platform/Windows/Window.h"
 #include <windows.h>
 #include <io.h>
 #include <time.h>
@@ -730,7 +731,7 @@ void W3DDisplay::init( void )
 	{
 		SortingRendererClass::SetMinVertexBufferSize(1);
 	}
-	if (WW3D::Init( ApplicationHWnd ) != WW3D_ERROR_OK)
+	if (WW3D::Init( Platform::NativeGameWindow() ) != WW3D_ERROR_OK)
 		throw ERROR_INVALID_D3D;	//failed to initialize.  User probably doesn't have DX 8.1
 
 	WW3D::Set_Prelit_Mode( WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS );
@@ -1665,9 +1666,7 @@ void W3DDisplay::draw( void )
 {
 	//USE_PERF_TIMER(W3DDisplay_draw)
 	static UnsignedInt syncTime = 0;
-
-	extern HWND ApplicationHWnd;
-	if (ApplicationHWnd && ::IsIconic(ApplicationHWnd)) {
+	if (Platform::NativeGameWindow() && ::IsIconic(Platform::NativeGameWindow())) {
 		return;
 	}
 
@@ -3021,12 +3020,12 @@ void W3DDisplay::takeScreenShot(void)
 	RECT bounds;
 	POINT point;
 
-	GetClientRect(ApplicationHWnd,&bounds);
+	GetClientRect(Platform::NativeGameWindow(),&bounds);
 	point.x=bounds.left; point.y=bounds.top;
-	ClientToScreen(ApplicationHWnd, &point);
+	ClientToScreen(Platform::NativeGameWindow(), &point);
 	bounds.left=point.x; bounds.top=point.y; 
 	point.x=bounds.right; point.y=bounds.bottom;
-	ClientToScreen(ApplicationHWnd, &point);
+	ClientToScreen(Platform::NativeGameWindow(), &point);
 	bounds.right=point.x; bounds.bottom=point.y;
  
 	D3DLOCKED_RECT lrect;

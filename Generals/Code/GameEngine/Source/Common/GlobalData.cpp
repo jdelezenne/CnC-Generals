@@ -39,6 +39,8 @@
 #define DEFINE_PANNING_NAMES
 
 #include "Common/CRC.h"
+#include "Platform/Paths.h"
+#include "Platform/Input.h"
 #include "Common/File.h"
 #include "Common/FileSystem.h"
 #include "Common/GameAudio.h"
@@ -1024,7 +1026,7 @@ GlobalData::GlobalData()
 	m_shouldUpdateTGAToDDS = FALSE;
 	
 	// Default DoubleClickTime to System double click time.
-	m_doubleClickTimeMS = GetDoubleClickTime(); // Note: This is actual MS, not frames.
+	m_doubleClickTimeMS = Platform::DoubleClickTime(); // Note: This is actual MS, not frames.
 	
 #ifdef DUMP_PERF_STATS
 	m_dumpPerformanceStatistics = FALSE;
@@ -1173,14 +1175,10 @@ void GlobalData::parseGameDataDefinition( INI* ini )
 
 	TheWritableGlobalData->m_userDataDir.clear();
 
-	char temp[_MAX_PATH];
-	if (::SHGetSpecialFolderPath(NULL, temp, CSIDL_PERSONAL, true))
+	char temp[1024];
+	if (Platform::UserDataDirectory(Platform::GameTitle::Generals,
+		TheWritableGlobalData->m_userDataLeafName.str(), temp, sizeof(temp)))
 	{
-		if (temp[strlen(temp)-1] != '\\')
-			strcat(temp, "\\");
-		strcat(temp, TheWritableGlobalData->m_userDataLeafName.str());
-		strcat(temp, "\\");
-		CreateDirectory(temp, NULL);
 		TheWritableGlobalData->m_userDataDir = temp;
 	}
 

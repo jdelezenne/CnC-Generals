@@ -14,7 +14,7 @@ function(gen_legacy_settings name)
     target_include_directories(${name} BEFORE PRIVATE
         "${PROJECT_SOURCE_DIR}/Vendors/STLport-4.5.3/stlport" "${stlport_support}")
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
-        "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include")
+        "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include" "${PROJECT_SOURCE_DIR}")
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Audio/Include")
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Bink")
     foreach(config DEBUG RELEASE)
@@ -141,10 +141,13 @@ foreach(name gameengine gameenginedevice)
     target_link_libraries(${name} PRIVATE eabrowserdispatch)
 endforeach()
 set_target_properties(gameengine PROPERTIES OUTPUT_NAME GameEngine)
+target_link_libraries(gameengine PRIVATE gen_platform)
 target_precompile_headers(gameengine PRIVATE "${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h"
     "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
 set_target_properties(gameenginedevice PROPERTIES OUTPUT_NAME GameEngineDevice)
-target_link_libraries(gameenginedevice PRIVATE binkcompat gen_audio)
+target_sources(gameenginedevice PRIVATE "${PROJECT_SOURCE_DIR}/Platform/SDL/Keyboard.cpp")
+
+target_link_libraries(gameenginedevice PRIVATE binkcompat gen_audio gen_platform)
 
 if(GEN_GAME STREQUAL "Generals")
     set(default_version "1.8")

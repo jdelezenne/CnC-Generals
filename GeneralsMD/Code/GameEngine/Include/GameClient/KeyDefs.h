@@ -62,7 +62,7 @@
 #	define DIRECTINPUT_VERSION	0x800
 #endif
 
-#include <dinput.h>
+#include "Platform/KeyCodes.h"
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
 

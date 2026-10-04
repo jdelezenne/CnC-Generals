@@ -39,6 +39,8 @@
 #define DEFINE_PANNING_NAMES
 
 #include "Common/CRC.h"
+#include "Platform/Paths.h"
+#include "Platform/Input.h"
 #include "Common/File.h"
 #include "Common/FileSystem.h"
 #include "Common/GameAudio.h"
@@ -1039,7 +1041,7 @@ GlobalData::GlobalData()
 	m_shouldUpdateTGAToDDS = FALSE;
 	
 	// Default DoubleClickTime to System double click time.
-	m_doubleClickTimeMS = GetDoubleClickTime(); // Note: This is actual MS, not frames.
+	m_doubleClickTimeMS = Platform::DoubleClickTime(); // Note: This is actual MS, not frames.
 	
 #ifdef DUMP_PERF_STATS
 	m_dumpPerformanceStatistics = FALSE;
@@ -1050,31 +1052,13 @@ GlobalData::GlobalData()
 
 	m_keyboardCameraRotateSpeed = 0.1f;
 
-  // Set user data directory based on registry settings instead of INI parameters. This allows us to 
-  // localize the leaf name.
-  char temp[_MAX_PATH + 1];
-  if (::SHGetSpecialFolderPath(NULL, temp, CSIDL_PERSONAL, true))
-  {
-    AsciiString myDocumentsDirectory = temp;
-
-    if (myDocumentsDirectory.getCharAt(myDocumentsDirectory.getLength() -1) != '\\')
-      myDocumentsDirectory.concat( '\\' );
-
-    AsciiString leafName;
-    
-    if ( !GetStringFromRegistry( "", "UserDataLeafName", leafName ) )
-    {
-      // Use something, anything
-      // [MH] had to remove this, otherwise mapcache build step won't run... DEBUG_CRASH( ( "Could not find registry key UserDataLeafName; defaulting to \"Command and Conquer Generals Zero Hour Data\" " ) );
+  AsciiString leafName;
+  if (!GetStringFromRegistry("", "UserDataLeafName", leafName))
       leafName = "Command and Conquer Generals Zero Hour Data";
-    }
-
-    myDocumentsDirectory.concat( leafName );
-    if (myDocumentsDirectory.getCharAt( myDocumentsDirectory.getLength() - 1) != '\\')
-      myDocumentsDirectory.concat( '\\' );
-
-    CreateDirectory(myDocumentsDirectory.str(), NULL);
-    m_userDataDir = myDocumentsDirectory;
+  char temp[1024];
+  if (Platform::UserDataDirectory(Platform::GameTitle::ZeroHour, leafName.str(), temp, sizeof(temp)))
+  {
+      m_userDataDir = temp;
   }
 	
 	//-allAdvice feature

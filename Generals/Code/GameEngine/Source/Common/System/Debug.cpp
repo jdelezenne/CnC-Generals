@@ -44,6 +44,7 @@
 
 // SYSTEM INCLUDES 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Windows/Window.h"
 
 
 // USER INCLUDES 
@@ -62,7 +63,6 @@
 
 // Horrible reference, but we really, really need to know if we are windowed.
 extern bool DX8Wrapper_IsWindowed;
-extern HWND ApplicationHWnd;
 
 extern char *gAppPrefix; /// So WB can have a different log file name.
 
@@ -148,7 +148,7 @@ inline Bool ignoringAsserts()
 // ----------------------------------------------------------------------------
 inline HWND getThreadHWND()
 {
-	return (theMainThreadID == GetCurrentThreadId())?ApplicationHWnd:NULL;
+	return (theMainThreadID == GetCurrentThreadId())?Platform::NativeGameWindow():NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -430,8 +430,8 @@ void DebugCrash(const char *format, ...)
 	if (theDebugFlags == 0)
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (ApplicationHWnd) {
-				ShowWindow(ApplicationHWnd, SW_HIDE);
+			if (Platform::NativeGameWindow()) {
+				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 			}
 		}
 		MessageBoxWrapper("DebugCrash - Debug not inited properly", "", MB_OK|MB_TASKMODAL);
@@ -448,8 +448,8 @@ void DebugCrash(const char *format, ...)
 	if (strlen(theCrashBuffer) >= sizeof(theCrashBuffer))
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (ApplicationHWnd) {
-				ShowWindow(ApplicationHWnd, SW_HIDE);
+			if (Platform::NativeGameWindow()) {
+				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 			}
 		}
 		MessageBoxWrapper("String too long for debug buffers", "", MB_OK|MB_TASKMODAL);
@@ -684,8 +684,8 @@ void ReleaseCrash(const char *reason)
 	}
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (ApplicationHWnd) {
-			ShowWindow(ApplicationHWnd, SW_HIDE);
+		if (Platform::NativeGameWindow()) {
+			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 		}
 	}
 
@@ -700,7 +700,7 @@ void ReleaseCrash(const char *reason)
 
 	if (!GetRegistryLanguage().compareNoCase("german2") || !GetRegistryLanguage().compareNoCase("german") )
 	{
-		::MessageBox(NULL, "Es ist ein gravierender Fehler aufgetreten. Solche Fehler können durch viele verschiedene Dinge wie Viren, überhitzte Hardware und Hardware, die den Mindestanforderungen des Spiels nicht entspricht, ausgelöst werden. Tipps zur Vorgehensweise findest du in den Foren unter www.generals.ea.com, Informationen zum Technischen Kundendienst im Handbuch zum Spiel.", "Fehler...", MB_OK|MB_TASKMODAL|MB_ICONERROR);
+		::MessageBox(NULL, "Es ist ein gravierender Fehler aufgetreten. Solche Fehler kï¿½nnen durch viele verschiedene Dinge wie Viren, ï¿½berhitzte Hardware und Hardware, die den Mindestanforderungen des Spiels nicht entspricht, ausgelï¿½st werden. Tipps zur Vorgehensweise findest du in den Foren unter www.generals.ea.com, Informationen zum Technischen Kundendienst im Handbuch zum Spiel.", "Fehler...", MB_OK|MB_TASKMODAL|MB_ICONERROR);
 	} 
 	else
 	{
@@ -727,8 +727,8 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	/// do additional reporting on the crash, if possible
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (ApplicationHWnd) {
-			ShowWindow(ApplicationHWnd, SW_HIDE);
+		if (Platform::NativeGameWindow()) {
+			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 		}
 	}
 
@@ -744,7 +744,7 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 		promptA.translate(prompt);
 		mesgA.translate(mesg);
 		//Make sure main window is not TOP_MOST
-		::SetWindowPos(ApplicationHWnd, HWND_NOTOPMOST, 0, 0, 0, 0,SWP_NOSIZE |SWP_NOMOVE);
+		::SetWindowPos(Platform::NativeGameWindow(), HWND_NOTOPMOST, 0, 0, 0, 0,SWP_NOSIZE |SWP_NOMOVE);
 		::MessageBoxA(NULL, mesgA.str(), promptA.str(), MB_OK|MB_TASKMODAL|MB_ICONERROR);
 	}
 

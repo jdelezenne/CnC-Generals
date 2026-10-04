@@ -29,8 +29,10 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "Platform/Windows/Window.h"
 
 #include "Common/Debug.h"
+#include "Platform/Input.h"
 #include "Common/GlobalData.h"
 #include "Common/LocalFileSystem.h"
 #include "GameClient/GameClient.h"
@@ -58,29 +60,23 @@ HCURSOR cursorResources[Mouse::NUM_MOUSE_CURSORS][MAX_2D_CURSOR_DIRECTIONS];
 //-------------------------------------------------------------------------------------------------
 UnsignedByte Win32Mouse::getMouseEvent( MouseIO *result, Bool flush )
 {
-
-	// if there is nothing here there is no event data to do
-	if( m_eventBuffer[ m_nextGetIndex ].msg == 0 )
-		return MOUSE_NONE;
-
-	// translate the win32 mouse message to our own system
-	translateEvent( m_nextGetIndex, result );
-
-	// remove this event from the buffer by setting msg to zero
-	m_eventBuffer[ m_nextGetIndex ].msg = 0;
-
-	//
-	// our next get index will now be advanced to the next index, wrapping at
-	// the mad
-	//
-	m_nextGetIndex++;
-	if( m_nextGetIndex >= Mouse::NUM_MOUSE_EVENTS )
-		m_nextGetIndex = 0;
-
-	// got event OK and all done with this one
-	return MOUSE_OK;
-
-}  // end getMouseEvent
+    Platform::MouseEvent event;
+    if (!Platform::ReadMouseEvent(event)) return MOUSE_NONE;
+    const UnsignedInt frame = TheGameClient ? TheGameClient->getFrame() : 1;
+    result->leftState = result->middleState = result->rightState = MBS_Up;
+    result->leftFrame = result->middleFrame = result->rightFrame = 0;
+    result->pos.x = event.x;
+    result->pos.y = event.y;
+    result->time = event.time;
+    result->wheelPos = event.wheel;
+    if (event.type == Platform::MouseEventType::Button) {
+        const MouseButtonState state = !event.down ? MBS_Up : event.clicks >= 2 && (event.clicks % 2) == 0 ? MBS_DoubleClick : MBS_Down;
+        if (event.button == 1) { result->leftState = state; result->leftFrame = frame; }
+        if (event.button == 2) { result->middleState = state; result->middleFrame = frame; }
+        if (event.button == 3) { result->rightState = state; result->rightFrame = frame; }
+    }
+    return MOUSE_OK;
+}
 
 //-------------------------------------------------------------------------------------------------
 /** Translate a win32 mouse event to our own event info */
@@ -239,7 +235,7 @@ void Win32Mouse::translateEvent( UnsignedInt eventIndex, MouseIO *result )
 			// translate the screen mouse position to be relative to the application window
 			p.x = LOWORD( lParam );
 			p.y = HIWORD( lParam );
-			ScreenToClient( ApplicationHWnd, &p );
+			ScreenToClient( Platform::NativeGameWindow(), &p );
 	
 			// note the short cast here to keep signed information in tact
 			result->wheelPos = (Short)HIWORD( wParam );
@@ -318,6 +314,7 @@ void Win32Mouse::init( void )
 //-------------------------------------------------------------------------------------------------
 void Win32Mouse::reset( void )
 {
+	Platform::ResetMouseInput();
 
 	// extend
 	Mouse::reset();
@@ -339,29 +336,10 @@ void Win32Mouse::update( void )
 /** Add a window message event along with its WPARAM and LPARAM parameters
 	* to our input storage buffer */
 //-------------------------------------------------------------------------------------------------
-void Win32Mouse::addWin32Event( UINT msg, WPARAM wParam, LPARAM lParam, DWORD time )
+void Win32Mouse::addWin32Event( UINT, WPARAM, LPARAM, DWORD )
 {
-
-	//
-	// we can only add this event if our next free index does not already
-	// have an event in it, if it does ... our buffer is full and this input
-	// event will be lost
-	//
-	if( m_eventBuffer[ m_nextFreeIndex ].msg != 0 )
-		return;
-
-	// add to this index
-	m_eventBuffer[ m_nextFreeIndex ].msg = msg;
-	m_eventBuffer[ m_nextFreeIndex ].wParam = wParam;
-	m_eventBuffer[ m_nextFreeIndex ].lParam = lParam;
-	m_eventBuffer[ m_nextFreeIndex ].time = time;
-
-	// wrap index at max
-	m_nextFreeIndex++;
-	if( m_nextFreeIndex >= Mouse::NUM_MOUSE_EVENTS )
-		m_nextFreeIndex = 0;
-
-}  // end addWin32Event
+    // SDL owns input events; this legacy window-procedure hook stays inert.
+}
 
 extern HINSTANCE ApplicationHInstance;
 
@@ -444,7 +422,7 @@ void Win32Mouse::setCursor( MouseCursor cursor )
 void Win32Mouse::capture( void )
 {
 
-//	SetCapture( ApplicationHWnd );
+//	SetCapture( Platform::NativeGameWindow() );
 
 }  // end capture
 

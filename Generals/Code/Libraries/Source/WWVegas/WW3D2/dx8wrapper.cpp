@@ -1,3 +1,4 @@
+#include "Platform/Window.h"
 /*
 **	Command & Conquer Generals(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -737,38 +738,7 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	// the caption and edges of the window type you provide, so its important to 
 	// push the client area to be the size you really want.
 	// if ( resize_window && windowed ) {
-	if (resize_window) {
-
-		// Get the current dimensions of the 'render area' of the window
-		RECT rect = { 0 };
-		::GetClientRect (_Hwnd, &rect);
-
-		// Is the window the correct size for this resolution?
-		if ((rect.right-rect.left) != ResolutionWidth ||
-			 (rect.bottom-rect.top) != ResolutionHeight) {			
-			
-			// Calculate what the main window's bounding rectangle should be to
-			// accomodate this resolution
-			rect.left = 0;
-			rect.top = 0;
-			rect.right = ResolutionWidth;
-			rect.bottom = ResolutionHeight;
-			DWORD dwstyle = ::GetWindowLong (_Hwnd, GWL_STYLE);
-			AdjustWindowRect (&rect, dwstyle, FALSE);
-
-			// Resize the window to fit this resolution
-			if (!windowed)
-				::SetWindowPos(_Hwnd, HWND_TOPMOST, 0, 0, rect.right-rect.left, rect.bottom-rect.top,SWP_NOSIZE |SWP_NOMOVE);
-			else
-				::SetWindowPos (_Hwnd,
-								 NULL,
-								 0,
-								 0,
-								 rect.right-rect.left,
-								 rect.bottom-rect.top,
-								 SWP_NOZORDER | SWP_NOMOVE);
-		}
-	}
+	if (resize_window && !Platform::ConfigureRenderWindow(ResolutionWidth, ResolutionHeight, windowed != 0)) return false;
 #endif
 	//must be either resetting existing device or creating a new one.
 	WWASSERT(reset_device || D3DDevice == NULL);
@@ -1014,40 +984,7 @@ bool DX8Wrapper::Set_Device_Resolution(int width,int height,int bits,int windowe
 			_PresentParameters.BackBufferHeight = ResolutionHeight = height;
 		}
 
-		if (resize_window)
-		{
-
-			// Get the current dimensions of the 'render area' of the window
-			RECT rect = { 0 };
-			::GetClientRect (_Hwnd, &rect);
-
-			// Is the window the correct size for this resolution?
-			if ((rect.right-rect.left) != ResolutionWidth ||
-				 (rect.bottom-rect.top) != ResolutionHeight)
-			{			
-				
-				// Calculate what the main window's bounding rectangle should be to
-				// accomodate this resolution
-				rect.left = 0;
-				rect.top = 0;
-				rect.right = ResolutionWidth;
-				rect.bottom = ResolutionHeight;
-				DWORD dwstyle = ::GetWindowLong (_Hwnd, GWL_STYLE);
-				AdjustWindowRect (&rect, dwstyle, FALSE);
-
-				// Resize the window to fit this resolution
-				if (!windowed)
-					::SetWindowPos(_Hwnd, HWND_TOPMOST, 0, 0, rect.right-rect.left, rect.bottom-rect.top,SWP_NOSIZE |SWP_NOMOVE);
-				else
-					::SetWindowPos (_Hwnd,
-									 NULL,
-									 0,
-									 0,
-									 rect.right-rect.left,
-									 rect.bottom-rect.top,
-									 SWP_NOZORDER | SWP_NOMOVE);
-			}
-		}
+		if (resize_window && !Platform::ConfigureRenderWindow(ResolutionWidth, ResolutionHeight, windowed != 0)) return false;
 
 #pragma message("TODO: support changing windowed status and changing the bit depth")
 		return Reset_Device();

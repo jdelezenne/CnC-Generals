@@ -64,7 +64,7 @@ public:
 	Win32GameEngine();
 	virtual ~Win32GameEngine();
 
-	virtual void init( void );															///< initialization 
+	virtual void init( int argc, char *argv[] );															///< initialization
 	virtual void reset( void );															///< reset engine
 	virtual void update( void );														///< update the game engine
 	virtual void serviceWindowsOS( void );									///< allow windows maintenance in background

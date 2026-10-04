@@ -44,6 +44,7 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Windows/Window.h"
 
 #include "GameClient/GameText.h"
 #include "Common/Language.h"
@@ -370,9 +371,8 @@ void GameTextManager::init( void )
 	qsort( m_stringLUT, m_textCount, sizeof(StringLookUp), compareLUT  );
 
 	UnicodeString ourName = fetch("GUI:Command&ConquerGenerals");
-	extern HWND ApplicationHWnd;  ///< our application window handle
-	if (ApplicationHWnd) {
-		::SetWindowTextW(ApplicationHWnd, ourName.str());
+	if (Platform::NativeGameWindow()) {
+		::SetWindowTextW(Platform::NativeGameWindow(), ourName.str());
 	}
 
 }

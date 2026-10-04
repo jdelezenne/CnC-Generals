@@ -44,6 +44,7 @@
 
 // SYSTEM INCLUDES 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Windows/Window.h"
 
 
 // USER INCLUDES 
@@ -63,7 +64,6 @@
 
 // Horrible reference, but we really, really need to know if we are windowed.
 extern bool DX8Wrapper_IsWindowed;
-extern HWND ApplicationHWnd;
 
 extern char *gAppPrefix; /// So WB can have a different log file name.
 
@@ -143,7 +143,7 @@ inline Bool ignoringAsserts()
 // ----------------------------------------------------------------------------
 inline HWND getThreadHWND()
 {
-	return (theMainThreadID == GetCurrentThreadId())?ApplicationHWnd:NULL;
+	return (theMainThreadID == GetCurrentThreadId())?Platform::NativeGameWindow():NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -425,8 +425,8 @@ void DebugCrash(const char *format, ...)
 	if (theDebugFlags == 0)
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (ApplicationHWnd) {
-				ShowWindow(ApplicationHWnd, SW_HIDE);
+			if (Platform::NativeGameWindow()) {
+				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 			}
 		}
 		MessageBoxWrapper("DebugCrash - Debug not inited properly", "", MB_OK|MB_TASKMODAL);
@@ -443,8 +443,8 @@ void DebugCrash(const char *format, ...)
 	if (strlen(theCrashBuffer) >= sizeof(theCrashBuffer))
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (ApplicationHWnd) {
-				ShowWindow(ApplicationHWnd, SW_HIDE);
+			if (Platform::NativeGameWindow()) {
+				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 			}
 		}
 		MessageBoxWrapper("String too long for debug buffers", "", MB_OK|MB_TASKMODAL);
@@ -651,8 +651,8 @@ void ReleaseCrash(const char *reason)
 	/// do additional reporting on the crash, if possible
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (ApplicationHWnd) {
-			ShowWindow(ApplicationHWnd, SW_HIDE);
+		if (Platform::NativeGameWindow()) {
+			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 		}
 	}
 //#if defined(_DEBUG) || defined(_INTERNAL)
@@ -696,8 +696,8 @@ void ReleaseCrash(const char *reason)
 	}
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (ApplicationHWnd) {
-			ShowWindow(ApplicationHWnd, SW_HIDE);
+		if (Platform::NativeGameWindow()) {
+			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 		}
 	}
 #if defined(_DEBUG) || defined(_INTERNAL)
@@ -736,8 +736,8 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	/// do additional reporting on the crash, if possible
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (ApplicationHWnd) {
-			ShowWindow(ApplicationHWnd, SW_HIDE);
+		if (Platform::NativeGameWindow()) {
+			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
 		}
 	}
 
@@ -753,7 +753,7 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 		promptA.translate(prompt);
 		mesgA.translate(mesg);
 		//Make sure main window is not TOP_MOST
-		::SetWindowPos(ApplicationHWnd, HWND_NOTOPMOST, 0, 0, 0, 0,SWP_NOSIZE |SWP_NOMOVE);
+		::SetWindowPos(Platform::NativeGameWindow(), HWND_NOTOPMOST, 0, 0, 0, 0,SWP_NOSIZE |SWP_NOMOVE);
 		::MessageBoxA(NULL, mesgA.str(), promptA.str(), MB_OK|MB_TASKMODAL|MB_ICONERROR);
 	}
 

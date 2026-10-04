@@ -49,7 +49,7 @@
 #include "W3DDevice/GameClient/W3DGameFont.h"
 #include "W3DDevice/GameClient/W3DDisplayStringManager.h"
 #include "VideoDevice/Bink/BinkVideoPlayer.h"
-#include "Win32Device/GameClient/Win32DIKeyboard.h"
+#include "Platform/SDL/Keyboard.h"
 #include "Win32Device/GameClient/Win32DIMouse.h"
 #include "Win32Device/GameClient/Win32Mouse.h"
 #include "W3DDevice/GameClient/W3DMouse.h"
@@ -118,7 +118,7 @@ protected:
 
 };  // end class W3DGameClient
 
-inline Keyboard *W3DGameClient::createKeyboard( void ) { return NEW DirectInputKeyboard; }
+inline Keyboard *W3DGameClient::createKeyboard( void ) { return NEW SDLKeyboard; }
 inline Mouse *W3DGameClient::createMouse( void )
 {
 	//return new DirectInputMouse;

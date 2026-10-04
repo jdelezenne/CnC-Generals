@@ -46,6 +46,7 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Windows/Window.h"
 
 #include "Windows.h"
 #include "mbstring.h"
@@ -71,8 +72,6 @@
 //----------------------------------------------------------------------------
 //         Externals                                                     
 //----------------------------------------------------------------------------
-
-extern HWND ApplicationHWnd;  ///< our application window handle
 extern Int	IMECandidateWindowLineSpacing;
 
 //----------------------------------------------------------------------------
@@ -549,8 +548,8 @@ IMEManager::~IMEManager()
 	}
 
 	detatch();
-	ImmAssociateContext( ApplicationHWnd, m_oldContext );
-	ImmReleaseContext( ApplicationHWnd, m_oldContext );
+	ImmAssociateContext( Platform::NativeGameWindow(), m_oldContext );
+	ImmReleaseContext( Platform::NativeGameWindow(), m_oldContext );
 	if ( m_context )
 	{
 		ImmDestroyContext( m_context );
@@ -563,14 +562,14 @@ IMEManager::~IMEManager()
 
 void IMEManager::init( void )
 {
-	//HWND ImeWindow = ImmGetDefaultIMEWnd(ApplicationHWnd);
+	//HWND ImeWindow = ImmGetDefaultIMEWnd(Platform::NativeGameWindow());
   // if(ImeWindow) 
 	// {
   //    DestroyWindow(ImeWindow);
 	//	}
 
 	m_context = ImmCreateContext();
-	m_oldContext = ImmGetContext( ApplicationHWnd );
+	m_oldContext = ImmGetContext( Platform::NativeGameWindow() );
 	m_disabled = 0;
 	m_candidateWindow = TheWindowManager->winCreateFromScript( AsciiString("IMECandidateWindow.wnd"));
 	m_candidateWindow->winSetStatus(WIN_STATUS_ABOVE);
@@ -646,7 +645,7 @@ void IMEManager::attach( GameWindow *window )
 		detatch();
 		if ( m_disabled == 0 )
 		{
-			ImmAssociateContext( ApplicationHWnd, m_context );
+			ImmAssociateContext( Platform::NativeGameWindow(), m_context );
 			updateStatusWindow();
 			//openStatusWindow();
 		}
@@ -660,7 +659,7 @@ void IMEManager::attach( GameWindow *window )
 
 void IMEManager::detatch( void )
 {
-	//ImmAssociateContext( ApplicationHWnd, NULL );
+	//ImmAssociateContext( Platform::NativeGameWindow(), NULL );
 	m_window = NULL;
 
 }
@@ -672,7 +671,7 @@ void IMEManager::detatch( void )
 Bool IMEManager::serviceIMEMessage(	void *windowsHandle, UnsignedInt message,	Int wParam,	Int lParam )
 {
 
-	DEBUG_ASSERTCRASH( windowsHandle == ApplicationHWnd, ("Unexpected window handle for IMEManager") );
+	DEBUG_ASSERTCRASH( windowsHandle == Platform::NativeGameWindow(), ("Unexpected window handle for IMEManager") );
 	#ifdef DEBUG_IME
 	printMessageInfo( message, wParam, lParam );
 	#endif
@@ -997,7 +996,7 @@ void IMEManager::enable( void )
 	if ( --m_disabled <= 0 )
 	{
 		m_disabled = 0;
-		ImmAssociateContext( ApplicationHWnd, m_context );
+		ImmAssociateContext( Platform::NativeGameWindow(), m_context );
 	}
 }
 
@@ -1008,7 +1007,7 @@ void IMEManager::enable( void )
 void IMEManager::disable( void )
 {
 	m_disabled++;
-	ImmAssociateContext( ApplicationHWnd, NULL );
+	ImmAssociateContext( Platform::NativeGameWindow(), NULL );
 }
 
 //============================================================================

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
-#include <windows.h>
-#include <mmsystem.h>
-#include <mmreg.h>
+#include <cstdint>
 
 #ifndef NO
 #define NO 0
@@ -11,8 +9,16 @@
 #define YES 1
 #endif
 
+#ifdef _WIN32
 using S32 = long;
 using U32 = unsigned long;
+#define AILCALL __stdcall
+#else
+using S32 = std::int32_t;
+using U32 = std::uint32_t;
+#define AILCALL
+#endif
+static_assert(sizeof(S32) == 4 && sizeof(U32) == 4);
 using F32 = float;
 using C8 = char;
 struct MilesSample;
@@ -29,8 +35,7 @@ using HPROVIDER = U32;
 using HPROENUM = U32;
 using HTIMER = S32;
 using M3DRESULT = S32;
-#define AILCALL WINAPI
-#define AILCALLBACK WINAPI
+#define AILCALLBACK AILCALL
 #define AIL_set_3D_object_user_data AIL_set_3D_user_data
 #define AIL_3D_object_user_data AIL_3D_user_data
 #define AIL_3D_open_listener AIL_open_3D_listener
@@ -81,7 +86,7 @@ void AILCALL AIL_lock (void);
 void AILCALL AIL_unlock (void);
 void AILCALL AIL_stop_timer (HTIMER timer);
 void AILCALL AIL_release_timer_handle (HTIMER timer);
-S32 AILCALL AIL_waveOutOpen (HDIGDRIVER *drvr, LPHWAVEOUT *lphWaveOut, S32 wDeviceID, LPWAVEFORMAT lpFormat);
+S32 AILCALL Audio_OpenDigitalDriver (HDIGDRIVER *drvr, U32 sampleRate, S32 channels);
 void AILCALL AIL_waveOutClose (HDIGDRIVER drvr);
 HSAMPLE AILCALL AIL_allocate_sample_handle (HDIGDRIVER dig);
 void AILCALL AIL_release_sample_handle (HSAMPLE S);
@@ -175,3 +180,6 @@ S32 AILCALL AIL_get_timer_highest_delay();
 void Audio_Service();
 S32 Audio_GetSpeakerType(S32 preferred);
 }
+#ifdef _WIN32
+#include <MssWindows.h>
+#endif

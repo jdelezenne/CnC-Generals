@@ -29,6 +29,7 @@
 
 
 #include "Common/GameMemory.h"
+#include "Platform/Windows/Window.h"
 #include "WW3D2/DX8Wrapper.h"
 #include "WW3D2/RendObj.h"
 #include "WW3D2/HAnim.h"
@@ -472,8 +473,6 @@ void W3DMouse::setCursor( MouseCursor cursor )
 
 }  // end setCursor
 
-extern HWND ApplicationHWnd;
-
 void W3DMouse::draw(void)
 {
 	CriticalSectionClass::LockClass m(mutex);
@@ -496,7 +495,7 @@ void W3DMouse::draw(void)
 				POINT ptCursor;
 
 				GetCursorPos( &ptCursor );
-				ScreenToClient( ApplicationHWnd, &ptCursor );
+				ScreenToClient( Platform::NativeGameWindow(), &ptCursor );
 				m_pDev->SetCursorPosition( ptCursor.x, ptCursor.y, D3DCURSOR_IMMEDIATE_UPDATE);
 			}
 			//Check if animated cursor and new frame

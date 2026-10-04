@@ -44,6 +44,7 @@
 //-----------------------------------------------------------------------------
 
 #include "W3DDevice/GameClient/heightmap.h"
+#include "Platform/Windows/Window.h"
 #include "W3DDevice/GameClient/W3DWaterTracks.h"
 #include "W3DDevice/GameClient/W3DShaderManager.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
@@ -1097,8 +1098,6 @@ void WaterTracksRenderSystem::loadTracks(void)
 Will need to move this code to an external editor at some pont. */
 #include "GameClient/Display.h"
 
-extern HWND ApplicationHWnd;
-
 //TODO: Fix editor so it actually draws the wave segment instead of line while editing
 //Could freeze all the water while editing?  Or keep setting elapsed time on current segment.
 //Have to make it so seamless merge of segments at final position.
@@ -1177,7 +1176,7 @@ static void TestWaterUpdate(void)
 
 		if (GetCursorPos(&screenPoint))	//read mouse position
 		{
-			ScreenToClient( ApplicationHWnd, &screenPoint);
+			ScreenToClient( Platform::NativeGameWindow(), &screenPoint);
 
 			if (GetAsyncKeyState(VK_F6) & 0x8001)
 			{

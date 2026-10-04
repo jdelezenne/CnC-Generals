@@ -44,6 +44,7 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Windows/Window.h"
 
 #include "GameClient/GameText.h"
 #include "Common/Language.h"
@@ -372,12 +373,10 @@ void GameTextManager::init( void )
 	UnicodeString ourName = fetch("GUI:Command&ConquerGenerals");
 	AsciiString ourNameA;
 	ourNameA.translate(ourName);	//get ASCII version for Win 9x
-
-	extern HWND ApplicationHWnd;  ///< our application window handle
-	if (ApplicationHWnd) {
+	if (Platform::NativeGameWindow()) {
 		//Set it twice because Win 9x does not support SetWindowTextW.
-		::SetWindowText(ApplicationHWnd, ourNameA.str());
-		::SetWindowTextW(ApplicationHWnd, ourName.str());
+		::SetWindowText(Platform::NativeGameWindow(), ourNameA.str());
+		::SetWindowTextW(Platform::NativeGameWindow(), ourName.str());
 	}
 
 }
