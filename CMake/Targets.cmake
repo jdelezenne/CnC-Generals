@@ -11,8 +11,6 @@ set(GEN_DIRECTX_INCLUDE_DIR "${directx_headers}")
 file(CONFIGURE OUTPUT "${directx_headers}/D3DXMath.h" CONTENT "#include <d3dx8math.h>\n" @ONLY)
 
 function(gen_legacy_settings name)
-    target_include_directories(${name} BEFORE PRIVATE
-        "${PROJECT_SOURCE_DIR}/Vendors/STLport-4.5.3/stlport" "${stlport_support}")
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
         "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include" "${PROJECT_SOURCE_DIR}")
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Audio/Include")
@@ -23,7 +21,7 @@ function(gen_legacy_settings name)
         target_compile_options(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_OPTIONS_${config}}>")
     endforeach()
     target_compile_definitions(${name} PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _USE_32BIT_TIME_T _STLP_NO_IOSTREAMS _CONST_RETURN=)
+        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _USE_32BIT_TIME_T _CONST_RETURN=)
     # Preserve VC6 x87 code generation and avoid EBX stack alignment in legacy assembly.
     target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4;/arch:IA32>"
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/Zc:forScope-;/Zc:wchar_t-;/Zc:twoPhase-;/wd4430;/FI${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h>")

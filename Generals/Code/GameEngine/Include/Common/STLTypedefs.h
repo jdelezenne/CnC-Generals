@@ -48,10 +48,6 @@
 #define __STLTYPEDEFS_H__
 
 //-----------------------------------------------------------------------------
-// srj sez: this must come first, first, first.
-#define _STLP_USE_NEWALLOC					1
-//#define _STLP_USE_CUSTOM_NEWALLOC		STLSpecialAlloc
-class STLSpecialAlloc;
 
 //-----------------------------------------------------------------------------
 #include "Common/AsciiString.h"
@@ -70,7 +66,7 @@ enum DrawableID;
 
 #include <algorithm>
 #include <bitset>
-#include <hash_map>
+#include <unordered_map>
 #include <list>
 #include <map>
 #include <queue>
@@ -127,6 +123,16 @@ namespace rts
 		}
 	};
 
+	template<> struct hash<const char*>
+	{
+		size_t operator()(const char* text) const
+		{
+			unsigned long result = 0;
+			for (; *text; ++text)
+				result = 5 * result + *text;
+			return result;
+		}
+	};
 	// Generic equal_to functor. This should be overridden if there is no
 	// operator==, or if that isn't the behavior desired. (For instance, in
 	// the case of pointers.)
@@ -192,7 +198,7 @@ namespace rts
 	{
 		size_t operator()(AsciiString ast) const
 		{ 
-			std::hash<const char *> tmp;
+			rts::hash<const char *> tmp;
 			return tmp((const char *) ast.str());
 		}
 	};

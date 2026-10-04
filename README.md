@@ -9,7 +9,6 @@ This repository includes source code for Command & Conquer Generals, and its exp
 If you wish to rebuild the source code and tools successfully you will need to find or write new replacements (or remove the code using them entirely) for the following libraries;
 
 - DirectX SDK (Version 9.0 or higher) (expected path `\Code\Libraries\DirectX\`)
-- STLport (4.5.3) - (expected path `\Code\Libraries\STLport-4.5.3`)
 - 3DSMax 4 SDK - (expected path `\Code\Libraries\Max4SDK\`)
 - NVASM - (expected path `\Code\Tools\NVASM\`)
 - BYTEmark - (expected path `\Code\Libraries\Source\Benchmark`)
@@ -38,10 +37,6 @@ When the workspace has finished building, the compiled binaries will be copied t
 ## Known Issues
 
 Windows has a policy where executables that contain words “version”, “update” or “install” in their filename will require UAC Elevation to run. This will affect “versionUpdate” and “buildVersionUpdate” projects from running as post-build events. Renaming the output binary name for these projects to not include these words should resolve the issue for you.
-
-
-## STLport
-STLport will require changes to successfully compile this source code. The file [stlport.diff](stlport.diff) has been provided for you so you can review and apply these changes. Please make sure you are using STLport 4.5.3 before attempting to apply the patch.
 
 
 ## Contributing

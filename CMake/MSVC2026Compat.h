@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-// Load CRT/ATL support before STLport redirects std:: to its own namespace.
-#define _STLP_DONT_REDEFINE_STD
-#endif
 #define WIN32_LEAN_AND_MEAN
 #define AnimateWindow Win32AnimateWindow
 #include <winsock2.h>
@@ -11,13 +7,12 @@
 #include <windows.h>
 #include <mmsystem.h>
 #undef AnimateWindow
-#define _STLP_WINDOWS_H_INCLUDED
 #ifdef __cplusplus
-#include <gen_native_cpp/cstddef>
-#include <gen_native_cpp/cstdlib>
-#include <gen_native_cpp/cstring>
-#include <gen_native_cpp/new>
-#include <gen_native_cpp/utility>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <new>
+#include <utility>
 #include <atlbase.h>
 #include <atlcom.h>
 #include <comutil.h>
@@ -40,6 +35,4 @@ void* __cdecl operator new(size_t, const char*, int);
 void __cdecl operator delete(void*, const char*, int);
 void* __cdecl operator new[](size_t, const char*, int);
 void __cdecl operator delete[](void*, const char*, int);
-#undef _STLP_DONT_REDEFINE_STD
-#define std STLPORT
 #endif

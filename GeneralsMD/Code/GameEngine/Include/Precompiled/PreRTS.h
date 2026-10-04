@@ -30,10 +30,6 @@
 #define __PRERTS_H__
 
 //-----------------------------------------------------------------------------
-// srj sez: this must come first, first, first.
-#define _STLP_USE_NEWALLOC					1
-//#define _STLP_USE_CUSTOM_NEWALLOC		STLSpecialAlloc
-class STLSpecialAlloc;
 
 
 // We actually don't use Windows for much other than timeGetTime, but it was included in 40 
@@ -49,7 +45,7 @@ class STLSpecialAlloc;
 #include <direct.h>
 #include <EXCPT.H>
 #include <float.h>
-#include <fstream.h>
+#include <fstream>
 #include <imagehlp.h>
 #include <io.h>
 #include <limits.h>
@@ -89,7 +85,7 @@ class STLSpecialAlloc;
 // srj sez: no, include STLTypesdefs below, instead, thanks
 //#include <algorithm>
 //#include <bitset>
-//#include <hash_map>
+//#include <unordered_map>
 //#include <list>
 //#include <map>
 //#include <queue>
