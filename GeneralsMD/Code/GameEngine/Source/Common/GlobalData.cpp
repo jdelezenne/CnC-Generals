@@ -1047,7 +1047,6 @@ GlobalData::GlobalData()
   m_statsInterval = 30;      
 #endif
 
-	m_forceBenchmark = FALSE;	///<forces running of CPU detection benchmark, even on known cpu's.
 
 	m_keyboardCameraRotateSpeed = 0.1f;
 

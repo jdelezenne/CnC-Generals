@@ -18,16 +18,9 @@
 
 // FILE: Compression.cpp /////////////////////////////////////////////////////
 // Author: Matthew D. Campbell
-// LZH wrapper taken from Nox, originally from Jeff Brown
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Compression.h"
-#ifndef GEN_ENABLE_LZH
-#define GEN_ENABLE_LZH 1
-#endif
-#if GEN_ENABLE_LZH
-#include "LZHCompress/NoxCompress.h"
-#endif
 extern "C" {
 #include "ZLib/zlib.h"
 }
@@ -50,7 +43,6 @@ const char *CompressionManager::getCompressionNameByType( CompressionType compTy
 		"No compression",
 		"RefPack",
 		/*
-		"LZHL",
 		"ZLib 1 (fast)",
 		"ZLib 2",
 		"ZLib 3",
@@ -74,7 +66,6 @@ const char *CompressionManager::getDecompressionNameByType( CompressionType comp
 		"d_None",
 		"d_RefPack",
 		/*
-		"d_NoxLZW",
 		"d_ZLib1",
 		"d_ZLib2",
 		"d_ZLib3",
@@ -110,9 +101,6 @@ CompressionType CompressionManager::getCompressionType( const void *mem, Int len
 	if (len < 8)
 		return COMPRESSION_NONE;
 
-	if ( memcmp( mem, "NOX\0", 4 ) == 0 )
-		return COMPRESSION_NOXLZH;
-
 	if ( memcmp( mem, "ZL1\0", 4 ) == 0 )
 		return COMPRESSION_ZLIB1;
 	if ( memcmp( mem, "ZL2\0", 4 ) == 0 )
@@ -145,13 +133,6 @@ Int CompressionManager::getMaxCompressedSize( Int uncompressedLen, CompressionTy
 {
 	switch (compType)
 	{
-		case COMPRESSION_NOXLZH:
-#if GEN_ENABLE_LZH
-			return CalcNewSize(uncompressedLen) + 8;
-#else
-			return 0;
-#endif
-
 		case COMPRESSION_BTREE:   // guessing here
 		case COMPRESSION_HUFF:    // guessing here
 		case COMPRESSION_REFPACK: // guessing here
@@ -180,7 +161,6 @@ Int CompressionManager::getUncompressedSize( const void *mem, Int len )
 	CompressionType compType = getCompressionType( mem, len );
 	switch (compType)
 	{
-		case COMPRESSION_NOXLZH:
 		case COMPRESSION_ZLIB1:
 		case COMPRESSION_ZLIB2:
 		case COMPRESSION_ZLIB3:
@@ -249,24 +229,6 @@ Int CompressionManager::compressData( CompressionType compType, void *srcVoid, I
 			return 0;
 	}
 
-	if (compType == COMPRESSION_NOXLZH)
-	{
-#if GEN_ENABLE_LZH
-		memcpy(dest, "NOX\0", 4);
-		*(Int *)(dest+4) = 0;
-		Bool ret = CompressMemory(src, srcLen, dest+8, destLen);
-		if (ret)
-		{
-			*(Int *)(dest+4) = srcLen;
-			return destLen + 8;
-		}
-		else
-			return 0;
-#else
-		return 0;
-#endif
-	}
-
 	if (compType >= COMPRESSION_ZLIB1 && compType <= COMPRESSION_ZLIB9)
 	{
 		Int level = compType - COMPRESSION_ZLIB1 + 1; // 1-9
@@ -328,19 +290,6 @@ Int CompressionManager::decompressData( void *srcVoid, Int srcLen, void *destVoi
 			return ret;
 		else
 			return 0;
-	}
-
-	if (compType == COMPRESSION_NOXLZH)
-	{
-#if GEN_ENABLE_LZH
-		Bool ret = DecompressMemory(src+8, srcLen-8, dest, destLen);
-		if (ret)
-			return destLen;
-		else
-			return 0;
-#else
-		return 0;
-#endif
 	}
 
 	if (compType >= COMPRESSION_ZLIB1 && compType <= COMPRESSION_ZLIB9)

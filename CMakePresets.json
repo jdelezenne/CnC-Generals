@@ -7,7 +7,8 @@
       "hidden": true,
       "generator": "Visual Studio 18 2026",
       "architecture": "Win32",
-      "toolset": "v145,host=x64"
+      "toolset": "v145,host=x64",
+      "cacheVariables": { "CMAKE_CONFIGURATION_TYPES": "Debug;Release" }
     },
     {
       "name": "Generals-Debug",

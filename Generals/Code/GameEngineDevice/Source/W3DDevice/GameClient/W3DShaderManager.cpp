@@ -72,12 +72,6 @@
 #include "d3dx8tex.h"
 #include "dx8caps.h"
 #include "common/gamelod.h"
-#ifndef GEN_ENABLE_BENCHMARK
-#define GEN_ENABLE_BENCHMARK 1
-#endif
-#if GEN_ENABLE_BENCHMARK
-#include "Benchmark.h"
-#endif
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -2811,12 +2805,12 @@ HRESULT W3DShaderManager::LoadAndCreateD3DShader(char* strFilePath, const DWORD*
 #define MIN_ACCEPTED_TEXTURE_MEMORY	(1024*1024*30)	//30 MB
 
 /**Hack to give gameengine access to this function*/
-Bool testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM, Real *intBenchIndex, Real *floatBenchIndex, Real *memBenchIndex)
+Bool testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM)
 {
-	return W3DShaderManager::testMinimumRequirements(videoChipType,cpuType,cpuFreq,numRAM,intBenchIndex,floatBenchIndex,memBenchIndex);
+	return W3DShaderManager::testMinimumRequirements(videoChipType,cpuType,cpuFreq,numRAM);
 }
 
-Bool W3DShaderManager::testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM, Real *intBenchIndex, Real *floatBenchIndex, Real *memBenchIndex)
+Bool W3DShaderManager::testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM)
 {
 	if (videoChipType)
 		*videoChipType = getChipset();
@@ -2845,15 +2839,6 @@ Bool W3DShaderManager::testMinimumRequirements(ChipsetType *videoChipType, CpuTy
 
 	if (numRAM)
 		*numRAM=CPUDetectClass::Get_Total_Physical_Memory();
-
-	if (intBenchIndex && floatBenchIndex && memBenchIndex)
-	{
-#if GEN_ENABLE_BENCHMARK
-		RunBenchmark(0, NULL, floatBenchIndex, intBenchIndex, memBenchIndex);
-#else
-		*floatBenchIndex = *intBenchIndex = *memBenchIndex = 0;
-#endif
-	}
 
 	return TRUE;
 }

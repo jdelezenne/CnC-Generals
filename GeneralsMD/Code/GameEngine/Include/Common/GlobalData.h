@@ -266,7 +266,6 @@ public:
   Int   m_statsInterval;       ///< if so, how many is N?
 #endif
 	
-	Bool m_forceBenchmark;	///<forces running of CPU detection benchmark, even on known cpu's.
 
 	Int m_fixedSeed;							///< fixed random seed for game logic (less than 0 to disable)
 

@@ -120,8 +120,6 @@ foreach(source IN LISTS GEN_compression_SOURCES)
         if(NOT filename STREQUAL "maketree.c")
             list(APPEND compression_sources "${GEN_ZLIB_ROOT}/${filename}")
         endif()
-    elseif(source MATCHES "/LZHCompress/")
-        continue()
     else()
         list(APPEND compression_sources "${source}")
     endif()
@@ -134,7 +132,6 @@ file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/ZLib/zlib.h" CONTENT "#incl
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Generated/MSS")
 file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/MSS/MSS.h" CONTENT "#include \"${GEN_MILES_INCLUDE_DIR}/mss.h\"\n" @ONLY)
 target_include_directories(compression PRIVATE "${CMAKE_BINARY_DIR}/Generated")
-target_compile_definitions(compression PRIVATE GEN_ENABLE_LZH=0)
 
 foreach(name gameengine gameenginedevice)
     add_library(${name} STATIC ${GEN_${name}_SOURCES})
@@ -142,8 +139,7 @@ foreach(name gameengine gameenginedevice)
     target_include_directories(${name} PRIVATE "${GEN_CODE_DIR}/GameEngine/Include/Precompiled"
         "${GEN_GAMESPY_ROOT}" "${GEN_CODE_DIR}/Libraries/Source/Compression")
     target_compile_definitions(${name} PUBLIC GEN_ENABLE_BINK=1
-        GEN_ENABLE_GAMESPY=$<BOOL:${GEN_ENABLE_GAMESPY}>
-        GEN_ENABLE_BENCHMARK=0)
+        GEN_ENABLE_GAMESPY=$<BOOL:${GEN_ENABLE_GAMESPY}>)
     target_link_libraries(${name} PRIVATE eabrowserdispatch)
 endforeach()
 set_target_properties(gameengine PROPERTIES OUTPUT_NAME GameEngine)

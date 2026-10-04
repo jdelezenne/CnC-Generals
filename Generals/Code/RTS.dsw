@@ -3,18 +3,6 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "Benchmark"=.\LIBRARIES\SOURCE\Benchmark\Benchmark.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "Compress"=.\Tools\Compress\Compress.dsp - Package Owner=<4>
 
 Package=<5>
@@ -128,9 +116,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name EABrowserDispatch
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name Benchmark
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -145,9 +130,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name EABrowserDispatch
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name Benchmark
     End Project Dependency
 }}}
 
@@ -311,9 +293,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name wwsaveload
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name Benchmark
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -384,9 +363,6 @@ Package=<4>
     Project_Dep_Name GameSpyStats
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name Benchmark
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name versionUpdate
     End Project Dependency
     Begin Project Dependency
@@ -428,9 +404,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name Benchmark
-    End Project Dependency
     Begin Project Dependency
     Project_Dep_Name Compression
     End Project Dependency

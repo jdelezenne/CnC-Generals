@@ -478,11 +478,6 @@ set(GEN_compression_SOURCES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/ZLib/trees.c"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/ZLib/uncompr.c"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/ZLib/zutil.c"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/LZHCompress/CompLibSource/Huff.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/LZHCompress/CompLibSource/Lz.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/LZHCompress/CompLibSource/Lzhl.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/LZHCompress/CompLibSource/Lzhl_tcp.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/LZHCompress/NoxCompress.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/EAC/btreeabout.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/EAC/btreedecode.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Compression/EAC/btreeencode.cpp"
@@ -1239,7 +1234,6 @@ set(GEN_gameenginedevice_SOURCES
 )
 set(GEN_gameenginedevice_INCLUDES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Include/MSS"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/Benchmark"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Main"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngineDevice/Include"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngine/Include"

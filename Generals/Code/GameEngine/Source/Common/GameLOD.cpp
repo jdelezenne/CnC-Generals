@@ -50,7 +50,7 @@
 #define PROFILE_ERROR_LIMIT	0.94f	//fraction of profiled result needed to get a match.  Allows some room for error/fluctuation.
 
 //Hack to get access to a static method on the W3DDevice side. -MW
-extern Bool testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM, Real *intBenchIndex, Real *floatBenchIndex, Real *memBenchIndex);
+extern Bool testMinimumRequirements(ChipsetType *videoChipType, CpuType *cpuType, Int *cpuFreq, Int *numRAM);
 
 GameLODManager *TheGameLODManager=NULL;
 
@@ -160,21 +160,9 @@ void parseReallyLowMHz(INI* ini)
 	}
 }
 
-void INI::parseBenchProfile( INI* ini)
+void INI::parseBenchProfile( INI* /*ini*/)
 {
-	if( TheGameLODManager )
-	{
-			BenchProfile *preset = TheGameLODManager->newBenchProfile();
-
-			if (preset)
-			{
-				INI::parseIndexList(ini,NULL,&preset->m_cpuType,CPUNames);
-				INI::parseInt(ini,NULL,&preset->m_mhz,NULL);
-				INI::parseReal(ini,NULL,&preset->m_intBenchIndex,NULL);
-				INI::parseReal(ini,NULL,&preset->m_floatBenchIndex,NULL);
-				INI::parseReal(ini,NULL,&preset->m_memBenchIndex,NULL);
-			}
-	}
+	// Accept the obsolete entries in the retail GameLODPresets.ini.
 }
 
 /**Parse a description of all the LOD settings for a given detail level*/
@@ -222,11 +210,6 @@ GameLODManager::GameLODManager(void)
 	m_cpuType = XX;
 	m_numRAM=0;
 	m_cpuFreq=0;
-	m_intBenchIndex=0;
-	m_floatBenchIndex=0;
-	m_memBenchIndex=0;
-	m_compositeBenchIndex=0;
-	m_numBenchProfiles=0;
 	m_currentTextureReduction=0;
 	m_reallyLowMHz = 400;
 	
@@ -237,18 +220,6 @@ GameLODManager::GameLODManager(void)
 GameLODManager::~GameLODManager()
 {
 
-}
-
-BenchProfile *GameLODManager::newBenchProfile(void)
-{
-	if (m_numBenchProfiles < MAX_BENCH_PROFILES)
-	{	
-		m_numBenchProfiles++;
-		return &m_benchProfiles[m_numBenchProfiles-1];
-	}
-
-	DEBUG_CRASH(( "GameLODManager::newBenchProfile - Too many profiles defined\n"));
-	return NULL;
 }
 
 LODPresetInfo *GameLODManager::newLODPreset(StaticGameLODLevel index)
@@ -284,60 +255,10 @@ void GameLODManager::init(void)
 	m_idealDetailLevel=(StaticGameLODLevel)optionPref.getIdealStaticGameDetail();
 
 	//always get this data in case we need it later.
-	testMinimumRequirements(NULL,&m_cpuType,&m_cpuFreq,&m_numRAM,NULL,NULL,NULL);
+	testMinimumRequirements(NULL,&m_cpuType,&m_cpuFreq,&m_numRAM);
 
 	if ((Real)(m_numRAM)/(Real)(256*1024*1024) >= PROFILE_ERROR_LIMIT)
 		m_memPassed=TRUE;	//check if they have at least 256 MB
-
-	if (m_idealDetailLevel == STATIC_GAME_LOD_UNKNOWN || TheGlobalData->m_forceBenchmark)
-	{
-		if (m_cpuType == XX || TheGlobalData->m_forceBenchmark)
-		{
-			//need to run the benchmark
-			testMinimumRequirements(NULL,NULL,NULL,NULL,&m_intBenchIndex,&m_floatBenchIndex,&m_memBenchIndex);
-			
-			if (TheGlobalData->m_forceBenchmark)
-			{	//we want to see the numbers.  So dump them to a logfile.
-				FILE *fp=fopen("Benchmark.txt","w");
-				if (fp)
-				{
-					fprintf(fp,"BenchProfile = %s %d %f %f %f", CPUNames[m_cpuType], m_cpuFreq, m_intBenchIndex, m_floatBenchIndex, m_memBenchIndex);
-					fclose(fp);
-				}
-			}
-
-	 		m_compositeBenchIndex = m_intBenchIndex + m_floatBenchIndex;	///@todo: Need to scale these based on our apps usage of int/float/mem ops.
-
-			StaticGameLODLevel currentLevel=STATIC_GAME_LOD_LOW;
-			BenchProfile *prof=m_benchProfiles;
-			m_cpuType = P3;	//assume lowest spec.
-			m_cpuFreq = 1000;	//assume lowest spec.
-			for (Int k=0; k<m_numBenchProfiles; k++)
-			{
-				//Check if we're within 5% of the performance of this cpu profile.
-				if (m_intBenchIndex/prof->m_intBenchIndex >= PROFILE_ERROR_LIMIT && m_floatBenchIndex/prof->m_floatBenchIndex >= PROFILE_ERROR_LIMIT && m_memBenchIndex/prof->m_memBenchIndex >= PROFILE_ERROR_LIMIT)
-				{	
-					for (Int i=STATIC_GAME_LOD_HIGH; i >= STATIC_GAME_LOD_LOW; i--)
-					{
-						LODPresetInfo *preset=&m_lodPresets[i][0];	//pointer to first preset at this LOD level.
-						for (Int j=0; j<m_numLevelPresets[i]; j++)
-						{
-							if(	prof->m_cpuType == preset->m_cpuType &&	((Real)prof->m_mhz/(Real)preset->m_mhz >= PROFILE_ERROR_LIMIT))
-							{	currentLevel = (StaticGameLODLevel)i;
-								m_cpuType = prof->m_cpuType;
-								m_cpuFreq = prof->m_mhz;
-								break;
-							}
-							preset++;	//skip to next preset
-						}
-						if (currentLevel >= i)
-							break;	//we already found a higher level than the remaining presets so no need to keep searching.
-					}
-				}
-				prof++;
-			}
-		}	//finding equivalent CPU to unkown cpu.
-	}	//find data needed to determine m_idealDetailLevel
 
 	if (userSetDetail == STATIC_GAME_LOD_CUSTOM)
 	{
@@ -447,7 +368,7 @@ StaticGameLODLevel GameLODManager::findStaticLODLevel(void)
 		m_idealDetailLevel = STATIC_GAME_LOD_LOW;
 
 		//get system configuration - only need vide chip type, got rest in ::init().
-		testMinimumRequirements(&m_videoChipType,NULL,NULL,NULL,NULL,NULL,NULL);
+		testMinimumRequirements(&m_videoChipType,NULL,NULL,NULL);
 		if (m_videoChipType == DC_UNKNOWN)
 			m_videoChipType = DC_TNT2;	//presume it's at least TNT2 level
 

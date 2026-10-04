@@ -1,13 +1,6 @@
 cmake_minimum_required(VERSION 4.2)
 project(Generals LANGUAGES C CXX RC)
 
-if(NOT WIN32 OR NOT MSVC OR MSVC_VERSION LESS 1950)
-    message(FATAL_ERROR "Use Visual Studio 2026 or newer on Windows.")
-endif()
-if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "The original game and vendor ABIs require Win32/x86.")
-endif()
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Build configurations" FORCE)
 set(GEN_GAME "Generals" CACHE STRING "Game to build: Generals or ZeroHour")
 set_property(CACHE GEN_GAME PROPERTY STRINGS Generals ZeroHour)
 if(GEN_GAME STREQUAL "Generals")

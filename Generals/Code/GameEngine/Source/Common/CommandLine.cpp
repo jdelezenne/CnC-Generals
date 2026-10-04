@@ -704,15 +704,6 @@ Int parseNoShroud(char *args[], int)
 }
 #endif
 
-Int parseForceBenchmark(char *args[], int)
-{
-	if (TheWritableGlobalData)
-	{
-		TheWritableGlobalData->m_forceBenchmark = TRUE;
-	}
-	return 1;
-}
-
 Int parseNoMoveCamera(char *args[], int)
 {
 	if (TheWritableGlobalData)
@@ -1169,7 +1160,6 @@ static CommandLineParam params[] =
 	{ "-setDebugLevel", parseSetDebugLevel },
 	{ "-clearDebugLevel", parseClearDebugLevel },
 #endif
-	{ "-forceBenchmark", parseForceBenchmark },
 	{ "-buildmapcache", parseBuildMapCache },
 	{ "-noshadowvolumes", parseNoShadows },
 	{ "-nofx", parseNoFX },

@@ -172,46 +172,6 @@ SOURCE=.\ZLib\uncompr.c
 SOURCE=.\ZLib\zutil.c
 # End Source File
 # End Group
-# Begin Group "NoxLZH"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Hdec_g.tbl
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Hdec_s.tbl
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Hdisp.tbl
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Henc.tbl
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Huff.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Lz.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Lzhl.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibSource\Lzhl_tcp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\NoxCompress.cpp
-# End Source File
-# End Group
 # Begin Group "EAC"
 
 # PROP Default_Filter ""
@@ -306,34 +266,6 @@ SOURCE=.\ZLib\zlib.h
 # Begin Source File
 
 SOURCE=.\ZLib\zutil.h
-# End Source File
-# End Group
-# Begin Group "NoxLZH.H"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibHeader\_huff.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibHeader\_lz.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibHeader\_lzhl.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibHeader\Lzhl.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\CompLibHeader\Lzhl_tcp.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\LZHCompress\NoxCompress.h
 # End Source File
 # End Group
 # Begin Group "EAC.H"

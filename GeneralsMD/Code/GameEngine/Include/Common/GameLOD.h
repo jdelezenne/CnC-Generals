@@ -39,7 +39,6 @@
 enum ParticlePriorityType;
 
 #define MAX_LOD_PRESETS_PER_LEVEL	32	//number of hardware configs preset for each low,medium,high
-#define MAX_BENCH_PROFILES	16
 
 //Make sure this enum stays in sync with GameLODNames[]
 enum StaticGameLODLevel
@@ -143,17 +142,6 @@ struct LODPresetInfo
 	Int  m_memory;
 };
 
-struct BenchProfile
-{
-	BenchProfile() : m_cpuType(XX),m_mhz(1),m_intBenchIndex(1.0f),m_floatBenchIndex(1.0f),m_memBenchIndex(1.0f) {};
-
-	CpuType  m_cpuType;
-	Int	 m_mhz;
-	Real m_intBenchIndex;
-	Real m_floatBenchIndex;
-	Real m_memBenchIndex;
-};
-
 class GameLODManager
 {
 public:
@@ -181,7 +169,6 @@ public:
 	Int getRecommendedTextureReduction(void);	///<return the optimal texture reduction for the system.
 	Int getLevelTextureReduction(StaticGameLODLevel level);	///<return texture reduction specified in INI for this game detail.
 	LODPresetInfo *newLODPreset(StaticGameLODLevel index);
-	BenchProfile *newBenchProfile(void);
 	Bool didMemPass( void );
 	void setReallyLowMHz(Int mhz) { m_reallyLowMHz = mhz; }
 	Bool isReallyLowMHz() const { return m_cpuFreq < m_reallyLowMHz; }
@@ -189,7 +176,6 @@ public:
 	StaticGameLODInfo m_staticGameLODInfo[STATIC_GAME_LOD_COUNT];
 	DynamicGameLODInfo m_dynamicGameLODInfo[DYNAMIC_GAME_LOD_COUNT];
 	LODPresetInfo m_lodPresets[STATIC_GAME_LOD_CUSTOM][MAX_LOD_PRESETS_PER_LEVEL];
-	BenchProfile m_benchProfiles[MAX_BENCH_PROFILES];
 
 protected:
 	void applyStaticLODLevel(StaticGameLODLevel level);
@@ -210,16 +196,11 @@ protected:
 	Bool m_cpuPassed;
 	Bool m_memPassed;
 	Int m_numLevelPresets[STATIC_GAME_LOD_CUSTOM];
-	Int m_numBenchProfiles;
 	StaticGameLODLevel m_idealDetailLevel;
 	ChipsetType m_videoChipType;
 	CpuType m_cpuType;
 	Int m_numRAM;
 	Int m_cpuFreq;
-	Real m_intBenchIndex;
-	Real m_floatBenchIndex;
-	Real m_memBenchIndex;
-	Real m_compositeBenchIndex;
 	Int m_currentTextureReduction;
 	Int m_reallyLowMHz;
 };
