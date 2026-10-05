@@ -23,6 +23,7 @@
 #pragma once
 #endif
 #ifdef _UNIX
+#include <cstdint>
 #include "osdep.h"
 #endif
 
@@ -99,7 +100,7 @@ protected:
 
 private:
 	static void __cdecl Internal_Thread_Function(void*);
-	volatile unsigned long handle;
+	volatile std::uintptr_t handle;
 	int thread_priority;
 };
 

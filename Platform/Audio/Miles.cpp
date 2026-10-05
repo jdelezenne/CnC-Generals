@@ -63,7 +63,7 @@ std::unordered_map<std::uint64_t, std::weak_ptr<AudioData>> Sounds;
 struct Decoder {
     drwav Wave{};
     drmp3 MP3{};
-    U32 File = 0;
+    AIL_FILE_HANDLE File = 0;
     bool Opened = false;
     bool IsWave = false;
     bool Valid = false;

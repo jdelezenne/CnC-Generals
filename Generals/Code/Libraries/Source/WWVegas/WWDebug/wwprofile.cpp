@@ -52,6 +52,9 @@
 
 #include "always.h"
 #include "wwprofile.h"
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 #include "wwdebug.h"
 #include <windows.h>
 
@@ -71,7 +74,9 @@
  *=============================================================================================*/
 inline void WWProfile_Get_Ticks(_int64 * ticks)
 {
-#ifdef _UNIX
+#if defined(_M_X64)
+    *ticks = __rdtsc();
+#elif defined(_UNIX)
 	*ticks = 0;
 #else 
 	__asm

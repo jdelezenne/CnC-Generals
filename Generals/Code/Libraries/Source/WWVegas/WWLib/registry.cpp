@@ -33,6 +33,7 @@
  *---------------------------------------------------------------------------------------------*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <cstdint>
 #include "registry.h"
 #include <assert.h>
 #include <windows.h>
@@ -52,7 +53,7 @@ RegistryClass::RegistryClass( const char * sub_key ) :
 			0, NULL, 0, KEY_ALL_ACCESS, NULL,
 			&key, &disposition ) == ERROR_SUCCESS) {
 		IsValid = true;
-		Key = (int)key;
+		Key = reinterpret_cast<std::intptr_t>(key);
 	}
 }
 

@@ -29,6 +29,9 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "Common/PerfTimer.h"
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 
 #include "Common/GlobalData.h"
 #include "GameClient/DebugDisplay.h"
@@ -37,6 +40,9 @@
 
 __forceinline void ProfileGetTime(__int64 &t)
 {
+#if defined(_M_X64)
+  t = __rdtsc();
+#else
   _asm
   {
     mov ecx,[t]
@@ -48,6 +54,7 @@ __forceinline void ProfileGetTime(__int64 &t)
     pop edx
     pop eax
   };
+#endif
 }
 
 #ifdef _INTERNAL

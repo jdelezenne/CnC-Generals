@@ -38,6 +38,10 @@
  *   WWMemoryLogClass::Release_Memory -- frees memory                                          *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <cstdint>
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 #include "always.h"
 #include "wwmemlog.h"
 #include "wwdebug.h"
@@ -316,8 +320,12 @@ WWINLINE void Lock_Mem_Log_Mutex(void)
 	volatile unsigned& nFlag=_MemLogSemaphore;
 
 	#define ts_lock _emit 0xF0
-	assert(((unsigned)&nFlag % 4) == 0);
+	assert((reinterpret_cast<std::uintptr_t>(&nFlag) % 4) == 0);
 
+#if defined(_M_X64)
+    while (_interlockedbittestandset(reinterpret_cast<volatile long*>(&_MemLogSemaphore), 0))
+        ThreadClass::Switch_Thread();
+#else
 	__asm mov ebx, [nFlag]
 	__asm ts_lock
 	__asm bts dword ptr [ebx], 0
@@ -331,6 +339,7 @@ WWINLINE void Lock_Mem_Log_Mutex(void)
 	__asm bts dword ptr [ebx], 0
 	__asm jc  The_Bit_Was_Previously_Set_So_Try_Again
 
+#endif
 #endif
 }
 

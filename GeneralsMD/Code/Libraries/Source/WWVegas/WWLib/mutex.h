@@ -115,6 +115,11 @@ public:
 //
 // ----------------------------------------------------------------------------
 
+#include <cstdint>
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
+
 class FastCriticalSectionClass
 {
 	unsigned Flag;
@@ -132,8 +137,12 @@ public:
 		  unsigned& nFlag=cs.Flag;
 
 		  #define ts_lock _emit 0xF0
-		  assert(((unsigned)&nFlag % 4) == 0);
+		  assert((reinterpret_cast<std::uintptr_t>(&nFlag) % 4) == 0);
 
+#if defined(_M_X64)
+      while (_interlockedbittestandset(reinterpret_cast<volatile long*>(&nFlag), 0))
+        ThreadClass::Switch_Thread();
+#else
       // I'm terribly sorry for these emits in here but
       // VC won't inline any functions that have labels in them...
 
@@ -159,6 +168,7 @@ public:
 
       BitSet:
         ;
+#endif
 		}
 
 		~LockClass()

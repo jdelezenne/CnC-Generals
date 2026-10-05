@@ -27,6 +27,17 @@
 // Unhandled exception handler
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+namespace
+{
+    std::uintptr_t InstructionPointer(const CONTEXT& context)
+    {
+#if defined(_M_X64)
+        return context.Rip;
+#else
+        return context.Eip;
+#endif
+    }
+}
 #include <commctrl.h>
 
 #pragma comment (lib,"comctl32")
@@ -110,7 +121,7 @@ void DebugExceptionhandler::LogExceptionLocation(Debug &dbg, struct _EXCEPTION_P
   struct _CONTEXT &ctx=*exptr->ContextRecord;
 
   char buf[512];
-  DebugStackwalk::Signature::GetSymbol(ctx.Eip,buf,sizeof(buf));
+  DebugStackwalk::Signature::GetSymbol(InstructionPointer(ctx),buf,sizeof(buf));
   dbg << "Exception occured at\n" << buf << ".";
 }
 
@@ -118,6 +129,22 @@ void DebugExceptionhandler::LogRegisters(Debug &dbg, struct _EXCEPTION_POINTERS 
 {
   struct _CONTEXT &ctx=*exptr->ContextRecord;
 
+#if defined(_M_X64)
+  dbg << Debug::FillChar('0') << Debug::Hex()
+      << "RAX:" << Debug::Width(16) << ctx.Rax
+      << " RBX:" << Debug::Width(16) << ctx.Rbx
+      << " RCX:" << Debug::Width(16) << ctx.Rcx << "\n"
+      << "RDX:" << Debug::Width(16) << ctx.Rdx
+      << " RSI:" << Debug::Width(16) << ctx.Rsi
+      << " RDI:" << Debug::Width(16) << ctx.Rdi << "\n"
+      << "RIP:" << Debug::Width(16) << ctx.Rip
+      << " RSP:" << Debug::Width(16) << ctx.Rsp
+      << " RBP:" << Debug::Width(16) << ctx.Rbp << "\n"
+      << "R8:" << Debug::Width(16) << ctx.R8 << " R9:" << Debug::Width(16) << ctx.R9
+      << " R10:" << Debug::Width(16) << ctx.R10 << " R11:" << Debug::Width(16) << ctx.R11 << "\n"
+      << "R12:" << Debug::Width(16) << ctx.R12 << " R13:" << Debug::Width(16) << ctx.R13
+      << " R14:" << Debug::Width(16) << ctx.R14 << " R15:" << Debug::Width(16) << ctx.R15 << "\n"
+#else
   dbg << Debug::FillChar('0')
       << Debug::Hex()
       <<  "EAX:" << Debug::Width(8) << ctx.Eax 
@@ -129,6 +156,7 @@ void DebugExceptionhandler::LogRegisters(Debug &dbg, struct _EXCEPTION_POINTERS 
       <<  "EIP:" << Debug::Width(8) << ctx.Eip 
       << " ESP:" << Debug::Width(8) << ctx.Esp
       << " EBP:" << Debug::Width(8) << ctx.Ebp << "\n"
+#endif
       <<  "Flags:" << Debug::Bin() << Debug::Width(32) << ctx.EFlags << Debug::Hex() << "\n"
       <<  "CS:" << Debug::Width(4) << ctx.SegCs
       << " DS:" << Debug::Width(4) << ctx.SegDs
@@ -148,6 +176,30 @@ void DebugExceptionhandler::LogFPURegisters(Debug &dbg, struct _EXCEPTION_POINTE
     return;
   }
 
+#if defined(_M_X64)
+  const XMM_SAVE_AREA32& flt = ctx.FltSave;
+  dbg << Debug::Bin() << Debug::FillChar('0')
+      << "CW:" << Debug::Width(16) << flt.ControlWord << "\n"
+      << "SW:" << Debug::Width(16) << flt.StatusWord << "\n"
+      << "TW:" << Debug::Width(8) << unsigned(flt.TagWord) << "\n"
+      << "MXCSR:" << Debug::Width(32) << ctx.MxCsr << "\n";
+  for (unsigned k = 0; k < 8; ++k)
+  {
+    dbg << Debug::Dec() << "ST(" << k << ") ";
+    dbg.SetPrefixAndRadix("", 16);
+    const BYTE* value = reinterpret_cast<const BYTE*>(&flt.FloatRegisters[k]);
+    for (unsigned i = 0; i < 10; ++i) dbg << Debug::Width(2) << value[i];
+    dbg << "\n";
+  }
+  for (unsigned k = 0; k < 16; ++k)
+  {
+    dbg << Debug::Dec() << "XMM(" << k << ") ";
+    dbg.SetPrefixAndRadix("", 16);
+    const BYTE* value = reinterpret_cast<const BYTE*>(&flt.XmmRegisters[k]);
+    for (unsigned i = 0; i < 16; ++i) dbg << Debug::Width(2) << value[i];
+    dbg << "\n";
+  }
+#else
   FLOATING_SAVE_AREA &flt=ctx.FloatSave;
   dbg << Debug::Bin() << Debug::FillChar('0')
       << "CW:" << Debug::Width(16) << (flt.ControlWord&0xffff) << "\n"
@@ -181,6 +233,7 @@ void DebugExceptionhandler::LogFPURegisters(Debug &dbg, struct _EXCEPTION_POINTE
 
     dbg << " " << fpVal << "\n";
   }
+#endif
   dbg << Debug::FillChar() << Debug::Dec();
 }
 
@@ -196,7 +249,7 @@ static char regInfo[1024],verInfo[256];
 // and this saves us from doing a stack walk twice
 static DebugStackwalk::Signature sig;
 
-static BOOL CALLBACK ExceptionDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ExceptionDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
   {
@@ -241,7 +294,7 @@ static BOOL CALLBACK ExceptionDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
   // address
   struct _CONTEXT &ctx=*exPtrs->ContextRecord;
-  DebugStackwalk::Signature::GetSymbol(ctx.Eip,regInfo,sizeof(regInfo));
+  DebugStackwalk::Signature::GetSymbol(InstructionPointer(ctx),regInfo,sizeof(regInfo));
   SendDlgItemMessage(hWnd,102,WM_SETTEXT,0,(LPARAM)regInfo);
 
   // stack 
@@ -391,7 +444,7 @@ LONG __stdcall DebugExceptionhandler::ExceptionFilter(struct _EXCEPTION_POINTERS
   dbg.m_stackWalk.StackWalk(sig,pExPtrs->ContextRecord);
   dbg << sig << "\n";
 
-  dbg << "Bytes around EIP:" << Debug::MemDump::Char(((char *)(pExPtrs->ContextRecord->Eip))-32,80);
+  dbg << "Bytes around EIP:" << Debug::MemDump::Char(reinterpret_cast<char*>(InstructionPointer(*pExPtrs->ContextRecord))-32,80);
 
   dbg.FlushOutput();
 

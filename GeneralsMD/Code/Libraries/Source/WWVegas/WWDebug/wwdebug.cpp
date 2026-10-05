@@ -313,7 +313,11 @@ void WWDebug_Assert_Fail(const char * expr,const char * file, int line)
       }
 
 		if (code == IDRETRY) {
+#if defined(_M_X64)
+			__debugbreak();
+#else
 			_asm int 3;
+#endif
       	return;
 		}
    }

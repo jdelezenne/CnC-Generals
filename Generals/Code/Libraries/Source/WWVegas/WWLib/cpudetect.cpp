@@ -24,6 +24,10 @@
 #pragma warning (disable : 4201)	// Nonstandard extension - nameless struct
 #include <windows.h>
 #include "systimer.h"
+#if defined(_M_X64)
+#include <intrin.h>
+#include <climits>
+#endif
 
 #ifdef _UNIX
 # include <time.h>  // for time(), localtime() and timezone variable.
@@ -134,7 +138,11 @@ static unsigned Calculate_Processor_Speed(__int64& ticks_per_second)
 		unsigned timer1_l;
 	} Time;
 
-#ifdef WIN32
+#if defined(_M_X64)
+    auto start_ticks = __rdtsc();
+    Time.timer0_h = static_cast<unsigned>(start_ticks);
+    Time.timer0_l = static_cast<unsigned>(start_ticks >> 32);
+#elif defined(WIN32)
    __asm {
       ASM_RDTSC;
       mov Time.timer0_h, eax
@@ -149,7 +157,11 @@ static unsigned Calculate_Processor_Speed(__int64& ticks_per_second)
 	unsigned start=TIMEGETTIME();
 	unsigned elapsed;
 	while ((elapsed=TIMEGETTIME()-start)<200) {
-#ifdef WIN32
+#if defined(_M_X64)
+      auto end_ticks = __rdtsc();
+      Time.timer1_h = static_cast<unsigned>(end_ticks);
+      Time.timer1_l = static_cast<unsigned>(end_ticks >> 32);
+#elif defined(WIN32)
       __asm {
          ASM_RDTSC;
          mov Time.timer1_h, eax
@@ -826,7 +838,9 @@ void CPUDetectClass::Init_CPUID_Instruction()
    // because CodeWarrior seems to have problems with
    // the command (huh?)
 
-#ifdef WIN32
+#if defined(_M_X64)
+   cpuid_available = 1;
+#elif defined(WIN32)
    __asm
    {
       mov cpuid_available, 0	// clear flag
@@ -904,12 +918,25 @@ void CPUDetectClass::Init_Memory()
 	MEMORYSTATUS mem;
    GlobalMemoryStatus(&mem);
 
+#if defined(_M_X64)
+	// Preserve the Win32 query's signed 32-bit ceiling before narrowing SIZE_T.
+	const auto legacyMemorySize = [](SIZE_T size) -> unsigned {
+		return size > INT_MAX ? INT_MAX : static_cast<unsigned>(size);
+	};
+	TotalPhysicalMemory     = legacyMemorySize(mem.dwTotalPhys);
+	AvailablePhysicalMemory = legacyMemorySize(mem.dwAvailPhys);
+	TotalPageMemory         = legacyMemorySize(mem.dwTotalPageFile);
+	AvailablePageMemory     = legacyMemorySize(mem.dwAvailPageFile);
+	TotalVirtualMemory      = legacyMemorySize(mem.dwTotalVirtual);
+	AvailableVirtualMemory  = legacyMemorySize(mem.dwAvailVirtual);
+#else
    TotalPhysicalMemory     = mem.dwTotalPhys;
    AvailablePhysicalMemory = mem.dwAvailPhys;
    TotalPageMemory         = mem.dwTotalPageFile;
    AvailablePageMemory     = mem.dwAvailPageFile;
    TotalVirtualMemory      = mem.dwTotalVirtual;
    AvailableVirtualMemory  = mem.dwAvailVirtual;
+#endif
 #elif defined(_UNIX)
 #warning FIX Init_Memory()
 #endif
@@ -946,7 +973,12 @@ bool CPUDetectClass::CPUID(
 	unsigned u_ecx;
 	unsigned u_edx;
 
-#ifdef WIN32
+#if defined(_M_X64)
+   int registers[4];
+   __cpuidex(registers, static_cast<int>(cpuid_type), 0);
+   u_eax = registers[0]; u_ebx = registers[1];
+   u_ecx = registers[2]; u_edx = registers[3];
+#elif defined(WIN32)
    __asm
    {
       pushad

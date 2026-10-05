@@ -135,7 +135,7 @@ struct LegacyDDSURFACEDESC2 {
 	};
 	unsigned AlphaBitDepth;
 	unsigned Reserved;
-	void* Surface;
+	unsigned Surface; // Reserved 32-bit slot in the on-disk DDS header.
 	union
 	{
 		LegacyDDCOLORKEY CKDestOverlay;
@@ -148,6 +148,8 @@ struct LegacyDDSURFACEDESC2 {
 	LegacyDDSCAPS2 Caps;
 	unsigned TextureStage;
 };
+
+static_assert(sizeof(LegacyDDSURFACEDESC2) == 124, "DDS headers must retain their on-disk layout");
 
 // ----------------------------------------------------------------------------
 //

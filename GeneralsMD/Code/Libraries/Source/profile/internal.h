@@ -33,6 +33,10 @@
 #define INTERNAL_H
 
 #include "../debug/debug.h"
+#include <cstdint>
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 #include "internal_funclevel.h"
 #include "internal_highlevel.h"
 #include "internal_cmd.h"
@@ -51,8 +55,14 @@ class ProfileFastCS
 		volatile unsigned& nFlag=m_Flag;
 
 		#define ts_lock _emit 0xF0
-		DASSERT(((unsigned)&nFlag % 4) == 0);
+		DASSERT((reinterpret_cast<std::uintptr_t>(&nFlag) % 4) == 0);
 
+#if defined(_M_X64)
+        while (_interlockedbittestandset(reinterpret_cast<volatile long*>(&nFlag), 0))
+        {
+            if (testEvent) ::WaitForSingleObject(testEvent, 1);
+        }
+#else
 		__asm mov ebx, [nFlag]
 		__asm ts_lock
 		__asm bts dword ptr [ebx], 0
@@ -67,6 +77,7 @@ class ProfileFastCS
 		__asm ts_lock
 		__asm bts dword ptr [ebx], 0
 		__asm jc  The_Bit_Was_Previously_Set_So_Try_Again
+#endif
 	}
 
 	void ThreadSafeClearFlag()
@@ -109,6 +120,9 @@ void ProfileFreeMemory(void *ptr);
 
 __forceinline void ProfileGetTime(__int64 &t)
 {
+#if defined(_M_X64)
+  t = __rdtsc();
+#else
   _asm
   {
     mov ecx,[t]
@@ -120,6 +134,7 @@ __forceinline void ProfileGetTime(__int64 &t)
     pop edx
     pop eax
   };
+#endif
 }
 
 #endif // INTERNAL_H

@@ -41,6 +41,7 @@
 #define REGISTRY_H
 
 #ifndef ALWAYS_H
+#include <cstdint>
 #include "always.h"
 #endif
 
@@ -94,7 +95,7 @@ public:
 	void	Deleta_All_Values( void );
 
 private:
-	int	Key;
+	std::intptr_t	Key;
 	bool	IsValid;
 };
 

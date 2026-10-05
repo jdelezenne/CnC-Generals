@@ -20,6 +20,7 @@
 // MilesAudioManager implementation
 // Author: John K. McDonald, July 2002
 
+#include <cstdint>
 #include "Common/AsciiString.h"
 #include "Common/GameAudio.h"
 #include "MSS/MSS.h"
@@ -174,8 +175,8 @@ class MilesAudioManager : public AudioManager
 		///< NOTE NOTE NOTE !!DO NOT USE THIS IN FOR GAMELOGIC PURPOSES!! NOTE NOTE NOTE
 		virtual Bool isCurrentlyPlaying( AudioHandle handle );
 
-		virtual void notifyOfAudioCompletion( UnsignedInt audioCompleted, UnsignedInt flags );
-		virtual PlayingAudio *findPlayingAudioFrom( UnsignedInt audioCompleted, UnsignedInt flags );
+		virtual void notifyOfAudioCompletion( std::uintptr_t audioCompleted, UnsignedInt flags );
+		virtual PlayingAudio *findPlayingAudioFrom( std::uintptr_t audioCompleted, UnsignedInt flags );
 
 		virtual UnsignedInt getProviderCount( void ) const;
 		virtual AsciiString getProviderName( UnsignedInt providerNum ) const;

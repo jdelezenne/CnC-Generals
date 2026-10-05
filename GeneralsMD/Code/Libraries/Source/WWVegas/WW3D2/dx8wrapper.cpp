@@ -1,4 +1,5 @@
 #include "Platform/Window.h"
+#include "Platform/SDL/GPU/D3D8.h"
 /*
 **	Command & Conquer Generals Zero Hour(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -199,9 +200,6 @@ static DynamicVectorClass<StringClass>					_RenderDeviceShortNameTable;
 static DynamicVectorClass<RenderDeviceDescClass>	_RenderDeviceDescriptionTable;
 
 
-typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
-Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
-HINSTANCE D3D8Lib = NULL;
 
 DX8_CleanupHook	 *DX8Wrapper::m_pCleanupHook=NULL;
 #ifdef EXTENDED_STATS
@@ -295,18 +293,11 @@ bool DX8Wrapper::Init(void * hwnd, bool lite)
 	Invalidate_Cached_Render_States();
 
 	if (!lite) {
-		D3D8Lib = LoadLibrary("D3D8.DLL");
-
-		if (D3D8Lib == NULL) return false;	// Return false at this point if init failed
-
-		Direct3DCreate8Ptr = (Direct3DCreate8Type) GetProcAddress(D3D8Lib, "Direct3DCreate8");
-		if (Direct3DCreate8Ptr == NULL) return false;
-
 		/*
 		** Create the D3D interface object
 		*/
 		WWDEBUG_SAY(("Create Direct3D8\n"));
-		D3DInterface = Direct3DCreate8Ptr(D3D_SDK_VERSION);		// TODO: handle failure cases...
+		D3DInterface = Platform::CreateD3D8Renderer();
 		if (D3DInterface == NULL) {
 			return(false);
 		}
@@ -353,11 +344,6 @@ void DX8Wrapper::Shutdown(void)
 	if (D3DInterface) {
 		UINT newRefCount=D3DInterface->Release();
 		D3DInterface=NULL;
-	}
-
-	if (D3D8Lib) {
-		FreeLibrary(D3D8Lib);
-		D3D8Lib = NULL;
 	}
 
 	_RenderDeviceNameTable.Clear();		 // note - Delete_All() resizes the vector, causing a reallocation.  Clear is better. jba.

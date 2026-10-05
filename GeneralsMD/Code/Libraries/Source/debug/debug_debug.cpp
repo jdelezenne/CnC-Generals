@@ -27,6 +27,9 @@
 // Debug class implementation
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +61,7 @@ Debug::LogDescription::LogDescription(const char *fileOrGroup, const char *descr
 Debug Debug::Instance;
 
 // more class static members
-unsigned Debug::curStackFrame;
+std::uintptr_t Debug::curStackFrame;
 
 // this constructor is empty on purpose because all construction
 // work is done in PreStaticInit (and some in PostStaticInit)
@@ -269,12 +272,16 @@ bool Debug::SkipNext(void)
 
   // do not implement this function inline, we do need
   // a valid frame pointer here!
+#if defined(_M_X64)
+  std::uintptr_t help = reinterpret_cast<std::uintptr_t>(_ReturnAddress());
+#else
   unsigned help;
   _asm 
   {
     mov eax,[ebp+4]   // return address
     mov help,eax
   };
+#endif
   curStackFrame=help;
 
   // do we know if to skip the following code?
@@ -386,7 +393,11 @@ bool Debug::AssertDone(void)
           }
           break;
         case IDRETRY:
+          #if defined(_M_X64)
+          __debugbreak();
+#else
           _asm int 0x03
+#endif
           break;
         default:
           ((void)0);
@@ -654,7 +665,11 @@ bool Debug::CrashDone(bool die)
             }
             break;
           case IDRETRY:
-            _asm int 0x03
+            #if defined(_M_X64)
+          __debugbreak();
+#else
+          _asm int 0x03
+#endif
             break;
           default:
             ((void)0);
@@ -840,8 +855,8 @@ Debug& Debug::operator<<(const void *ptr)
   (*this) << "ptr:";
   if (ptr)
   {
-    char help[9];
-    (*this) << "0x" << _ultoa((unsigned long)ptr,help,16);
+    char help[2 * sizeof(void*) + 1];
+    (*this) << "0x" << _ui64toa(reinterpret_cast<std::uintptr_t>(ptr),help,16);
   }
   else
     (*this) << "NULL";
@@ -872,8 +887,8 @@ Debug& Debug::operator<<(const MemDump &dump)
   for (unsigned i=0;i<dump.m_numItems;i+=itemPerLine,cur+=itemPerLine*dump.m_bytePerItem)
   {
     // address
-    char buf[9];
-    sprintf(buf,"%08x",dump.m_absAddr?unsigned(cur):cur-dump.m_startPtr);
+    char buf[2 * sizeof(void*) + 1];
+    sprintf(buf,"%0*llx",int(2 * sizeof(void*)),static_cast<unsigned long long>(dump.m_absAddr?reinterpret_cast<std::uintptr_t>(cur):cur-dump.m_startPtr));
     operator<<(buf);
 
     // items
@@ -950,9 +965,9 @@ bool Debug::IsLogEnabled(const char *fileOrGroup)
   // to be used from the D_ISLOG macros only and those guarantee
   // that we are having real static strings let's use
   // that strings address as frame address...
-  FrameHashEntry *e=Instance.LookupFrame((unsigned)fileOrGroup);
+  FrameHashEntry *e=Instance.LookupFrame(reinterpret_cast<std::uintptr_t>(fileOrGroup));
   if (!e)
-    e=Instance.AddFrameEntry((unsigned)fileOrGroup,FrameTypeLog,fileOrGroup,0);
+    e=Instance.AddFrameEntry(reinterpret_cast<std::uintptr_t>(fileOrGroup),FrameTypeLog,fileOrGroup,0);
   if (e->status==Unknown)
     Instance.UpdateFrameStatus(*e);
   return e->status==NoSkip;
@@ -1134,7 +1149,7 @@ void Debug::Update(void)
   }
 }
 
-Debug::FrameHashEntry* Debug::AddFrameEntry(unsigned addr, unsigned type,
+Debug::FrameHashEntry* Debug::AddFrameEntry(std::uintptr_t addr, unsigned type,
                                             const char *fileOrGroup, int line)
 {
   __ASSERT(LookupFrame(addr)==NULL);

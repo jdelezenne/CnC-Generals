@@ -41,6 +41,9 @@
 	#define NO_PERF_TIMERS
 #endif
 
+#if defined(_M_X64)
+#include <intrin.h>
+#endif
 #include "Common/GameCommon.h"	// ensure we get DUMP_PERF_STATS, or not
 
 #ifdef PERF_TIMERS
@@ -68,7 +71,9 @@ void GetPrecisionTimerTicksPerSec(Int64* t);
 //-------------------------------------------------------------------------------------------------
 __forceinline void GetPrecisionTimer(Int64* t)
 {
-#ifdef USE_QPF
+#if defined(_M_X64)
+    *t = __rdtsc();
+#elif defined(USE_QPF)
 	QueryPerformanceCounter((LARGE_INTEGER*)t);
 #else
 	// CPUID is needed to force serialization of any previous instructions. 

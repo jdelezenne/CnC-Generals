@@ -203,8 +203,11 @@ static Bool theMainInitFlag = false;
 // PRIVATE PROTOTYPES 
 // ----------------------------------------------------------------------------
 
-/// @todo srj -- make this work for 8
+#if defined(_WIN64)
+#define MEM_BOUND_ALIGNMENT 16
+#else
 #define MEM_BOUND_ALIGNMENT 4
+#endif
 
 static Int roundUpMemBound(Int i);
 static void *sysAllocate(Int numBytes);
@@ -455,6 +458,7 @@ private:
 
 public:
 	
+	static Int calcUserDataOffset();
 	static Int calcRawBlockSize(Int logicalSize);
 	static MemoryPoolSingleBlock *rawAllocateSingleBlock(MemoryPoolSingleBlock **pRawListHead, Int logicalSize, MemoryPoolFactory *owningFactory DECLARE_LITERALSTRING_ARG2);
 	void removeBlockFromList(MemoryPoolSingleBlock **pHead);
@@ -556,13 +560,21 @@ inline void **BlockCheckpointInfo::getStacktraceInfo() { return m_stacktrace; }
 	return a ptr to the user-data area of the block (ie, the part the enduser can deal with).
 	this call does NO debug verification and is for internal use of class MemoryPoolSingleBlock only.
 */
+inline Int MemoryPoolSingleBlock::calcUserDataOffset()
+{
+    Int offset = sizeof(MemoryPoolSingleBlock);
+#ifdef MEMORYPOOL_BOUNDINGWALL
+    offset += WALLSIZE;
+#endif
+#if defined(_WIN64)
+    offset = ::roundUpMemBound(offset);
+#endif
+    return offset;
+}
+
 inline void* MemoryPoolSingleBlock::getUserDataNoDbg()
 {
-	char* p = ((char*)this) + sizeof(MemoryPoolSingleBlock);
-	#ifdef MEMORYPOOL_BOUNDINGWALL
-	p += WALLSIZE;
-	#endif
-	return (void*)p;
+    return reinterpret_cast<char*>(this) + calcUserDataOffset();
 }
 
 /**
@@ -584,11 +596,11 @@ inline void* MemoryPoolSingleBlock::getUserData()
 */
 inline /*static*/ Int MemoryPoolSingleBlock::calcRawBlockSize(Int logicalSize) 
 { 
-	Int s = ::roundUpMemBound(logicalSize) + sizeof(MemoryPoolSingleBlock);
+	Int s = ::roundUpMemBound(logicalSize) + calcUserDataOffset();
 	#ifdef MEMORYPOOL_BOUNDINGWALL
-	s += WALLSIZE*2;
+	s += WALLSIZE;
 	#endif
-	return s;
+	return ::roundUpMemBound(s);
 }
 
 /**
@@ -928,10 +940,7 @@ void MemoryPoolSingleBlock::initBlock(Int logicalSize, MemoryPoolBlob *owningBlo
 	DEBUG_ASSERTCRASH(pUserData, ("null pUserData"));
 	if (!pUserData)
 		return NULL;
-	char* p = ((char*)pUserData) - sizeof(MemoryPoolSingleBlock);
-	#ifdef MEMORYPOOL_BOUNDINGWALL
-	p -= WALLSIZE;
-	#endif
+	char* p = static_cast<char*>(pUserData) - calcUserDataOffset();
 	MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)p;
 // yes, verify the block in this case for plain debug mode (not intense-verify mode)
 #ifdef MEMORYPOOL_DEBUG

@@ -1,4 +1,5 @@
 #include "Platform/Window.h"
+#include "Platform/SDL/GPU/D3D8.h"
 /*
 **	Command & Conquer Generals(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -249,7 +250,7 @@ bool DX8Wrapper::Init(void * hwnd)
 	/*
 	** Create the D3D interface object
 	*/
-	D3DInterface = Direct3DCreate8(D3D_SDK_VERSION);		// TODO: handle failure cases...
+	D3DInterface = Platform::CreateD3D8Renderer();
 	if (!D3DInterface)
 		return false;
 	IsInitted = true;	

@@ -64,6 +64,8 @@
 #include	<conio.h>
 #include	<imagehlp.h>
 #include <crtdbg.h>
+#include <mutex>
+#include <intrin.h>
 #include	<stdio.h>
 
 #ifdef WWDEBUG
@@ -177,7 +179,11 @@ int __cdecl _purecall(void)
 	** Use int3 to cause an exception.
 	*/
 	WWDEBUG_SAY(("Pure Virtual Function call. Oh No!\n"));
+	#if defined(_M_X64)
+    __debugbreak();
+#else
 	_asm int 0x03;
+#endif
 #endif	//_DEBUG_ASSERT
 
 	return(return_code);
@@ -281,6 +287,7 @@ static void Add_Txt (char const *txt)
  *=============================================================================================*/
 void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 {
+#if defined(_M_IX86)
 	/*
 	** List of possible exceptions
 	*/
@@ -727,6 +734,71 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	}
 
 	Add_Txt ("\r\n\r\n");
+#else
+    memset(ExceptionText, 0, sizeof(ExceptionText));
+    char text[1024];
+    const CONTEXT& ctx = *e_info->ContextRecord;
+    sprintf_s(text, "Exception %08lx at %p\r\n", e_info->ExceptionRecord->ExceptionCode,
+        e_info->ExceptionRecord->ExceptionAddress);
+    Add_Txt(text);
+    if (e_info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
+        e_info->ExceptionRecord->NumberParameters >= 2)
+    {
+        sprintf_s(text, "Access type %llu at %p\r\n", e_info->ExceptionRecord->ExceptionInformation[0],
+            reinterpret_cast<void*>(e_info->ExceptionRecord->ExceptionInformation[1]));
+        Add_Txt(text);
+    }
+    ULONG_PTR addresses[256];
+    int count = Stack_Walk(addresses, 256, e_info->ContextRecord);
+    Add_Txt("Call stack:\r\n");
+    for (int i = 0; i < count; ++i)
+    {
+        char symbol[512]; int displacement = 0;
+        if (Lookup_Symbol(reinterpret_cast<void*>(addresses[i]), symbol, displacement))
+            sprintf_s(text, "%p %s + %x\r\n", reinterpret_cast<void*>(addresses[i]), symbol, displacement);
+        else sprintf_s(text, "%p\r\n", reinterpret_cast<void*>(addresses[i]));
+        Add_Txt(text);
+    }
+    sprintf_s(text,
+        "RIP:%016llx RSP:%016llx RBP:%016llx\r\n"
+        "RAX:%016llx RBX:%016llx RCX:%016llx RDX:%016llx\r\n"
+        "RSI:%016llx RDI:%016llx R8:%016llx R9:%016llx\r\n"
+        "R10:%016llx R11:%016llx R12:%016llx R13:%016llx\r\n"
+        "R14:%016llx R15:%016llx EFlags:%08lx\r\n"
+        "CS:%04x SS:%04x DS:%04x ES:%04x FS:%04x GS:%04x\r\n"
+        "FP Control:%04x Status:%04x Tag:%02x MXCSR:%08lx\r\n",
+        ctx.Rip, ctx.Rsp, ctx.Rbp, ctx.Rax, ctx.Rbx, ctx.Rcx, ctx.Rdx,
+        ctx.Rsi, ctx.Rdi, ctx.R8, ctx.R9, ctx.R10, ctx.R11, ctx.R12, ctx.R13,
+        ctx.R14, ctx.R15, ctx.EFlags, ctx.SegCs, ctx.SegSs, ctx.SegDs, ctx.SegEs,
+        ctx.SegFs, ctx.SegGs, ctx.FltSave.ControlWord, ctx.FltSave.StatusWord,
+        ctx.FltSave.TagWord, ctx.MxCsr);
+    Add_Txt(text);
+    for (unsigned i = 0; i < 24; ++i)
+    {
+        const BYTE* bytes = reinterpret_cast<const BYTE*>(i < 8 ?
+            &ctx.FltSave.FloatRegisters[i] : &ctx.FltSave.XmmRegisters[i - 8]);
+        sprintf_s(text, "%s%u: ", i < 8 ? "ST" : "XMM", i < 8 ? i : i - 8);
+        Add_Txt(text);
+        for (unsigned j = 0; j < (i < 8 ? 10u : 16u); ++j)
+        {
+            sprintf_s(text, "%02x", bytes[j]); Add_Txt(text);
+        }
+        Add_Txt("\r\n");
+    }
+    Add_Txt("Bytes at RIP: ");
+    const BYTE* pc = reinterpret_cast<const BYTE*>(ctx.Rip);
+    for (unsigned i = 0; i < 32; ++i)
+    {
+        if (IsBadReadPtr(pc + i, 1)) Add_Txt("?? ");
+        else { sprintf_s(text, "%02x ", pc[i]); Add_Txt(text); }
+    }
+    Add_Txt("\r\nStack data:\r\n");
+    const ULONG_PTR* stack = reinterpret_cast<const ULONG_PTR*>(ctx.Rsp);
+    for (unsigned i = 0; i < 256 && !IsBadReadPtr(stack + i, sizeof(*stack)); ++i)
+    {
+        sprintf_s(text, "%p: %016llx\r\n", stack + i, stack[i]); Add_Txt(text);
+    }
+#endif
 }
 
 
@@ -1055,6 +1127,7 @@ unsigned long Get_Main_Thread_ID(void)
  *=============================================================================================*/
 void Load_Image_Helper(void)
 {
+#if defined(_M_IX86)
 	/*
 	** If this is the first time through then fix up the imagehelp function pointers since imagehlp.dll
 	** can't be statically linked.
@@ -1108,6 +1181,13 @@ void Load_Image_Helper(void)
 			}
 		}
 	}
+#else
+    static std::once_flag initialized;
+    std::call_once(initialized, [] {
+        SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
+        SymInitialize(GetCurrentProcess(), nullptr, TRUE);
+    });
+#endif
 }
 
 
@@ -1134,6 +1214,7 @@ void Load_Image_Helper(void)
  *=============================================================================================*/
 bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
 {
+#if defined(_M_IX86)
 	/*
 	** Locals.
 	*/
@@ -1182,6 +1263,16 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
 		return(true);
 	}
 	return(false);
+#else
+    Load_Image_Helper();
+    alignas(SYMBOL_INFO) unsigned char buffer[sizeof(SYMBOL_INFO) + 512]{};
+    auto* info = reinterpret_cast<SYMBOL_INFO*>(buffer);
+    info->SizeOfStruct = sizeof(SYMBOL_INFO); info->MaxNameLen = 512;
+    DWORD64 offset = 0;
+    if (!SymFromAddr(GetCurrentProcess(), reinterpret_cast<DWORD64>(code_ptr), &offset, info)) return false;
+    strcpy(symbol, info->Name); displacement = static_cast<int>(offset);
+    return true;
+#endif
 }
 
 
@@ -1203,8 +1294,9 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
  * HISTORY:                                                                                    *
  *   6/12/2001 11:57AM ST : Created                                                            *
  *=============================================================================================*/
-int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *context)
+int Stack_Walk(ULONG_PTR *return_addresses, int num_addresses, CONTEXT *context)
 {
+#if defined(_M_IX86)
 	static HINSTANCE _imagehelp = (HINSTANCE) -1;
 
 	/*
@@ -1276,6 +1368,23 @@ here:
 	}
 
 	return(pointer_index);
+#else
+    if (!return_addresses || num_addresses <= 0) return 0;
+    Load_Image_Helper();
+    CONTEXT captured{};
+    if (context) captured = *context; else RtlCaptureContext(&captured);
+    STACKFRAME64 frame{};
+    frame.AddrPC = {captured.Rip, 0, AddrModeFlat};
+    frame.AddrStack = {captured.Rsp, 0, AddrModeFlat};
+    frame.AddrFrame = {captured.Rbp, 0, AddrModeFlat};
+    int count = 0;
+    while (count < num_addresses && StackWalk64(IMAGE_FILE_MACHINE_AMD64, GetCurrentProcess(), GetCurrentThread(),
+        &frame, &captured, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
+        if (!frame.AddrPC.Offset) break;
+        return_addresses[count++] = static_cast<ULONG_PTR>(frame.AddrPC.Offset);
+    }
+    return count;
+#endif
 }
 
 

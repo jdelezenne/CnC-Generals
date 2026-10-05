@@ -69,10 +69,11 @@ struct AILSOUNDINFO {
  U32 block_size;
  const void* initial_ptr;
 };
-using AIL_file_open_callback = U32 (AILCALLBACK*)(const char*, U32*);
-using AIL_file_close_callback = void (AILCALLBACK*)(U32);
-using AIL_file_seek_callback = S32 (AILCALLBACK*)(U32, S32, U32);
-using AIL_file_read_callback = U32 (AILCALLBACK*)(U32, void*, U32);
+using AIL_FILE_HANDLE = std::uintptr_t;
+using AIL_file_open_callback = U32 (AILCALLBACK*)(const char*, AIL_FILE_HANDLE*);
+using AIL_file_close_callback = void (AILCALLBACK*)(AIL_FILE_HANDLE);
+using AIL_file_seek_callback = S32 (AILCALLBACK*)(AIL_FILE_HANDLE, S32, U32);
+using AIL_file_read_callback = U32 (AILCALLBACK*)(AIL_FILE_HANDLE, void*, U32);
 using AILSAMPLECB = void (AILCALLBACK*)(HSAMPLE);
 using AIL3DSAMPLECB = void (AILCALLBACK*)(H3DSAMPLE);
 using AILSTREAMCB = void (AILCALLBACK*)(HSTREAM);

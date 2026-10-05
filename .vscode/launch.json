@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Generals Debug",
+      "name": "Generals x86 Debug",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/Binaries/Generals/Debug/Generals.exe",
@@ -14,10 +14,25 @@
           "value": "${config:generals.gameDirectory};${env:PATH}"
         }
       ],
-      "preLaunchTask": "Build Generals Debug"
+      "preLaunchTask": "Build Generals x86 Debug"
     },
     {
-      "name": "Generals Release",
+      "name": "Generals x64 Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/Generals/x64/Debug/Generals.exe",
+      "cwd": "${config:generals.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:generals.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Generals x64 Debug"
+    },
+    {
+      "name": "Generals x86 Release",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/Binaries/Generals/Release/Generals.exe",
@@ -29,10 +44,25 @@
           "value": "${config:generals.gameDirectory};${env:PATH}"
         }
       ],
-      "preLaunchTask": "Build Generals Release"
+      "preLaunchTask": "Build Generals x86 Release"
     },
     {
-      "name": "Zero Hour Debug",
+      "name": "Generals x64 Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/Generals/x64/Release/Generals.exe",
+      "cwd": "${config:generals.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:generals.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Generals x64 Release"
+    },
+    {
+      "name": "Zero Hour x86 Debug",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/Binaries/ZeroHour/Debug/GeneralsZH.exe",
@@ -44,10 +74,25 @@
           "value": "${config:zeroHour.gameDirectory};${env:PATH}"
         }
       ],
-      "preLaunchTask": "Build Zero Hour Debug"
+      "preLaunchTask": "Build Zero Hour x86 Debug"
     },
     {
-      "name": "Zero Hour Release",
+      "name": "Zero Hour x64 Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/x64/Debug/GeneralsZH.exe",
+      "cwd": "${config:zeroHour.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:zeroHour.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Zero Hour x64 Debug"
+    },
+    {
+      "name": "Zero Hour x86 Release",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/Binaries/ZeroHour/Release/GeneralsZH.exe",
@@ -59,7 +104,22 @@
           "value": "${config:zeroHour.gameDirectory};${env:PATH}"
         }
       ],
-      "preLaunchTask": "Build Zero Hour Release"
+      "preLaunchTask": "Build Zero Hour x86 Release"
+    },
+    {
+      "name": "Zero Hour x64 Release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/Binaries/ZeroHour/x64/Release/GeneralsZH.exe",
+      "cwd": "${config:zeroHour.gameDirectory}",
+      "args": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:zeroHour.gameDirectory};${env:PATH}"
+        }
+      ],
+      "preLaunchTask": "Build Zero Hour x64 Release"
     }
   ]
 }

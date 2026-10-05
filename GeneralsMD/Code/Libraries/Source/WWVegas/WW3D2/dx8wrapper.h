@@ -47,6 +47,9 @@
 #define DX8_WRAPPER_H
 
 #include "always.h"
+#if defined(_M_X64)
+#include "Platform/Windows/FloatMath.h"
+#endif
 #include "dllist.h"
 #include "d3d8.h"
 #include "matrix4.h"
@@ -1004,6 +1007,10 @@ WWINLINE unsigned int DX8Wrapper::Convert_Color(const Vector4& color)
 
 WWINLINE unsigned int DX8Wrapper::Convert_Color(const Vector3& color,float alpha)
 {
+#if defined(_M_X64)
+    return (Platform::ColorComponent(alpha)<<24) | (Platform::ColorComponent(color.X)<<16) |
+        (Platform::ColorComponent(color.Y)<<8) | Platform::ColorComponent(color.Z);
+#else
 	const float scale = 255.0;
 	unsigned int col;
 
@@ -1070,6 +1077,7 @@ not_changed:
 		mov	col,eax
 	}
 	return col;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -1080,6 +1088,9 @@ not_changed:
 
 WWINLINE void DX8Wrapper::Clamp_Color(Vector4& color)
 {
+#if defined(_M_X64)
+    for(int i=0;i<4;++i)color[i]=Platform::ClampColorBits(color[i]);
+#else
 	if (!CPUDetectClass::Has_CMOV_Instruction()) {
 		for (int i=0;i<4;++i) {
 			float f=(color[i]<0.0f) ? 0.0f : color[i];
@@ -1130,6 +1141,7 @@ WWINLINE void DX8Wrapper::Clamp_Color(Vector4& color)
 		cmovnb edi,edx
 		mov dword ptr[esi+12],edi
 	}
+#endif
 }
 
 // ----------------------------------------------------------------------------

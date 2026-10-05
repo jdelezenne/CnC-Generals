@@ -42,7 +42,12 @@ bool Platform::ConfigureRenderWindow(int width, int height, bool windowed)
     if (!GameWindow) return false;
     SplashActive = false;
     if (SDL_WindowHasSurface(GameWindow) && !SDL_DestroyWindowSurface(GameWindow)) return false;
-    // D3D8 still owns its exclusive display mode; SDL owns the window geometry.
+    if (!windowed) {
+        SDL_DisplayMode mode{};
+        if (!SDL_GetClosestFullscreenDisplayMode(SDL_GetDisplayForWindow(GameWindow), width, height, 0, true, &mode) ||
+            mode.w != width || mode.h != height || !SDL_SetWindowFullscreenMode(GameWindow, &mode)) return false;
+    }
+    if (!SDL_SetWindowFullscreen(GameWindow, !windowed)) return false;
     if (!SDL_SetWindowBordered(GameWindow, windowed) ||
         !SDL_SetWindowSize(GameWindow, width, height) ||
         !SDL_SetWindowAlwaysOnTop(GameWindow, !windowed)) return false;

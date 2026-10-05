@@ -827,6 +827,16 @@ void Targa::XFlip(void)
 
 static __forceinline void _swapBytes(char *p1, char *p2, unsigned count)
 {
+#if defined(_M_X64)
+  // The original assembly exchanges complete 16-byte groups only.
+  for (unsigned i = 0; count - i >= 16; i += 16)
+  {
+    char temporary[16];
+    memcpy(temporary, p1 + i, 16);
+    memcpy(p1 + i, p2 + i, 16);
+    memcpy(p2 + i, temporary, 16);
+  }
+#else
   _asm
   {
     mov esi,[p1]
@@ -865,6 +875,7 @@ static __forceinline void _swapBytes(char *p1, char *p2, unsigned count)
     jmp lpLessThan16
   done:
   }
+#endif
 }
 
 void Targa::YFlip(void)

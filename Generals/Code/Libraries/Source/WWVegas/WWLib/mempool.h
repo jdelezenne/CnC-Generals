@@ -278,16 +278,18 @@ T * ObjectPoolClass<T,BLOCK_SIZE>::Allocate_Object_Memory(void)
 
 		// No free objects, allocate another block
 		uint32 * tmp_block_head = BlockListHead;
-		BlockListHead = (uint32*)::operator new( sizeof(T) * BLOCK_SIZE + sizeof(uint32 *));
+		constexpr size_t headerSize = sizeof(void*) == 4 ? sizeof(void*) : (sizeof(void*) + alignof(T) - 1) & ~(alignof(T) - 1);
+		constexpr size_t slotSize = sizeof(void*) == 4 ? sizeof(T) : (sizeof(T) + sizeof(void*) - 1) & ~(sizeof(void*) - 1);
+		BlockListHead = (uint32*)::operator new(slotSize * BLOCK_SIZE + headerSize);
 		// Link this block into the block list
 		*(void **)BlockListHead = tmp_block_head;
 
 		// Link the objects in the block into the free object list
-		FreeListHead = (T*)(BlockListHead + 1);
+		FreeListHead = reinterpret_cast<T*>(reinterpret_cast<char*>(BlockListHead) + headerSize);
 		for ( int i = 0; i < BLOCK_SIZE; i++ ) {	
-			*(T**)(&(FreeListHead[i])) = &(FreeListHead[i+1]);	// link up the elements
+			*reinterpret_cast<T**>(reinterpret_cast<char*>(FreeListHead) + i * slotSize) = reinterpret_cast<T*>(reinterpret_cast<char*>(FreeListHead) + (i + 1) * slotSize);	// link up the elements
 		}
-		*(T**)(&(FreeListHead[BLOCK_SIZE-1])) = 0;				// Mark the end
+		*reinterpret_cast<T**>(reinterpret_cast<char*>(FreeListHead) + (BLOCK_SIZE - 1) * slotSize) = 0;				// Mark the end
 
 		FreeObjectCount += BLOCK_SIZE;
 		TotalObjectCount += BLOCK_SIZE;

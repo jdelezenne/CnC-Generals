@@ -32,6 +32,8 @@
 #ifndef DEBUG_STACK_H // Include guard
 #define DEBUG_STACK_H
 
+#include <cstdint>
+
 /// \brief stack walker class (singleton)
 class DebugStackwalk
 {
@@ -59,7 +61,7 @@ public:
     unsigned m_numAddr;
 
     /// addresses
-    unsigned m_addr[MAX_ADDR];
+    std::uintptr_t m_addr[MAX_ADDR];
 
   public:
     explicit Signature(void): m_numAddr(0) {}
@@ -81,7 +83,7 @@ public:
       \param n index, 0..Size()-1
       \return signature address
     */
-    unsigned GetAddress(int n) const;
+    std::uintptr_t GetAddress(int n) const;
 
     /**
       \brief Strong ordering operator.
@@ -113,7 +115,7 @@ public:
       \param buf return buffer
       \param bufSize size of return buffer, minimum is 64 bytes (256 recommended)
     */
-    static void GetSymbol(unsigned addr, char *buf, unsigned bufSize);
+    static void GetSymbol(std::uintptr_t addr, char *buf, unsigned bufSize);
     
     /**
       \brief Determines symbol for given address.
@@ -130,9 +132,9 @@ public:
       \param line line number, may be NULL
       \param relLine relative address within line, may be NULL
     */
-    static void GetSymbol(unsigned addr,
-                          char *bufMod, unsigned sizeMod, unsigned *relMod,
-                          char *bufSym, unsigned sizeSym, unsigned *relSym,
+    static void GetSymbol(std::uintptr_t addr,
+                          char *bufMod, unsigned sizeMod, std::uintptr_t *relMod,
+                          char *bufSym, unsigned sizeSym, std::uintptr_t *relSym,
                           char *bufFile, unsigned sizeFile, unsigned *line, unsigned *relLine);
   };
 

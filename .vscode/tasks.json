@@ -2,13 +2,13 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Generals Debug",
+      "label": "Build Generals x86 Debug",
       "type": "process",
       "command": "cmake",
       "args": [
         "--build",
         "--preset",
-        "Generals-Debug"
+        "Generals-x86-Debug"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -16,13 +16,13 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Build Generals Release",
+      "label": "Build Generals x64 Debug",
       "type": "process",
       "command": "cmake",
       "args": [
         "--build",
         "--preset",
-        "Generals-Release"
+        "Generals-x64-Debug"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -30,13 +30,13 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Build Zero Hour Debug",
+      "label": "Build Generals x86 Release",
       "type": "process",
       "command": "cmake",
       "args": [
         "--build",
         "--preset",
-        "ZeroHour-Debug"
+        "Generals-x86-Release"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -44,13 +44,69 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Build Zero Hour Release",
+      "label": "Build Generals x64 Release",
       "type": "process",
       "command": "cmake",
       "args": [
         "--build",
         "--preset",
-        "ZeroHour-Release"
+        "Generals-x64-Release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build Zero Hour x86 Debug",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "ZeroHour-x86-Debug"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build Zero Hour x64 Debug",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "ZeroHour-x64-Debug"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build Zero Hour x86 Release",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "ZeroHour-x86-Release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build Zero Hour x64 Release",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "ZeroHour-x64-Release"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

@@ -85,6 +85,11 @@ public:
     }
     */
 
+#if defined(_M_X64)
+    const UnsignedByte* bytes = static_cast<const UnsignedByte*>(buf);
+    for (Int i = 0; i < len; ++i)
+      crc = (crc << 1) + (crc >> 31) + bytes[i];
+#else
     // ASM version, verified by comparing resulting data with C++ version data
     unsigned *crcPtr=&crc;
     _asm
@@ -104,6 +109,7 @@ public:
       jns lp
       mov dword ptr [edi],ebx
     };
+#endif
   }
 
   /// Clears the CRC to 0

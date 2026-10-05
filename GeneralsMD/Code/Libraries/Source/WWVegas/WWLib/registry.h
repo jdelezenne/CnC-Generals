@@ -41,6 +41,7 @@
 #define REGISTRY_H
 
 #ifndef ALWAYS_H
+#include <cstdint>
 #include "always.h"
 #endif
 
@@ -115,7 +116,7 @@ private:
 	static void Save_Registry_Values(HKEY key, char *path, INIClass *ini);
 
 
-	int	Key;
+	std::intptr_t	Key;
 	bool	IsValid;
 
 	//

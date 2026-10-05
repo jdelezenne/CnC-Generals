@@ -35,6 +35,17 @@
 
 // Definitions to allow run-time linking to the dbghelp.dll functions.
 
+namespace
+{
+    HANDLE SymbolProcess()
+    {
+#if defined(_WIN64)
+        return GetCurrentProcess();
+#else
+        return reinterpret_cast<HANDLE>(GetCurrentProcessId());
+#endif
+    }
+}
 #define DBGHELP(name,ret,par) typedef ret (WINAPI *name##Type) par;
 #include "debug_stack.inl"
 #undef DBGHELP
@@ -46,11 +57,13 @@ static union
   {
 #include "debug_stack.inl"
   };
-  unsigned funcPtr[1];
+  FARPROC funcPtr[1];
 } gDbg;
 #undef DBGHELP
 
-#define DBGHELP(name,ret,par) #name,
+#define DBGHELP_EXPORT_STRING_IMPL(name) #name
+#define DBGHELP_EXPORT_STRING(name) DBGHELP_EXPORT_STRING_IMPL(name)
+#define DBGHELP(name,ret,par) DBGHELP_EXPORT_STRING(name),
 static char const *DebughelpFunctionNames[] =
 {
 #include "debug_stack.inl"
@@ -59,6 +72,7 @@ static char const *DebughelpFunctionNames[] =
 #undef DBGHELP
 
 // local dbghelp.dll module handle
+#undef StackWalk
 static HMODULE g_dbghelp;
 
 // local flag that is true if we're using an old dbghelp.dll version
@@ -89,10 +103,10 @@ static void InitDbghelp(void)
     return;
 
   // Get function addresses
-  unsigned *funcptr=gDbg.funcPtr;
+  FARPROC *funcptr=gDbg.funcPtr;
   for (unsigned k=0;DebughelpFunctionNames[k];++k,++funcptr)
   {
-    *funcptr=(unsigned)GetProcAddress(g_dbghelp,DebughelpFunctionNames[k]);
+    *funcptr=GetProcAddress(g_dbghelp,DebughelpFunctionNames[k]);
     if (!*funcptr)
       break;
   }
@@ -108,7 +122,7 @@ static void InitDbghelp(void)
     gDbg._SymSetOptions(gDbg._SymGetOptions()|SYMOPT_DEFERRED_LOADS|SYMOPT_LOAD_LINES);
 
     // Init module
-    gDbg._SymInitialize((HANDLE)GetCurrentProcessId(),NULL,TRUE);
+    gDbg._SymInitialize(SymbolProcess(),NULL,TRUE);
 
     // Check: are we using a newer version of dbghelp.dll?
     // (older versions have some serious issues.. err... bugs)
@@ -134,13 +148,13 @@ DebugStackwalk::Signature& DebugStackwalk::Signature::operator=(const Signature&
   return *this;
 }
 
-unsigned DebugStackwalk::Signature::GetAddress(int n) const
+std::uintptr_t DebugStackwalk::Signature::GetAddress(int n) const
 {
   DFAIL_IF_MSG(n<0||n>=MAX_ADDR,n << "/" << MAX_ADDR) return 0;
   return m_addr[n];
 }
 
-void DebugStackwalk::Signature::GetSymbol(unsigned addr, char *buf, unsigned bufSize) 
+void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr, char *buf, unsigned bufSize)
 {
   DFAIL_IF(!buf) return;
   DFAIL_IF(bufSize<64||bufSize>=0x80000000) return;
@@ -149,10 +163,14 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr, char *buf, unsigned buf
 
   char *bufEnd=buf+bufSize;
   *buf=0;
+  #if defined(_WIN64)
+  buf+=wsprintf(buf,"%016I64x",addr);
+#else
   buf+=wsprintf(buf,"%08x",addr);
+#endif
 
   // determine module
-  unsigned modBase=gDbg._SymGetModuleBase((HANDLE)GetCurrentProcessId(),addr);
+  DWORD_PTR modBase=gDbg._SymGetModuleBase(SymbolProcess(),addr);
   if (!modBase)
 	{
 		strcpy(buf," (unknown module)");
@@ -176,25 +194,34 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr, char *buf, unsigned buf
   buf+=strlen(buf);
   if (bufEnd-buf<32)
     return;
+  #if defined(_WIN64)
+  buf+=wsprintf(buf,"+0x%I64x",addr-modBase);
+#else
   buf+=wsprintf(buf,"+0x%x",addr-modBase);
+#endif
 
   // determine symbol
   PIMAGEHLP_SYMBOL symPtr=(PIMAGEHLP_SYMBOL)symbolBuffer;
   memset(symPtr,0,sizeof(symbolBuffer));
   symPtr->SizeOfStruct=sizeof(IMAGEHLP_SYMBOL);
   symPtr->MaxNameLength=sizeof(symbolBuffer)-sizeof(IMAGEHLP_SYMBOL);
-  DWORD displacement;
-  if (!gDbg._SymGetSymFromAddr((HANDLE)GetCurrentProcessId(),addr,&displacement,symPtr))
+  DWORD_PTR displacement;
+  if (!gDbg._SymGetSymFromAddr(SymbolProcess(),addr,&displacement,symPtr))
     return;
   if ((unsigned int)(bufEnd-buf)<strlen(symPtr->Name)+16)
     return;
+  #if defined(_WIN64)
+  buf+=wsprintf(buf,", %s+0x%I64x",symPtr->Name,displacement);
+#else
   buf+=wsprintf(buf,", %s+0x%x",symPtr->Name,displacement);
+#endif
 
   // and line number
+  DWORD lineDisplacement;
   IMAGEHLP_LINE line;
   memset(&line,0,sizeof(line));
   line.SizeOfStruct=sizeof(line);
-  if (!gDbg._SymGetLineFromAddr((HANDLE)GetCurrentProcessId(),addr,&displacement,&line))
+  if (!gDbg._SymGetLineFromAddr(SymbolProcess(),addr,&lineDisplacement,&line))
     return;
 
   p=strrchr(line.FileName,'\\'); // use filename only, strip off path
@@ -202,12 +229,12 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr, char *buf, unsigned buf
 
   if ((unsigned int)(bufEnd-buf)<strlen(p)+16)
     return;
-  buf+=wsprintf(buf,", %s:%i+0x%x",p,line.LineNumber,displacement);
+  buf+=wsprintf(buf,", %s:%i+0x%x",p,line.LineNumber,lineDisplacement);
 }
 
-void DebugStackwalk::Signature::GetSymbol(unsigned addr,
-                                          char *bufMod, unsigned sizeMod, unsigned *relMod,
-                                          char *bufSym, unsigned sizeSym, unsigned *relSym,
+void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr,
+                                          char *bufMod, unsigned sizeMod, std::uintptr_t *relMod,
+                                          char *bufSym, unsigned sizeSym, std::uintptr_t *relSym,
                                           char *bufFile, unsigned sizeFile, unsigned *linePtr, unsigned *relLine)
 {
   InitDbghelp();
@@ -226,7 +253,7 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr,
   DFAIL_IF(bufFile&&sizeFile<16) return;
 
   // determine module
-  unsigned modBase=gDbg._SymGetModuleBase((HANDLE)GetCurrentProcessId(),addr);
+  DWORD_PTR modBase=gDbg._SymGetModuleBase(SymbolProcess(),addr);
   if (!modBase)
 	{
     if (bufMod)
@@ -266,8 +293,8 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr,
     memset(symPtr,0,sizeof(symbolBuffer));
     symPtr->SizeOfStruct=sizeof(IMAGEHLP_SYMBOL);
     symPtr->MaxNameLength=sizeof(symbolBuffer)-sizeof(IMAGEHLP_SYMBOL);
-    DWORD displacement;
-    if (gDbg._SymGetSymFromAddr((HANDLE)GetCurrentProcessId(),addr,&displacement,symPtr))
+    DWORD_PTR displacement;
+    if (gDbg._SymGetSymFromAddr(SymbolProcess(),addr,&displacement,symPtr))
     {
       strncpy(bufSym,symPtr->Name,sizeSym);
       bufSym[sizeSym-1]=0;
@@ -281,11 +308,12 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr,
   // and line number
   if (bufFile)
   {
-    IMAGEHLP_LINE line;
+    DWORD lineDisplacement;
+  IMAGEHLP_LINE line;
     memset(&line,0,sizeof(line));
     line.SizeOfStruct=sizeof(line);
-    DWORD displacement;
-    if (!gDbg._SymGetLineFromAddr((HANDLE)GetCurrentProcessId(),addr,&displacement,&line))
+    DWORD_PTR displacement;
+    if (!gDbg._SymGetLineFromAddr(SymbolProcess(),addr,&lineDisplacement,&line))
       strcpy(bufFile,"(unknown)");
     else
     {
@@ -296,7 +324,7 @@ void DebugStackwalk::Signature::GetSymbol(unsigned addr,
       if (linePtr)
         *linePtr=line.LineNumber;
       if (relLine)
-        *relLine=displacement;
+        *relLine=lineDisplacement;
     }
   }
 }
@@ -355,6 +383,18 @@ int DebugStackwalk::StackWalk(Signature &sig, struct _CONTEXT *ctx)
 	stackFrame.AddrStack.Mode = AddrModeFlat;
 	stackFrame.AddrFrame.Mode = AddrModeFlat;
 
+#if defined(_M_X64)
+  CONTEXT walkContext;
+  if (ctx) walkContext = *ctx;
+  else RtlCaptureContext(&walkContext);
+  stackFrame.AddrPC.Offset = walkContext.Rip;
+  stackFrame.AddrStack.Offset = walkContext.Rsp;
+  stackFrame.AddrFrame.Offset = walkContext.Rbp;
+  const DWORD machine = IMAGE_FILE_MACHINE_AMD64;
+  CONTEXT* context = &walkContext;
+#else
+  const DWORD machine = IMAGE_FILE_MACHINE_I386;
+  CONTEXT* context = NULL;
 	// Use the context struct if it was provided.
 	if (ctx) 
   {
@@ -379,11 +419,12 @@ int DebugStackwalk::StackWalk(Signature &sig, struct _CONTEXT *ctx)
 	  stackFrame.AddrFrame.Offset = reg_ebp;
   }
 
+#endif
 	// Walk the stack by the requested number of return address iterations.
   bool skipFirst=!ctx;
   while (sig.m_numAddr<Signature::MAX_ADDR&&
-		     gDbg._StackWalk(IMAGE_FILE_MACHINE_I386,GetCurrentProcess(),GetCurrentThread(),
-                         &stackFrame,NULL,NULL,gDbg._SymFunctionTableAccess,gDbg._SymGetModuleBase,NULL))
+		     gDbg._StackWalk(machine,GetCurrentProcess(),GetCurrentThread(),
+                         &stackFrame,context,NULL,gDbg._SymFunctionTableAccess,gDbg._SymGetModuleBase,NULL))
   {
     if (skipFirst)
       skipFirst=false;

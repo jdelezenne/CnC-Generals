@@ -769,7 +769,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(
 		char *mesh_name = ::strchr (name, '.');
 		if (mesh_name != NULL) 
 		{
-			::lstrcpyn(filename, name, ((int)mesh_name) - ((int)name) + 1);
+			::lstrcpyn(filename, name, static_cast<int>(mesh_name - name) + 1);
 #ifdef	INCLUDE_GRANNY_IN_BUILD
 			if (isGranny)
 				::lstrcat(filename, ".gr2");
@@ -1465,7 +1465,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(const char * name,float scal
 		char filename [MAX_PATH];
 		char *mesh_name = ::strchr (name, '.');
 		if (mesh_name != NULL) {
-			::lstrcpyn (filename, name, ((int)mesh_name) - ((int)name) + 1);
+			::lstrcpyn (filename, name, static_cast<int>(mesh_name - name) + 1);
 			if (isGranny)
 				::lstrcat (filename, ".gr2");
 			else

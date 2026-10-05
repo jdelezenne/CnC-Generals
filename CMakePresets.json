@@ -1,48 +1,153 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": { "major": 4, "minor": 2, "patch": 0 },
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 2,
+    "patch": 0
+  },
   "configurePresets": [
     {
       "name": "MSVC2026",
       "hidden": true,
       "generator": "Visual Studio 18 2026",
-      "architecture": "Win32",
       "toolset": "v145,host=x64",
-      "cacheVariables": { "CMAKE_CONFIGURATION_TYPES": "Debug;Release" }
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
     },
     {
-      "name": "Generals-Debug",
-      "displayName": "Generals Debug",
+      "name": "Generals-x86-Debug",
+      "displayName": "Generals x86 Debug",
       "inherits": "MSVC2026",
       "binaryDir": "${sourceDir}/Build/Generals/Debug",
-      "cacheVariables": { "GEN_GAME": "Generals" }
+      "cacheVariables": {
+        "GEN_GAME": "Generals"
+      },
+      "architecture": "Win32"
     },
     {
-      "name": "Generals-Release",
-      "displayName": "Generals Release",
+      "name": "Generals-x86-Release",
+      "displayName": "Generals x86 Release",
       "inherits": "MSVC2026",
       "binaryDir": "${sourceDir}/Build/Generals/Release",
-      "cacheVariables": { "GEN_GAME": "Generals" }
+      "cacheVariables": {
+        "GEN_GAME": "Generals"
+      },
+      "architecture": "Win32"
     },
     {
-      "name": "ZeroHour-Debug",
-      "displayName": "Zero Hour Debug",
+      "name": "Generals-x64-Debug",
+      "displayName": "Generals x64 Debug",
+      "inherits": "MSVC2026",
+      "binaryDir": "${sourceDir}/Build/Generals/x64/Debug",
+      "cacheVariables": {
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/Generals/x64/$<CONFIG>",
+        "GEN_GAME": "Generals"
+      },
+      "architecture": "x64"
+    },
+    {
+      "name": "Generals-x64-Release",
+      "displayName": "Generals x64 Release",
+      "inherits": "MSVC2026",
+      "binaryDir": "${sourceDir}/Build/Generals/x64/Release",
+      "cacheVariables": {
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/Generals/x64/$<CONFIG>",
+        "GEN_GAME": "Generals"
+      },
+      "architecture": "x64"
+    },
+    {
+      "name": "ZeroHour-x86-Debug",
+      "displayName": "Zero Hour x86 Debug",
       "inherits": "MSVC2026",
       "binaryDir": "${sourceDir}/Build/ZeroHour/Debug",
-      "cacheVariables": { "GEN_GAME": "ZeroHour" }
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour"
+      },
+      "architecture": "Win32"
     },
     {
-      "name": "ZeroHour-Release",
-      "displayName": "Zero Hour Release",
+      "name": "ZeroHour-x86-Release",
+      "displayName": "Zero Hour x86 Release",
       "inherits": "MSVC2026",
       "binaryDir": "${sourceDir}/Build/ZeroHour/Release",
-      "cacheVariables": { "GEN_GAME": "ZeroHour" }
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour"
+      },
+      "architecture": "Win32"
+    },
+    {
+      "name": "ZeroHour-x64-Debug",
+      "displayName": "Zero Hour x64 Debug",
+      "inherits": "MSVC2026",
+      "binaryDir": "${sourceDir}/Build/ZeroHour/x64/Debug",
+      "cacheVariables": {
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/ZeroHour/x64/$<CONFIG>",
+        "GEN_GAME": "ZeroHour"
+      },
+      "architecture": "x64"
+    },
+    {
+      "name": "ZeroHour-x64-Release",
+      "displayName": "Zero Hour x64 Release",
+      "inherits": "MSVC2026",
+      "binaryDir": "${sourceDir}/Build/ZeroHour/x64/Release",
+      "cacheVariables": {
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/ZeroHour/x64/$<CONFIG>",
+        "GEN_GAME": "ZeroHour"
+      },
+      "architecture": "x64"
     }
   ],
   "buildPresets": [
-    { "name": "Generals-Debug", "configurePreset": "Generals-Debug", "configuration": "Debug" },
-    { "name": "Generals-Release", "configurePreset": "Generals-Release", "configuration": "Release" },
-    { "name": "ZeroHour-Debug", "configurePreset": "ZeroHour-Debug", "configuration": "Debug" },
-    { "name": "ZeroHour-Release", "configurePreset": "ZeroHour-Release", "configuration": "Release" }
+    {
+      "name": "Generals-x86-Debug",
+      "displayName": "Generals x86 Debug",
+      "configurePreset": "Generals-x86-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Generals-x86-Release",
+      "displayName": "Generals x86 Release",
+      "configurePreset": "Generals-x86-Release",
+      "configuration": "Release"
+    },
+    {
+      "name": "Generals-x64-Debug",
+      "displayName": "Generals x64 Debug",
+      "configurePreset": "Generals-x64-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Generals-x64-Release",
+      "displayName": "Generals x64 Release",
+      "configurePreset": "Generals-x64-Release",
+      "configuration": "Release"
+    },
+    {
+      "name": "ZeroHour-x86-Debug",
+      "displayName": "Zero Hour x86 Debug",
+      "configurePreset": "ZeroHour-x86-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ZeroHour-x86-Release",
+      "displayName": "Zero Hour x86 Release",
+      "configurePreset": "ZeroHour-x86-Release",
+      "configuration": "Release"
+    },
+    {
+      "name": "ZeroHour-x64-Debug",
+      "displayName": "Zero Hour x64 Debug",
+      "configurePreset": "ZeroHour-x64-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ZeroHour-x64-Release",
+      "displayName": "Zero Hour x64 Release",
+      "configurePreset": "ZeroHour-x64-Release",
+      "configuration": "Release"
+    }
   ]
 }

@@ -34,6 +34,9 @@
 
 #include <math.h>
 #include <string.h>
+#if defined(_M_X64)
+#include "Platform/Windows/FloatMath.h"
+#endif
 
 /*
 **	Turn off some unneeded warnings.
@@ -181,6 +184,9 @@ inline Real deg2rad(Real rad) { return rad * (PI/180); }
 // code, so use this function with caution -- it might not round in the way you want.
 __forceinline long fast_float2long_round(float f)
 {
+#if defined(_M_X64)
+    return Platform::RoundFloatToLong(f);
+#else
 	long i;
 
 	__asm {
@@ -189,12 +195,16 @@ __forceinline long fast_float2long_round(float f)
 	}
 
 	return i;
+#endif
 }
 
 // super fast float trunc routine, works always (independent of any FPU modes)
 // code courtesy of Martin Hoffesommer (grin)
 __forceinline float fast_float_trunc(float f)
 {
+#if defined(_M_X64)
+  return Platform::TruncateFloatBits(f);
+#else
   _asm
   {
     mov ecx,[f]
@@ -207,6 +217,7 @@ __forceinline float fast_float_trunc(float f)
     and [f],eax
   }
   return f;
+#endif
 }
 
 // same here, fast floor function

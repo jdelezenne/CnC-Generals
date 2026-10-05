@@ -1,15 +1,3 @@
-# Avoid the obsolete Windows platform headers bundled with the DX8 SDK.
-set(directx_headers "${CMAKE_BINARY_DIR}/Generated/DirectX8")
-file(MAKE_DIRECTORY "${directx_headers}")
-file(GLOB dx8_headers "${GEN_DIRECTX_INCLUDE_DIR}/d3d8*.h" "${GEN_DIRECTX_INCLUDE_DIR}/dxfile.h"
-    "${GEN_DIRECTX_INCLUDE_DIR}/d3dx8*.h" "${GEN_DIRECTX_INCLUDE_DIR}/d3dx8*.inl")
-foreach(header IN LISTS dx8_headers)
-    get_filename_component(filename "${header}" NAME)
-    configure_file("${header}" "${directx_headers}/${filename}" COPYONLY)
-endforeach()
-set(GEN_DIRECTX_INCLUDE_DIR "${directx_headers}")
-file(CONFIGURE OUTPUT "${directx_headers}/D3DXMath.h" CONTENT "#include <d3dx8math.h>\n" @ONLY)
-
 function(gen_legacy_settings name)
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
         "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include" "${PROJECT_SOURCE_DIR}")
@@ -21,9 +9,13 @@ function(gen_legacy_settings name)
         target_compile_options(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_OPTIONS_${config}}>")
     endforeach()
     target_compile_definitions(${name} PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _USE_32BIT_TIME_T _CONST_RETURN=)
+        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _CONST_RETURN=)
     # Preserve VC6 x87 code generation and avoid EBX stack alignment in legacy assembly.
-    target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4;/arch:IA32>"
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        target_compile_definitions(${name} PRIVATE _USE_32BIT_TIME_T)
+        target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/arch:IA32>")
+    endif()
+    target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4>"
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/Zc:forScope-;/Zc:wchar_t-;/Zc:twoPhase-;/wd4430;/FI${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h>")
     target_compile_features(${name} PRIVATE cxx_std_17)
     if(name MATCHES "^(wwdownload|compression|gameengine|gameenginedevice|generals|profile|eadebug|wwshade)$")
@@ -44,6 +36,9 @@ set_target_properties(wwmath PROPERTIES OUTPUT_NAME WWMath)
 set_target_properties(wwutil PROPERTIES OUTPUT_NAME WWUtil)
 set_target_properties(wwsaveload PROPERTIES OUTPUT_NAME WWSaveLoad)
 set_target_properties(wwdownload PROPERTIES OUTPUT_NAME WWDownload)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_sources(wwlib PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Compression/LCW.cpp")
+endif()
 target_include_directories(ww3d2 PRIVATE "${PROJECT_SOURCE_DIR}/Vendors/BrowserEngine")
 set_source_files_properties("${GEN_CODE_DIR}/Libraries/Source/WWVegas/WW3D2/dx8webbrowser.cpp"
     PROPERTIES VS_SETTINGS "MultiProcessorCompilation=false")
@@ -80,11 +75,16 @@ endif()
 # Keep generated COM files in the build directory, leaving the source tree clean.
 set(browser_dir "${CMAKE_BINARY_DIR}/Generated/EABrowserDispatch")
 find_program(GEN_MIDL NAMES midl REQUIRED)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(browser_midl_env x64)
+else()
+    set(browser_midl_env win32)
+endif()
 file(MAKE_DIRECTORY "${browser_dir}")
 add_custom_command(
     OUTPUT "${browser_dir}/BrowserDispatch_i.c" "${browser_dir}/BrowserDispatch.h" "${browser_dir}/BrowserDispatch.tlb"
     COMMAND "${GEN_MIDL}" /out "${browser_dir}" /tlb BrowserDispatch.tlb
-        /h BrowserDispatch.h /iid BrowserDispatch_i.c /mktyplib203 /win32
+        /h BrowserDispatch.h /iid BrowserDispatch_i.c /mktyplib203 /env ${browser_midl_env}
         "${GEN_CODE_DIR}/Libraries/Source/EABrowserDispatch/BrowserDispatch.idl"
     DEPENDS "${GEN_CODE_DIR}/Libraries/Source/EABrowserDispatch/BrowserDispatch.idl"
     VERBATIM)
@@ -183,13 +183,17 @@ gen_legacy_settings(generals)
 set_target_properties(generals PROPERTIES OUTPUT_NAME "${game_executable_name}" DEBUG_POSTFIX "")
 target_link_directories(generals PRIVATE "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 target_include_directories(generals PRIVATE "${GEN_CODE_DIR}/Main")
-target_link_options(generals PRIVATE /DEBUG /MACHINE:I386)
+target_link_options(generals PRIVATE /DEBUG)
 target_link_libraries(generals PRIVATE gameengine gameenginedevice compression ${GEN_CORE_LIBRARIES}
     gamespyHTTP gamespyPatching gamespyPeer gamespyPresence gamespyStats eabrowserdispatch
-    "${GEN_DBGHELP_LIBRARY}" "${GEN_DIRECTX_d3dx8_LIBRARY}" "${GEN_DIRECTX_d3d8_LIBRARY}"
-    "${GEN_DIRECTX_dinput8_LIBRARY}" "${GEN_DIRECTX_dxguid_LIBRARY}" "${GEN_DIRECTX_dsound_LIBRARY}"
+    dbghelp gen_graphics gen_d3dx dxguid
     kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid
     odbc32 odbccp32 winmm vfw32 wsock32 imm32 wininet)
+add_custom_command(TARGET generals POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "$<TARGET_FILE:Vendor::DXCompiler>" "${GEN_DXC_RUNTIME_DIRECTORY}/dxil.dll"
+        "$<TARGET_FILE_DIR:generals>"
+    VERBATIM)
 target_link_options(generals PRIVATE /NODEFAULTLIB:libci /NODEFAULTLIB:libc)
 target_link_libraries(generals PRIVATE legacy_stdio_definitions)
 if(TARGET profile)

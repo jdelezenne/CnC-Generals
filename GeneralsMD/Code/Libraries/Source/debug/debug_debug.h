@@ -41,6 +41,8 @@
   
   \brief Debug module main class (singleton).
 */
+#include <cstdint>
+
 class Debug
 {
   // necessary because all debug commands operate directly on this class
@@ -873,7 +875,7 @@ private:
   CmdInterfaceListEntry *firstCmdGroup;
 
   /// \internal current stack frame (used by SkipNext)
-  static unsigned curStackFrame;
+  static std::uintptr_t curStackFrame;
 
   /** \internal 
   
@@ -921,7 +923,7 @@ private:
     FrameHashEntry *next;
 
     /// frame address
-    unsigned frameAddr;
+    std::uintptr_t frameAddr;
 
     /// frame type (FrameTypeAssert, FrameTypeCheck, or FrameTypeLog)
     unsigned frameType;
@@ -961,7 +963,7 @@ private:
     \param addr frame address
     \return FrameHashEntry found or 0 if nothing found
   */
-  __forceinline FrameHashEntry *LookupFrame(unsigned addr)
+  __forceinline FrameHashEntry *LookupFrame(std::uintptr_t addr)
   {
     for (FrameHashEntry *e=frameHash[addr%FRAME_HASH_SIZE];e;e=e->next)
       if (e->frameAddr==addr)
@@ -981,7 +983,7 @@ private:
     \param line line number
     \return the entry just added
   */
-  FrameHashEntry *AddFrameEntry(unsigned addr, unsigned type,
+  FrameHashEntry *AddFrameEntry(std::uintptr_t addr, unsigned type,
                                 const char *fileOrGroup, int line);
 
   /** \internal
@@ -1003,7 +1005,7 @@ private:
     \param line line number
     \return the entry just added (or the already existing entry)
   */
-  FrameHashEntry *GetFrameEntry(unsigned addr, unsigned type,
+  FrameHashEntry *GetFrameEntry(std::uintptr_t addr, unsigned type,
                                 const char *fileOrGroup, int line)
   {
     FrameHashEntry *e=LookupFrame(addr);
