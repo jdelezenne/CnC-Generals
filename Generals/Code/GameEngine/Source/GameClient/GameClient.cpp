@@ -29,6 +29,7 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 #include "GameClient/GameClient.h"
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
@@ -530,8 +531,8 @@ void GameClient::update( void )
 				{				
 					legal->hide(FALSE);
 					legal->bringForward();
-					Int beginTime = timeGetTime();
-					while(beginTime + 4000 > timeGetTime() )
+					Int beginTime = Platform::Milliseconds();
+					while(beginTime + 4000 > Platform::Milliseconds() )
 					{
 						TheWindowManager->update();
 						// redraw all views, update the GUI

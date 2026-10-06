@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Platform/Window.h"
 #include "Platform/Input.h"
+#include "Platform/Paths.h"
 #include "InputInternal.h"
 #ifdef _WIN32
 #include "Platform/Windows/Window.h"
@@ -26,12 +27,7 @@ bool Platform::CreateGameWindow(const char* title, int width, int height, bool w
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
     GameWindow = SDL_CreateWindow(title, width, height, SDL_WINDOW_HIDDEN | (windowed ? 0 : SDL_WINDOW_BORDERLESS));
     if (!GameWindow) { SDL_QuitSubSystem(SDL_INIT_VIDEO); return false; }
-#ifdef _WIN32
-    const unsigned timeOffset = NativeInputTimeOffset();
-#else
-    const unsigned timeOffset = 0;
-#endif
-    if (!InitializeInput(GameWindow, timeOffset)) { DestroyGameWindow(); return false; }
+    if (!InitializeInput(GameWindow)) { DestroyGameWindow(); return false; }
     SDL_SetWindowPosition(GameWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(GameWindow);
     return true;
@@ -57,7 +53,7 @@ bool Platform::ConfigureRenderWindow(int width, int height, bool windowed)
 bool Platform::ShowStartupSplash(const char* filename)
 {
     if (!GameWindow) return false;
-    SDL_Surface* bitmap = SDL_LoadBMP(filename);
+    SDL_Surface* bitmap = SDL_LoadBMP(ReadPath(filename).c_str());
     if (!bitmap) return false;
     SDL_Surface* surface = SDL_GetWindowSurface(GameWindow);
     const bool shown = surface && SDL_BlitSurface(bitmap, nullptr, surface, nullptr) && SDL_UpdateWindowSurface(GameWindow);

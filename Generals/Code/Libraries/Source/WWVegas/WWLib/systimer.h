@@ -38,8 +38,8 @@
 #ifndef _SYSTIMER_H
 
 #include "always.h"
-#include <windows.h>
-#include "mmsys.h"
+#include "Platform/Clock.h"
+#include <cstdint>
 
 #define TIMEGETTIME SystemTime.Get
 
@@ -117,7 +117,7 @@ WWINLINE unsigned long SysTimeClass::Get(void)
 		is_init = true;
 	}
 
-	unsigned long time = timeGetTime();
+	unsigned long time = Platform::Milliseconds();
 	if (time > StartTime) {
 		return(time - StartTime);
 	}
@@ -125,7 +125,7 @@ WWINLINE unsigned long SysTimeClass::Get(void)
 	/*
 	** Timer wrapped around. Eeek.
 	*/
-	return(time + WrapAdd);
+	return(static_cast<std::uint32_t>(time + WrapAdd));
 }
 
 

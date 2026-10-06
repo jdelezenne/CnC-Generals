@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cstring>
 #include <fstream>
+#include <filesystem>
 #include <string>
 
 namespace {
@@ -13,16 +14,20 @@ std::string Trim(std::string text)
     if (first == std::string::npos) return {};
     return text.substr(first, text.find_last_not_of(" \t\r\n") - first + 1);
 }
-bool Read(Platform::GameTitle game, const char* section, const char* name, std::string& value)
+std::string SectionName(const char* section)
 {
-    const char* directory = Platform::PreferenceDirectory(game);
-    if (!*directory) return false;
-    std::ifstream file(std::string(directory) + "Settings.ini");
-    std::string active, line;
     std::string target = section;
     for (char& c : target) if (c == '\\') c = '/';
     if (target.empty()) target = "Installation";
     else if (target.front() == '/') target.erase(0, 1);
+    return target;
+}
+
+bool Read(Platform::GameTitle game, const char* section, const char* name, std::string& value)
+{
+    std::ifstream file(std::filesystem::path(Platform::UserPath("Settings.ini", game)));
+    std::string active, line;
+    const std::string target = SectionName(section);
     while (std::getline(file, line)) {
         line = Trim(line);
         if (line.empty() || line.front() == ';' || line.front() == '#') continue;
@@ -41,13 +46,15 @@ bool Read(Platform::GameTitle game, const char* section, const char* name, std::
     }
     return false;
 }
+
 }
 
 bool Platform::ReadInstallationString(GameTitle game, const char* section, const char* name,
     char* value, std::size_t capacity)
 {
     std::string text;
-    if (!Read(game, section, name, text) || text.size() >= capacity) return false;
+    if (!Read(game, section, name, text)) return false;
+    if (text.size() >= capacity) return false;
     std::memcpy(value, text.c_str(), text.size() + 1);
     return true;
 }

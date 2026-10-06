@@ -28,6 +28,7 @@
 // Description: LAN API Callbacks
 ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "strtok_r.h"
 #include "Common/GameEngine.h"
@@ -283,7 +284,7 @@ void LANAPI::OnGameOptions( UnsignedInt playerIP, Int playerSlot, AsciiString op
 
 	if (playerSlot == 0 && !m_currentGame->amIHost())
 	{
-		m_currentGame->setLastHeard(timeGetTime());
+		m_currentGame->setLastHeard(Platform::Milliseconds());
 		AsciiString oldOptions = GameInfoToAsciiString(m_currentGame); // save these off for if we get booted
 		if(ParseGameOptionsString(m_currentGame,options))
 		{
@@ -337,11 +338,11 @@ void LANAPI::OnGameOptions( UnsignedInt playerIP, Int playerSlot, AsciiString op
 		{
 			if (options.compare("HELLO") == 0)
 			{
-				m_currentGame->setPlayerLastHeard(playerSlot, timeGetTime());
+				m_currentGame->setPlayerLastHeard(playerSlot, Platform::Milliseconds());
 			}
 			else
 			{
-				m_currentGame->setPlayerLastHeard(playerSlot, timeGetTime());
+				m_currentGame->setPlayerLastHeard(playerSlot, Platform::Milliseconds());
 				Bool change = false;
 				Bool shouldUnaccept = false;
 				AsciiString key;

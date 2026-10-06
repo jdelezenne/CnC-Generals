@@ -29,6 +29,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 
 #include "Common/BattleHonors.h"
@@ -1303,7 +1304,7 @@ void SkirmishGameOptionsMenuInit( WindowLayout *layout, void *userData )
 	TheSkirmishGameInfo->setSlot(1, gSlot);
 
 	ParseAsciiStringToGameInfo(TheSkirmishGameInfo, prefs.getSlotList());
-	TheSkirmishGameInfo->setSeed(GetTickCount());
+	TheSkirmishGameInfo->setSeed(Platform::Milliseconds());
 
 	UnsignedInt isPreorder = 0;
 	GetUnsignedIntFromRegistry("", "Preorder", isPreorder);

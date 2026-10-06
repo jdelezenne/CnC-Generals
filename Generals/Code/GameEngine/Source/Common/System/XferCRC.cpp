@@ -29,6 +29,8 @@
 
 // USER INCLUDES //////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/UTF16.h"
+#include "Platform/Paths.h"
 
 #include "Common/XferCRC.h"
 #include "Common/XferDeepCRC.h"
@@ -232,7 +234,7 @@ void XferDeepCRC::open( AsciiString identifier )
 	Xfer::open( identifier );
 
 	// open the file
-	m_fileFP = fopen( identifier.str(), "w+b" );
+	m_fileFP = Platform::OpenStream( identifier.str(), "w+b" );
 	if( m_fileFP == NULL )
 	{
 		
@@ -337,8 +339,10 @@ void XferDeepCRC::xferAsciiString( AsciiString *asciiStringData )
 void XferDeepCRC::xferUnicodeString( UnicodeString *unicodeStringData )
 {
 	
+	const std::size_t codeUnits = Platform::UTF16CodeUnits(unicodeStringData->str(), unicodeStringData->getLength());
+
 	// sanity
-	if( unicodeStringData->getLength() > 255 )
+	if( codeUnits > 255 )
 	{
 
 		DEBUG_CRASH(( "XferSave cannot save this unicode string because it's too long.  Change the size of the length header (but be sure to preserve save file compatability\n" ));
@@ -347,11 +351,14 @@ void XferDeepCRC::xferUnicodeString( UnicodeString *unicodeStringData )
 	}  // end if
 
 	// save length of string to follow
-	Byte len = unicodeStringData->getLength();
+	Byte len = static_cast<Byte>(codeUnits);
 	xferByte( &len );
 
 	// save string data
 	if( len > 0 )
-		xferUser( (void *)unicodeStringData->str(), sizeof( WideChar ) * len );
+	{
+		auto bytes = Platform::EncodeUTF16LE(unicodeStringData->str(), unicodeStringData->getLength());
+		xferUser(bytes.data(), static_cast<Int>(bytes.size()));
+	}
 
 }  // end xferUnicodeString

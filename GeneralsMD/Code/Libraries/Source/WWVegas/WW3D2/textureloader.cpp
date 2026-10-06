@@ -39,6 +39,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "textureloader.h"
+#include "Platform/Clock.h"
 #include "mutex.h"
 #include "thread.h"
 #include "wwdebug.h"
@@ -53,7 +54,7 @@
 #include "dx8caps.h"
 #include "missingtexture.h"
 #include "targa.h"
-#include <D3dx8tex.h>
+#include <d3dx8tex.h>
 #include <cstdio>
 #include "wwmemlog.h"
 #include "texture.h"
@@ -839,7 +840,7 @@ void TextureLoader::Flush_Pending_Load_Tasks(void)
 #include <mmsystem.h>
 #define UPDATE_NETWORK 											\
 	if (network_callback) {                            \
-		unsigned long time2 = timeGetTime();            \
+		unsigned long time2 = Platform::Milliseconds();            \
 		if (time2 - time > 20) {                        \
 			network_callback();                          \
 			time = time2;                                \
@@ -859,7 +860,7 @@ void TextureLoader::Update(void (*network_callback)(void))
 	// modifying texture tasks.
 	FastCriticalSectionClass::LockClass lock(_ForegroundCriticalSection);
 
-	unsigned long time = timeGetTime();
+	unsigned long time = Platform::Milliseconds();
 
 	// while we have tasks on the foreground queue
 	while (TextureLoadTaskClass *task = _ForegroundQueue.Pop_Front()) {

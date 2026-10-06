@@ -40,6 +40,7 @@
  *   *ArgvClass::Get_Cur_Value -- Get value of current argugment.                              * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "argv.h"
+#include "Platform/Paths.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -244,7 +245,7 @@ int ArgvClass::Init(char *lpCmdLine, char *fileprefix)
  *=============================================================================================*/
 bool ArgvClass::Load_File(const char *fname)
 {
-	FILE *fp = fopen(fname, "r");
+	FILE *fp = Platform::OpenStream(fname, "r");
 
 	if (fp)  {							
 		while (Argc < MAX_ARGC) {

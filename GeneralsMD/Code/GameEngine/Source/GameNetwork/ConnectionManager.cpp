@@ -24,6 +24,7 @@
 
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "Compression.h"
 #include "strtok_r.h"
@@ -1212,7 +1213,7 @@ void ConnectionManager::update(Bool isInGame) {
 
 void ConnectionManager::updateRunAhead(Int oldRunAhead, Int frameRate, Bool didSelfSlug, Int nextExecutionFrame) {
 	static time_t lasttimesent = 0;
-	time_t curTime = timeGetTime();
+	time_t curTime = Platform::Milliseconds();
 
 	if ((lasttimesent == 0) || ((curTime - lasttimesent) > TheGlobalData->m_networkRunAheadMetricsTime)) {
 		if (m_localSlot == m_packetRouterSlot) {
@@ -1665,7 +1666,7 @@ void ConnectionManager::doKeepAlive() {
 	static Int nextIndex = 0;
 	static time_t startTime = 0;
 
-	time_t curTime = timeGetTime();
+	time_t curTime = Platform::Milliseconds();
 
 	if (startTime == 0) {
 		startTime = curTime;

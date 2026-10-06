@@ -98,6 +98,66 @@
         "GEN_GAME": "ZeroHour"
       },
       "architecture": "x64"
+    },
+    {
+      "name": "Linux-Clang",
+      "hidden": true,
+      "generator": "Ninja",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      }
+    },
+    {
+      "name": "Generals-Linux-Clang-x64-Debug",
+      "displayName": "Generals Linux Clang x64 Debug",
+      "inherits": "Linux-Clang",
+      "binaryDir": "${sourceDir}/Build/Generals/Linux-Clang-x64/Debug",
+      "cacheVariables": {
+        "GEN_GAME": "Generals",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/Generals/Linux-Clang-x64/Debug"
+      }
+    },
+    {
+      "name": "Generals-Linux-Clang-x64-Release",
+      "displayName": "Generals Linux Clang x64 Release",
+      "inherits": "Linux-Clang",
+      "binaryDir": "${sourceDir}/Build/Generals/Linux-Clang-x64/Release",
+      "cacheVariables": {
+        "GEN_GAME": "Generals",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/Generals/Linux-Clang-x64/Release"
+      }
+    },
+    {
+      "name": "ZeroHour-Linux-Clang-x64-Debug",
+      "displayName": "Zero Hour Linux Clang x64 Debug",
+      "inherits": "Linux-Clang",
+      "binaryDir": "${sourceDir}/Build/ZeroHour/Linux-Clang-x64/Debug",
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/ZeroHour/Linux-Clang-x64/Debug"
+      }
+    },
+    {
+      "name": "ZeroHour-Linux-Clang-x64-Release",
+      "displayName": "Zero Hour Linux Clang x64 Release",
+      "inherits": "Linux-Clang",
+      "binaryDir": "${sourceDir}/Build/ZeroHour/Linux-Clang-x64/Release",
+      "cacheVariables": {
+        "GEN_GAME": "ZeroHour",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/Binaries/ZeroHour/Linux-Clang-x64/Release"
+      }
     }
   ],
   "buildPresets": [
@@ -148,6 +208,26 @@
       "displayName": "Zero Hour x64 Release",
       "configurePreset": "ZeroHour-x64-Release",
       "configuration": "Release"
+    },
+    {
+      "name": "Generals-Linux-Clang-x64-Debug",
+      "displayName": "Generals Linux Clang x64 Debug",
+      "configurePreset": "Generals-Linux-Clang-x64-Debug"
+    },
+    {
+      "name": "Generals-Linux-Clang-x64-Release",
+      "displayName": "Generals Linux Clang x64 Release",
+      "configurePreset": "Generals-Linux-Clang-x64-Release"
+    },
+    {
+      "name": "ZeroHour-Linux-Clang-x64-Debug",
+      "displayName": "Zero Hour Linux Clang x64 Debug",
+      "configurePreset": "ZeroHour-Linux-Clang-x64-Debug"
+    },
+    {
+      "name": "ZeroHour-Linux-Clang-x64-Release",
+      "displayName": "Zero Hour Linux Clang x64 Release",
+      "configurePreset": "ZeroHour-Linux-Clang-x64-Release"
     }
   ]
 }

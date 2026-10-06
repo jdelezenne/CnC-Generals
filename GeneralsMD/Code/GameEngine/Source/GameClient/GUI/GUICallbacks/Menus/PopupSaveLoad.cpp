@@ -46,6 +46,7 @@
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
@@ -718,7 +719,7 @@ WindowMsgHandledType SaveLoadMenuSystem( GameWindow *window, UnsignedInt msg,
 					AsciiString filepath = TheGameState->getFilePathInSaveDirectory(selectedGameInfo->filename);
 
 					// delete the file
-					DeleteFile( filepath.str() );
+					Platform::RemoveUserFile( filepath.str() );
 					
 					// repopulate the listbox
 					TheGameState->populateSaveGameListbox( listboxGames, currentLayoutType );

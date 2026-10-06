@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"
+#include "Platform/Paths.h"
 #include "Common/File.h"
 #include "Common/FileSystem.h"
 #include "Common/GameEngine.h"
@@ -555,7 +556,7 @@ SaveCode GameState::saveGame( AsciiString filename, UnicodeString desc,
 	}  // end if
 
 	// make absolutely sure the save directory exists
-	CreateDirectory( getSaveDirectory().str(), NULL );
+	Platform::CreateUserDirectory(getSaveDirectory().str());
 
 	// construct path to file
 	AsciiString filepath = getFilePathInSaveDirectory(filename);

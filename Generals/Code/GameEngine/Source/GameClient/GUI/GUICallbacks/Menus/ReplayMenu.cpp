@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 
 #include "Lib/BaseType.h"
@@ -628,7 +629,7 @@ void deleteReplay( void )
 	filename = TheRecorder->getReplayDir();
 	translate.translate(GetReplayFilenameFromListbox(listboxReplayFiles, selected));
 	filename.concat(translate);
-	if(DeleteFile(filename.str()) == 0)
+	if(Platform::RemoveUserFile(filename.str()) == 0)
 	{
 		char buffer[1024];
 		FormatMessage ( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
@@ -666,7 +667,7 @@ void copyReplay( void )
 	newFilename.set(path);
 	newFilename.concat("\\");
 	newFilename.concat(translate);
-	if(CopyFile(filename.str(),newFilename.str(), FALSE) == 0)
+	if(Platform::CopyUserFile(filename.str(),newFilename.str(), FALSE) == 0)
 	{
 		wchar_t buffer[1024];
 		FormatMessageW( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);

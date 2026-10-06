@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 #include "Common/GameState.h"
 #include "Common/Team.h"
 #include "Common/ThingFactory.h"
@@ -517,7 +518,7 @@ void TeamFactory::xfer( Xfer *xfer )
 if( xfer->getXferMode() == XFER_SAVE )
 {
 
-FILE *fp = fopen( "TeamCheckSave.txt", "w+t" );
+FILE *fp = Platform::OpenStream( "TeamCheckSave.txt", "w+t" );
 if( fp == NULL )
 	return;
 
@@ -584,7 +585,7 @@ void TeamFactory::loadPostProcess( void )
 
 /*
 // SAVE_LOAD_DEBUG
-FILE *fp = fopen( "TeamCheckLoad.txt", "w+t" );
+FILE *fp = Platform::OpenStream( "TeamCheckLoad.txt", "w+t" );
 if( fp == NULL )
 	return;
 

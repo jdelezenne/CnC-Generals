@@ -27,6 +27,7 @@
 // Debug I/O class flat (flat or split log file)
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#include "Platform/Paths.h"
 #include <stdlib.h>
 #include <new>      // needed for placement new prototype
 
@@ -41,7 +42,7 @@ DebugIOFlat::OutputStream::OutputStream(const char *filename, unsigned maxSize):
   m_buffer=(char *)DebugAllocMemory(m_bufferSize);
 
   if (!m_limitedFileSize)
-    m_fileHandle=CreateFile(m_fileName,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
+    m_fileHandle=CreateFile(Platform::WritePath(m_fileName).c_str(),GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
                             FILE_ATTRIBUTE_NORMAL|FILE_FLAG_WRITE_THROUGH,
                             NULL);
 }
@@ -94,7 +95,7 @@ void DebugIOFlat::OutputStream::Delete(const char *path)
         wsprintf(help+strlen(help),"(%i)%s",run,ext);
       else
         strcat(help,ext);
-      if (CopyFile(m_fileName,help,TRUE))
+      if (CopyFile(Platform::ReadPath(m_fileName).c_str(),Platform::WritePath(help).c_str(),TRUE))
         break;
       if (GetLastError()!=ERROR_FILE_EXISTS)
         break;
@@ -176,7 +177,7 @@ void DebugIOFlat::OutputStream::Flush(void)
   else
   {
     // create file, write ring buffer
-    m_fileHandle=CreateFile(m_fileName,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
+    m_fileHandle=CreateFile(Platform::WritePath(m_fileName).c_str(),GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
                             FILE_ATTRIBUTE_NORMAL|FILE_FLAG_WRITE_THROUGH,
                             NULL);
     DWORD written;

@@ -25,6 +25,7 @@
 //
 //-----------------------------------------------------------------------------
 #include "miscutil.h" // I WANNA BE FIRST!
+#include "Platform/Paths.h"
 
 #include <time.h>
 
@@ -220,7 +221,7 @@ void cMiscUtil::Remove_File(LPCSTR filename)
 {
    WWASSERT(filename != NULL);
 
-	::DeleteFile(filename);
+	Platform::RemoveUserFile(filename);
 }
 
 

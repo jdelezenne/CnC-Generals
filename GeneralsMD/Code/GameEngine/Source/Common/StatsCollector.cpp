@@ -47,6 +47,7 @@
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 //-----------------------------------------------------------------------------
 // USER INCLUDES //////////////////////////////////////////////////////////////
@@ -222,7 +223,7 @@ void StatsCollector::incrementMoveCount( void )
 void StatsCollector::writeFileEnd( void )
 {
 	//open the file
-	FILE *f = fopen(m_statsFileName.str(), "a");
+	FILE *f = Platform::OpenStream(m_statsFileName.str(), "a");
 	if(!f)
 	{
 		DEBUG_ASSERTCRASH(f, ("Unable to open file %s to write", m_statsFileName.str()));
@@ -369,7 +370,7 @@ void StatsCollector::createFileName( void )
 void StatsCollector::writeInitialFileInfo()
 {
 	//open the file
-	FILE *f = fopen(m_statsFileName.str(), "w");
+	FILE *f = Platform::OpenStream(m_statsFileName.str(), "w");
 	if(!f)
 	{
 		DEBUG_ASSERTCRASH(f, ("Unable to open file %s to write", m_statsFileName.str()));
@@ -407,7 +408,7 @@ void StatsCollector::writeInitialFileInfo()
 void StatsCollector::writeStatInfo()
 {
 	//open the file
-	FILE *f = fopen(m_statsFileName.str(), "a");
+	FILE *f = Platform::OpenStream(m_statsFileName.str(), "a");
 	if(!f)
 	{
 		DEBUG_ASSERTCRASH(f, ("Unable to open file %s to write", m_statsFileName.str()));

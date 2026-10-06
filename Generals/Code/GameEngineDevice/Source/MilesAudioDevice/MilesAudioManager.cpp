@@ -39,6 +39,7 @@
 /*---------------------------------------------------------------------------*/
 
 #include "Lib/Basetype.h"
+#include "Platform/Paths.h"
 #include "MilesAudioDevice/MilesAudioManager.h"
 
 #include "Common/AudioAffect.h"
@@ -3241,7 +3242,7 @@ void MilesAudioManager::dumpAllAssetsUsed()
 	}
 
 	// Dump all the audio assets we've used.
-	FILE *logfile=fopen("PreloadedAssets.txt","a+");	//append to log
+	FILE *logfile=Platform::OpenStream("PreloadedAssets.txt","a+");	//append to log
 	if (!logfile)
 		return;
 

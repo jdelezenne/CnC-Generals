@@ -24,6 +24,7 @@
 
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
+#include "Platform/Paths.h"
 
 #include "Common/ArchiveFileSystem.h"
 #include "Common/CommandLine.h"
@@ -662,7 +663,7 @@ Int parseLogAssets( char *args[], int num )
 {
 	if( TheWritableGlobalData )
 	{
-		FILE *logfile=fopen("PreloadedAssets.txt","w");
+		FILE *logfile=Platform::OpenStream("PreloadedAssets.txt","w");
 		if (logfile)	//clear the file
 			fclose(logfile);
 		TheWritableGlobalData->m_preloadReport = TRUE;

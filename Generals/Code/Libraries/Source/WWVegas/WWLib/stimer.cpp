@@ -35,27 +35,18 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"always.h"
+#include "Platform/Clock.h"
 #include	"stimer.h"
-#include	"win.h"
 
-#ifdef _MSC_VER
-#pragma warning (push,3)
-#endif
-
-#include <mmsystem.h>
-
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif
 
 
 long SystemTimerClass::operator () (void) const
 {
-	return timeGetTime()/16;
+	return Platform::Milliseconds()/16;
 }
 
 
 SystemTimerClass::operator long (void) const
 {
-	return timeGetTime()/16;
+	return Platform::Milliseconds()/16;
 }

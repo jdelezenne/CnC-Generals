@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #include "Common/CRC.h"
 #include "Common/FileSystem.h"
@@ -387,7 +388,7 @@ void MapCache::writeCacheINI( Bool userDir )
 	TheFileSystem->createDirectory(mapDir);
 
 	filepath.concat(m_mapCacheName);
-	FILE *fp = fopen(filepath.str(), "w");
+	FILE *fp = Platform::OpenStream(filepath.str(), "w");
 	DEBUG_ASSERTCRASH(fp != NULL, ("Failed to create %s", filepath.str()));
 	if (fp == NULL) {
 		return;

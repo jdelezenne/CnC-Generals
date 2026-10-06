@@ -2,11 +2,10 @@
 #pragma once
 #include <SDL3/SDL.h>
 namespace Platform {
-bool InitializeInput(SDL_Window* window, unsigned int timeOffset = 0);
+bool InitializeInput(SDL_Window* window);
 SDL_Window* GetGameWindow();
 void RefreshStartupSplash();
 #ifdef _WIN32
 void ConfigureNativeInput();
-unsigned int NativeInputTimeOffset();
 #endif
 }

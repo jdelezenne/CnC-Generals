@@ -28,6 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
+#include "Platform/Paths.h"
 
 #include "Common/GlobalData.h"
 #include "Common/ThingTemplate.h"
@@ -317,7 +318,7 @@ static void loadText( char *filename, GameWindow *listboxText )
 	FILE *fp;
 
 	// open the file
-	fp = fopen( filename, "r" );
+	fp = Platform::OpenStream( filename, "r" );
 	if( fp == NULL )
 		return;
 

@@ -27,6 +27,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 
 #include "Common/PerfTimer.h"
 
@@ -77,11 +79,11 @@ void InitPrecisionTimer()
 		Int64		   StartTicks;
 		Int64		   EndTicks;
 
-		TimeStart = timeGetTime();
+		TimeStart = Platform::Milliseconds();
 		GetPrecisionTimer(&StartTicks);
 		for(;;)
 		{
-			TimeStop = timeGetTime();
+			TimeStop = Platform::Milliseconds();
 			if ((TimeStop - TimeStart) > 1000)
 			{
 				GetPrecisionTimer(&EndTicks);
@@ -280,7 +282,7 @@ void PerfGather::reset()
 	strcpy(tmp, s_buf);
 	strcat(tmp, ".csv");
 
-	s_perfStatsFile = fopen(tmp, "w");
+	s_perfStatsFile = Platform::OpenStream(tmp, "w");
 	s_perfDumpOptions = options;
 
 	if (s_perfStatsFile == NULL)

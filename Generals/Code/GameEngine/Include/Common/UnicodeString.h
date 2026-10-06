@@ -48,6 +48,7 @@
 #ifndef UNICODESTRING_H
 #define UNICODESTRING_H
 
+#include "Platform/StringCompare.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -404,14 +405,14 @@ inline int UnicodeString::compare(const WideChar* s) const
 inline int UnicodeString::compareNoCase(const UnicodeString& stringSrc) const
 {
 	validate();
-	return _wcsicmp(this->str(), stringSrc.str());
+	return Platform::CompareNoCase(this->str(), stringSrc.str());
 }
 
 // -----------------------------------------------------
 inline int UnicodeString::compareNoCase(const WideChar* s) const
 {
 	validate();
-	return _wcsicmp(this->str(), s);
+	return Platform::CompareNoCase(this->str(), s);
 }
 
 // -----------------------------------------------------

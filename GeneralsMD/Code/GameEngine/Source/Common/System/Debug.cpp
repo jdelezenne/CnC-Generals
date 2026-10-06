@@ -44,6 +44,8 @@
 
 // SYSTEM INCLUDES 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 #include "Platform/Windows/Window.h"
 
 
@@ -180,7 +182,7 @@ static const char *getCurrentTimeString(void)
 static const char *getCurrentTickString(void)
 {
 	static char TheTickString[32];
-	sprintf(TheTickString, "(T=%08lx)",::GetTickCount());
+	sprintf(TheTickString, "(T=%08lx)",static_cast<unsigned long>(Platform::Milliseconds()));
 	return TheTickString;
 }
 
@@ -338,18 +340,7 @@ void DebugInit(int flags)
 
 	#ifdef DEBUG_LOGGING
 
-		char dirbuf[ _MAX_PATH ];
-		::GetModuleFileName( NULL, dirbuf, sizeof( dirbuf ) );
-		char *pEnd = dirbuf + strlen( dirbuf );
-		while( pEnd != dirbuf ) 
-		{
-			if( *pEnd == '\\' ) 
-			{
-				*(pEnd + 1) = 0;
-				break;
-			}
-			pEnd--;
-		}
+		const char* dirbuf = Platform::PreferenceDirectory(Platform::CurrentGame());
 
 		char prevbuf[ _MAX_PATH ];
 		char curbuf[ _MAX_PATH ];
@@ -361,9 +352,9 @@ void DebugInit(int flags)
 		strcat(curbuf, gAppPrefix);
 		strcat(curbuf, DEBUG_FILE_NAME);
 
- 		remove(prevbuf);
-		rename(curbuf, prevbuf);
-		theLogFile = fopen(curbuf, "w");
+		Platform::RemoveUserFile(prevbuf);
+		Platform::RenameUserFile(curbuf, prevbuf);
+		theLogFile = Platform::OpenStream(curbuf, "w");
 		if (theLogFile != NULL)
 		{
 			DebugLog("Log %s opened: %s\n", curbuf, getCurrentTimeString());
@@ -676,10 +667,10 @@ void ReleaseCrash(const char *reason)
 	strcpy(curbuf, TheGlobalData->getPath_UserData().str());
 	strcat(curbuf, RELEASECRASH_FILE_NAME);
 
- 	remove(prevbuf);
-	rename(curbuf, prevbuf);
+	Platform::RemoveUserFile(prevbuf);
+	Platform::RenameUserFile(curbuf, prevbuf);
 
-	theReleaseCrashLogFile = fopen(curbuf, "w");
+	theReleaseCrashLogFile = Platform::OpenStream(curbuf, "w");
 	if (theReleaseCrashLogFile)
 	{
 		fprintf(theReleaseCrashLogFile, "Release Crash at %s; Reason %s\n", getCurrentTimeString(), reason);
@@ -765,10 +756,10 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	strcpy(curbuf, TheGlobalData->getPath_UserData().str());
 	strcat(curbuf, RELEASECRASH_FILE_NAME);
 
- 	remove(prevbuf);
-	rename(curbuf, prevbuf);
+	Platform::RemoveUserFile(prevbuf);
+	Platform::RenameUserFile(curbuf, prevbuf);
 
-	theReleaseCrashLogFile = fopen(curbuf, "w");
+	theReleaseCrashLogFile = Platform::OpenStream(curbuf, "w");
 	if (theReleaseCrashLogFile)
 	{
 		fprintf(theReleaseCrashLogFile, "Release Crash at %s; Reason %s\n", getCurrentTimeString(), mesg.str());

@@ -42,6 +42,7 @@
 //
 // ----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 // SYSTEM INCLUDES
 
@@ -725,7 +726,7 @@ void userMemoryManagerInitPools()
 	}
 	strcat(buf, "\\Data\\INI\\MemoryPools.ini");
 
-	FILE* fp = fopen(buf, "r");
+	FILE* fp = Platform::OpenStream(buf, "r");
 	if (fp)
 	{
 		char poolName[256];

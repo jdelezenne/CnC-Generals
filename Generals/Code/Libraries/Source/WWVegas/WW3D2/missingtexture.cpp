@@ -17,9 +17,10 @@
 */
 
 #include "missingtexture.h"
+#include "Platform/Paths.h"
 #include "texture.h"
 #include "dx8wrapper.h"
-#include <D3dx8core.h>
+#include <d3dx8core.h>
 
 static unsigned missing_image_width=128;
 static unsigned missing_image_height=128;
@@ -117,7 +118,7 @@ void MissingTexture::_Init()
 /*
 	//Load an 8-bit tga and generate text representation
 	FILE *fp;
-	fp=fopen("missing.tga","rb");
+	fp=Platform::OpenStream("missing.tga","rb");
 	if (fp)
 	{
 		char image[128*128];	//make enough storage for image and palette
@@ -125,7 +126,7 @@ void MissingTexture::_Init()
 		fread(image,18,1,fp);	//skip over the header
 		fread(palette,256,3,fp);	//read the palette
 		fread(image,1,128*128,fp);
-		FILE *output=fopen("missing.txt","w");
+		FILE *output=Platform::OpenStream("missing.txt","w");
 		fprintf(output,"palette:\n");
 		for (int i=0; i<256; i++)
 		{	int color=(((int)palette[i*3+0] & 0x000000ff)|(((int)palette[i*3+1] << 8)&0x0000ff00)|(((int)palette[i*3+2] << 16)&0x00ff0000)) | 0x7f000000;

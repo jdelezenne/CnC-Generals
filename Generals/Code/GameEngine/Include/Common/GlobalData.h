@@ -32,6 +32,9 @@
 #ifndef _GLOBALDATA_H_
 #define _GLOBALDATA_H_
 
+#include "GameClient/TerrainLOD.h"
+#include "GameLogic/BodyDamageType.h"
+#include "GameLogic/AIDebugOptions.h"
 #include "Common/GameCommon.h"	// ensure we get DUMP_PERF_STATS, or not
 #include "Common/AsciiString.h"
 #include "Common/GameType.h"

@@ -35,6 +35,7 @@
 #define NO_DEBUG_CRC
 
 #include "Common/CRC.h"
+#include "Platform/Paths.h"
 #include "Common/CRCDebug.h"
 #include "Common/GameState.h"
 #include "Common/GlobalData.h"
@@ -115,7 +116,7 @@ LogClass::LogClass(const char *fname)
 	}
 	AsciiString fullPath;
 	fullPath.format("%s\\%s", buffer, fname);
-	m_fp = fopen(fullPath.str(), "wt");
+	m_fp = Platform::OpenStream(fullPath.str(), "wt");
 }
 
 LogClass::~LogClass()

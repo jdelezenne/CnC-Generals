@@ -46,6 +46,8 @@
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 
 #include "Common/LocalFileSystem.h"
 #include "Common/MessageStream.h"
@@ -177,7 +179,7 @@ void PopupReplayUpdate( WindowLayout *layout, void *userData )
 	{
 		// the replay save confirmation popup is up
 		// check to see if its time to take it down.
-		if ((timeGetTime() - s_fileSavePopupStartTime) >= s_fileSavePopupDuration) 
+		if ((Platform::Milliseconds() - s_fileSavePopupStartTime) >= s_fileSavePopupDuration)
 		{
 			ShowReplaySavedPopup(FALSE);
 
@@ -285,7 +287,7 @@ void reallySaveReplay(void)
 
 	if (TheLocalFileSystem->doesFileExist(filename.str()))
 	{
-		if(DeleteFile(filename.str()) == 0)
+		if(Platform::RemoveUserFile(filename.str()) == 0)
 		{
 			wchar_t buffer[1024];
 			FormatMessageW ( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
@@ -310,7 +312,7 @@ void reallySaveReplay(void)
 	}
 
 	// copy the replay to the right place
-	if(CopyFile(oldFilename.str(),filename.str(), FALSE) == 0)
+	if(Platform::CopyUserFile(oldFilename.str(),filename.str(), FALSE) == 0)
 	{
 		wchar_t buffer[1024];
 		FormatMessageW( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
@@ -334,7 +336,7 @@ void reallySaveReplay(void)
 	PopulateReplayFileListbox(listboxGames);
 
 	ShowReplaySavedPopup(TRUE);
-	s_fileSavePopupStartTime = timeGetTime();
+	s_fileSavePopupStartTime = Platform::Milliseconds();
 }
 
 //-------------------------------------------------------------------------------------------------

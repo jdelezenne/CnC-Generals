@@ -32,6 +32,7 @@
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 //-----------------------------------------------------------------------------
 // USER INCLUDES //////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ Bool UserPreferences::load(AsciiString fname)
 	m_filename = TheGlobalData->getPath_UserData();
 	m_filename.concat(fname);
 
-	FILE *fp = fopen(m_filename.str(), "r");
+	FILE *fp = Platform::OpenStream(m_filename.str(), "r");
 	if (fp)
 	{
 		char buf[LINE_LEN];
@@ -160,7 +161,7 @@ Bool UserPreferences::write( void )
 	if (m_filename.isEmpty())
 		return false;
 
-	FILE *fp = fopen(m_filename.str(), "w");
+	FILE *fp = Platform::OpenStream(m_filename.str(), "w");
 	if (fp)
 	{
 		PreferenceMap::const_iterator it = begin();

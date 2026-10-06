@@ -50,6 +50,8 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+#include "Common/GameType.h"
+#include "Common/NameKeyType.h"
 #include "Common/AsciiString.h"
 #include "Common/UnicodeString.h"
 #include "Common/GameCommon.h"

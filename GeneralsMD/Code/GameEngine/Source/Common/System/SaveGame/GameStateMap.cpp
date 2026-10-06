@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"
+#include "Platform/Paths.h"
 
 #include "Common/File.h"
 #include "Common/FileSystem.h"
@@ -134,7 +135,7 @@ static void embedPristineMap( AsciiString map, Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 static void embedInUseMap( AsciiString map, Xfer *xfer )
 {
-	FILE *fp = fopen( map.str(), "rb" );
+	FILE *fp = Platform::OpenStream( map.str(), "rb" );
 
 	// sanity
 	if( fp == NULL )
@@ -192,7 +193,7 @@ static void extractAndSaveMap( AsciiString mapToSave, Xfer *xfer )
 	UnsignedInt dataSize;
 
 	// open handle to output file
-	FILE *fp = fopen( mapToSave.str(), "w+b" );
+	FILE *fp = Platform::OpenStream( mapToSave.str(), "w+b" );
 	if( fp == NULL )
 	{
 
@@ -514,7 +515,7 @@ void GameStateMap::clearScratchPadMaps( void )
 
 		// delete file if set
 		if( fileToDelete.isEmpty() == FALSE )
-			DeleteFile( fileToDelete.str() );
+			Platform::RemoveUserFile( fileToDelete.str() );
 
 	}  // end while
 

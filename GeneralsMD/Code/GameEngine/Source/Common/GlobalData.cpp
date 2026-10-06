@@ -1052,14 +1052,7 @@ GlobalData::GlobalData()
 
 	m_keyboardCameraRotateSpeed = 0.1f;
 
-  AsciiString leafName;
-  if (!GetStringFromRegistry("", "UserDataLeafName", leafName))
-      leafName = "Command and Conquer Generals Zero Hour Data";
-  char temp[1024];
-  if (Platform::UserDataDirectory(Platform::GameTitle::ZeroHour, leafName.str(), temp, sizeof(temp)))
-  {
-      m_userDataDir = temp;
-  }
+  m_userDataDir = Platform::PreferenceDirectory(Platform::GameTitle::ZeroHour);
 	
 	//-allAdvice feature
 	//m_allAdvice = FALSE;

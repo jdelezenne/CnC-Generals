@@ -66,6 +66,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "Common/GlobalData.h"
 #include "Common/BuildAssistant.h"
@@ -143,7 +144,7 @@ void ControlBar::showBuildTooltipLayout( GameWindow *cmdButton )
 	if(prevWindow == cmdButton)	
 	{
 		m_showBuildToolTipLayout = TRUE;
-		if(!isInitialized &&  beginWaitTime + cmdButton->getTooltipDelay() < timeGetTime())
+		if(!isInitialized &&  beginWaitTime + cmdButton->getTooltipDelay() < Platform::Milliseconds())
 		{
 			//DEBUG_LOG(("%d beginwaittime, %d tooltipdelay, %dtimegettime\n", beginWaitTime, cmdButton->getTooltipDelay(), timeGetTime()));
 			passedWaitTime = TRUE;
@@ -176,7 +177,7 @@ void ControlBar::showBuildTooltipLayout( GameWindow *cmdButton )
 	if(!passedWaitTime)
 	{
 		prevWindow = cmdButton;
-		beginWaitTime = timeGetTime();
+		beginWaitTime = Platform::Milliseconds();
 		isInitialized = FALSE;
 		return;
 	}

@@ -1,0 +1,2132 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c4c2aaa..f5e87af 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -121,11 +121,7 @@ set(LIBRARY_SOURCES
+     DirectXTex/DirectXTexTGA.cpp
+     DirectXTex/DirectXTexUtil.cpp)
+ 
+-if(WIN32)
+-   list(APPEND LIBRARY_SOURCES
+-       DirectXTex/DirectXTexFlipRotate.cpp
+-       DirectXTex/DirectXTexWIC.cpp)
+-endif()
++
+ 
+ if(DEFINED XBOX_CONSOLE_TARGET)
+ 
+@@ -190,17 +186,11 @@ if(ENABLE_OPENEXR_SUPPORT)
+ endif()
+ 
+ if(ENABLE_LIBJPEG_SUPPORT)
+-    if(WIN32)
+-        message(STATUS "Use of the Windows Imaging Component (WIC) instead of libjpeg is recommended.")
+-    endif()
+     list(APPEND LIBRARY_HEADERS Auxiliary/DirectXTexJPEG.h)
+     list(APPEND LIBRARY_SOURCES Auxiliary/DirectXTexJPEG.cpp)
+ endif()
+ 
+ if(ENABLE_LIBPNG_SUPPORT)
+-    if(WIN32)
+-        message(STATUS "Use of the Windows Imaging Component (WIC) instead of libpng is recommended.")
+-    endif()
+     list(APPEND LIBRARY_HEADERS Auxiliary/DirectXTexPNG.h)
+     list(APPEND LIBRARY_SOURCES Auxiliary/DirectXTexPNG.cpp)
+ endif()
+diff --git a/DirectXTex/DirectXTex.h b/DirectXTex/DirectXTex.h
+index 8caee20..10fbb99 100644
+--- a/DirectXTex/DirectXTex.h
++++ b/DirectXTex/DirectXTex.h
+@@ -36,16 +36,6 @@
+ 
+ #include <DirectXMath.h>
+ 
+-#ifdef _WIN32
+-#if defined(NTDDI_WIN10_FE) || defined(__MINGW32__)
+-#include <ocidl.h>
+-#else
+-#include <OCIdl.h>
+-#endif
+-
+-struct IWICImagingFactory;
+-struct IWICMetadataQueryReader;
+-#endif
+ 
+ #define DIRECTX_TEX_VERSION 211
+ 
+@@ -302,49 +292,7 @@ namespace DirectX
+         // If no colorspace is specified in TGA 2.0 metadata, assume sRGB
+     };
+ 
+-    enum WIC_FLAGS : uint32_t
+-    {
+-        WIC_FLAGS_NONE = 0,
+-
+-        WIC_FLAGS_FORCE_RGB = 0x1,
+-        // Loads DXGI 1.1 BGR formats as DXGI_FORMAT_R8G8B8A8_UNORM to avoid use of optional WDDM 1.1 formats
+-
+-        WIC_FLAGS_NO_X2_BIAS = 0x2,
+-        // Loads DXGI 1.1 X2 10:10:10:2 format as DXGI_FORMAT_R10G10B10A2_UNORM
+-
+-        WIC_FLAGS_NO_16BPP = 0x4,
+-        // Loads 565, 5551, and 4444 formats as 8888 to avoid use of optional WDDM 1.2 formats
+-
+-        WIC_FLAGS_ALLOW_MONO = 0x8,
+-        // Loads 1-bit monochrome (black & white) as R1_UNORM rather than 8-bit grayscale
+-
+-        WIC_FLAGS_ALL_FRAMES = 0x10,
+-        // Loads all images in a multi-frame file, converting/resizing to match the first frame as needed, defaults to 0th frame otherwise
+-
+-        WIC_FLAGS_IGNORE_SRGB = 0x20,
+-        // Ignores sRGB metadata if present in the file
+ 
+-        WIC_FLAGS_FORCE_SRGB = 0x40,
+-        // Writes sRGB metadata into the file reguardless of format
+-
+-        WIC_FLAGS_FORCE_LINEAR = 0x80,
+-        // Writes linear gamma metadata into the file reguardless of format
+-
+-        WIC_FLAGS_DEFAULT_SRGB = 0x100,
+-        // If no colorspace is specified, assume sRGB
+-
+-        WIC_FLAGS_DITHER = 0x10000,
+-        // Use ordered 4x4 dithering for any required conversions
+-
+-        WIC_FLAGS_DITHER_DIFFUSION = 0x20000,
+-        // Use error-diffusion dithering for any required conversions
+-
+-        WIC_FLAGS_FILTER_POINT = 0x100000,
+-        WIC_FLAGS_FILTER_LINEAR = 0x200000,
+-        WIC_FLAGS_FILTER_CUBIC = 0x300000,
+-        WIC_FLAGS_FILTER_FANT = 0x400000, // Combination of Linear and Box filter
+-            // Filtering mode to use for any required image resizing (only needed when loading arrays of differently sized images; defaults to Fant)
+-    };
+ 
+     DIRECTX_TEX_API HRESULT __cdecl GetMetadataFromDDSMemory(
+         _In_reads_bytes_(size) const uint8_t* pSource, _In_ size_t size,
+@@ -382,19 +330,6 @@ namespace DirectX
+         _In_ TGA_FLAGS flags,
+         _Out_ TexMetadata& metadata) noexcept;
+ 
+-#ifdef _WIN32
+-    DIRECTX_TEX_API HRESULT __cdecl GetMetadataFromWICMemory(
+-        _In_reads_bytes_(size) const uint8_t* pSource, _In_ size_t size,
+-        _In_ WIC_FLAGS flags,
+-        _Out_ TexMetadata& metadata,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-
+-    DIRECTX_TEX_API HRESULT __cdecl GetMetadataFromWICFile(
+-        _In_z_ const wchar_t* szFile,
+-        _In_ WIC_FLAGS flags,
+-        _Out_ TexMetadata& metadata,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-#endif
+ 
+     // Compatability helpers
+     DIRECTX_TEX_API HRESULT __cdecl GetMetadataFromTGAMemory(
+@@ -422,13 +357,6 @@ namespace DirectX
+         _In_ TGA_FLAGS flags,
+         _Out_ TexMetadata& metadata) noexcept;
+ 
+-#ifdef _WIN32
+-    DIRECTX_TEX_API HRESULT __cdecl GetMetadataFromWICMemory(
+-        _In_reads_bytes_(size) const std::byte* pSource, _In_ size_t size,
+-        _In_ WIC_FLAGS flags,
+-        _Out_ TexMetadata& metadata,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-#endif
+ #endif // __cpp_lib_byte
+ 
+ 
+@@ -645,38 +573,6 @@ namespace DirectX
+         _In_ TGA_FLAGS flags,
+         _In_z_ const wchar_t* szFile, _In_opt_ const TexMetadata* metadata = nullptr) noexcept;
+ 
+-    // WIC operations
+-#ifdef _WIN32
+-    DIRECTX_TEX_API HRESULT __cdecl LoadFromWICMemory(
+-        _In_reads_bytes_(size) const uint8_t* pSource, _In_ size_t size,
+-        _In_ WIC_FLAGS flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-    DIRECTX_TEX_API HRESULT __cdecl LoadFromWICFile(
+-        _In_z_ const wchar_t* szFile, _In_ WIC_FLAGS flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-
+-    DIRECTX_TEX_API HRESULT __cdecl SaveToWICMemory(
+-        _In_ const Image& image, _In_ WIC_FLAGS flags, _In_ REFGUID guidContainerFormat,
+-        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-    DIRECTX_TEX_API HRESULT __cdecl SaveToWICMemory(
+-        _In_count_(nimages) const Image* images, _In_ size_t nimages,
+-        _In_ WIC_FLAGS flags, _In_ REFGUID guidContainerFormat,
+-        _Out_ Blob& blob, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-
+-    DIRECTX_TEX_API HRESULT __cdecl SaveToWICFile(
+-        _In_ const Image& image, _In_ WIC_FLAGS flags, _In_ REFGUID guidContainerFormat,
+-        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-    DIRECTX_TEX_API HRESULT __cdecl SaveToWICFile(
+-        _In_count_(nimages) const Image* images, _In_ size_t nimages,
+-        _In_ WIC_FLAGS flags, _In_ REFGUID guidContainerFormat,
+-        _In_z_ const wchar_t* szFile, _In_opt_ const GUID* targetFormat = nullptr,
+-        _In_ std::function<void __cdecl(IPropertyBag2*)> setCustomProps = nullptr);
+-#endif // WIN32
+ 
+     // Compatability helpers
+     DIRECTX_TEX_API HRESULT __cdecl LoadFromTGAMemory(
+@@ -708,13 +604,6 @@ namespace DirectX
+         _In_ TGA_FLAGS flags,
+         _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image) noexcept;
+ 
+-#ifdef _WIN32
+-    DIRECTX_TEX_API HRESULT __cdecl LoadFromWICMemory(
+-        _In_reads_bytes_(size) const std::byte* pSource, _In_ size_t size,
+-        _In_ WIC_FLAGS flags,
+-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image,
+-        _In_ std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR = nullptr);
+-#endif
+ #endif // __cpp_lib_byte
+ 
+     //---------------------------------------------------------------------------------
+@@ -730,13 +619,6 @@ namespace DirectX
+         TEX_FR_FLIP_VERTICAL = 0x10,
+     };
+ 
+-#ifdef _WIN32
+-    DIRECTX_TEX_API HRESULT __cdecl FlipRotate(_In_ const Image& srcImage, _In_ TEX_FR_FLAGS flags, _Out_ ScratchImage& image) noexcept;
+-    DIRECTX_TEX_API HRESULT __cdecl FlipRotate(
+-        _In_reads_(nimages) const Image* srcImages, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+-        _In_ TEX_FR_FLAGS flags, _Out_ ScratchImage& result) noexcept;
+-        // Flip and/or rotate image
+-#endif
+ 
+     enum TEX_FILTER_FLAGS : uint32_t
+     {
+@@ -785,11 +667,7 @@ namespace DirectX
+         // if the input format type is IsSRGB(), then SRGB_IN is on by default
+         // if the output format type is IsSRGB(), then SRGB_OUT is on by default
+ 
+-        TEX_FILTER_FORCE_NON_WIC = 0x10000000,
+-        // Forces use of the non-WIC path when both are an option
+ 
+-        TEX_FILTER_FORCE_WIC = 0x20000000,
+-        // Forces use of the WIC path even when logic would have picked a non-WIC path when both are an option
+     };
+ 
+     constexpr uint32_t TEX_FILTER_DITHER_MASK = 0xF0000;
+@@ -1059,25 +937,6 @@ namespace DirectX
+         ScratchImage& result);
+ 
+     //---------------------------------------------------------------------------------
+-    // WIC utility code
+-#ifdef _WIN32
+-    enum WICCodecs : uint32_t
+-    {
+-        WIC_CODEC_BMP = 1,          // Windows Bitmap (.bmp)
+-        WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
+-        WIC_CODEC_PNG,              // Portable Network Graphics (.png)
+-        WIC_CODEC_TIFF,             // Tagged Image File Format  (.tif, .tiff)
+-        WIC_CODEC_GIF,              // Graphics Interchange Format  (.gif)
+-        WIC_CODEC_WMP,              // Windows Media Photo / HD Photo / JPEG XR (.hdp, .jxr, .wdp)
+-        WIC_CODEC_ICO,              // Windows Icon (.ico)
+-        WIC_CODEC_HEIF,             // High Efficiency Image File (.heif, .heic)
+-    };
+-
+-    DIRECTX_TEX_API REFGUID __cdecl GetWICCodec(_In_ WICCodecs codec) noexcept;
+-
+-    DIRECTX_TEX_API IWICImagingFactory* __cdecl GetWICFactory(bool& iswic2) noexcept;
+-    DIRECTX_TEX_API void __cdecl SetWICFactory(_In_opt_ IWICImagingFactory* pWIC) noexcept;
+-#endif
+ 
+     //---------------------------------------------------------------------------------
+     // DDS helper functions
+diff --git a/DirectXTex/DirectXTex.inl b/DirectXTex/DirectXTex.inl
+index 7df639e..cf7f48e 100644
+--- a/DirectXTex/DirectXTex.inl
++++ b/DirectXTex/DirectXTex.inl
+@@ -23,7 +23,6 @@
+ DEFINE_ENUM_FLAG_OPERATORS(CP_FLAGS);
+ DEFINE_ENUM_FLAG_OPERATORS(DDS_FLAGS);
+ DEFINE_ENUM_FLAG_OPERATORS(TGA_FLAGS);
+-DEFINE_ENUM_FLAG_OPERATORS(WIC_FLAGS);
+ DEFINE_ENUM_FLAG_OPERATORS(TEX_FR_FLAGS);
+ DEFINE_ENUM_FLAG_OPERATORS(TEX_FILTER_FLAGS);
+ DEFINE_ENUM_FLAG_OPERATORS(TEX_PMALPHA_FLAGS);
+@@ -36,9 +35,6 @@ DEFINE_ENUM_FLAG_OPERATORS(CREATETEX_FLAGS);
+ #pragma clang diagnostic pop
+ #endif
+ 
+-// WIC_FILTER modes match TEX_FILTER modes
+-constexpr WIC_FLAGS operator|(WIC_FLAGS a, TEX_FILTER_FLAGS b) { return static_cast<WIC_FLAGS>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b & TEX_FILTER_MODE_MASK)); }
+-constexpr WIC_FLAGS operator|(TEX_FILTER_FLAGS a, WIC_FLAGS b) { return static_cast<WIC_FLAGS>(static_cast<uint32_t>(a & TEX_FILTER_MODE_MASK) | static_cast<uint32_t>(b)); }
+ 
+ // TEX_PMALPHA_SRGB match TEX_FILTER_SRGB
+ constexpr TEX_PMALPHA_FLAGS operator|(TEX_PMALPHA_FLAGS a, TEX_FILTER_FLAGS b) { return static_cast<TEX_PMALPHA_FLAGS>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b & TEX_FILTER_SRGB_MASK)); }
+@@ -267,18 +263,5 @@ inline HRESULT __cdecl EncodeDDSHeader(const TexMetadata& metadata, DDS_FLAGS fl
+     return EncodeDDSHeader(metadata, flags, static_cast<uint8_t*>(nullptr), maxsize, required);
+ }
+ 
+-#ifdef _WIN32
+-_Use_decl_annotations_
+-inline HRESULT __cdecl GetMetadataFromWICMemory(const std::byte* pSource, size_t size, WIC_FLAGS flags, TexMetadata& metadata, std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR)
+-{
+-    return GetMetadataFromWICMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, getMQR);
+-}
+-
+-_Use_decl_annotations_
+-inline HRESULT __cdecl LoadFromWICMemory(const std::byte* pSource, size_t size, WIC_FLAGS flags, TexMetadata* metadata, ScratchImage& image, std::function<void __cdecl(IWICMetadataQueryReader*)> getMQR)
+-{
+-    return LoadFromWICMemory(reinterpret_cast<const uint8_t*>(pSource), size, flags, metadata, image, getMQR);
+-}
+-#endif // _WIN32
+ 
+ #endif // __cpp_lib_byte
+diff --git a/DirectXTex/DirectXTexConvert.cpp b/DirectXTex/DirectXTexConvert.cpp
+index ec53ac4..cc1ea00 100644
+--- a/DirectXTex/DirectXTexConvert.cpp
++++ b/DirectXTex/DirectXTexConvert.cpp
+@@ -2530,7 +2530,7 @@ bool DirectX::Internal::StoreScanline(
+ 
+ 
+ //-------------------------------------------------------------------------------------
+-// Convert DXGI image to/from GUID_WICPixelFormat128bppRGBAFloat (no range conversions)
++// Convert DXGI image to/from 128-bit RGBA float (no range conversions)
+ //-------------------------------------------------------------------------------------
+ _Use_decl_annotations_
+ HRESULT DirectX::Internal::ConvertToR32G32B32A32(const Image& srcImage, ScratchImage& image) noexcept
+@@ -2702,7 +2702,7 @@ HRESULT DirectX::Internal::ConvertFromR32G32B32A32(
+ 
+ 
+ //-------------------------------------------------------------------------------------
+-// Convert DXGI image to/from GUID_WICPixelFormat64bppRGBAHalf (no range conversions)
++// Convert DXGI image to/from 64-bit RGBA half float (no range conversions)
+ //-------------------------------------------------------------------------------------
+ _Use_decl_annotations_
+ HRESULT DirectX::Internal::ConvertToR16G16B16A16(const Image& srcImage, ScratchImage& image) noexcept
+@@ -4568,239 +4568,7 @@ bool DirectX::Internal::StoreScanlineDither(
+ 
+ namespace
+ {
+-    //-------------------------------------------------------------------------------------
+-    // Selection logic for using WIC vs. our own routines
+-    //-------------------------------------------------------------------------------------
+-    inline bool UseWICConversion(
+-        _In_ TEX_FILTER_FLAGS filter,
+-        _In_ DXGI_FORMAT sformat,
+-        _In_ DXGI_FORMAT tformat,
+-        _Out_ WICPixelFormatGUID& pfGUID,
+-        _Out_ WICPixelFormatGUID& targetGUID) noexcept
+-    {
+-    #ifndef _WIN32
+-        UNREFERENCED_PARAMETER(filter);
+-        UNREFERENCED_PARAMETER(sformat);
+-        UNREFERENCED_PARAMETER(tformat);
+-        UNREFERENCED_PARAMETER(pfGUID);
+-        UNREFERENCED_PARAMETER(targetGUID);
+-        return false;
+-    #else
+-        memset(&pfGUID, 0, sizeof(GUID));
+-        memset(&targetGUID, 0, sizeof(GUID));
+-
+-        if (filter & TEX_FILTER_FORCE_NON_WIC)
+-        {
+-            // Explicit flag indicates use of non-WIC code paths
+-            return false;
+-        }
+-
+-        if (!DXGIToWIC(sformat, pfGUID) || !DXGIToWIC(tformat, targetGUID))
+-        {
+-            // Source or target format are not WIC supported native pixel formats
+-            return false;
+-        }
+-
+-        if (filter & TEX_FILTER_FORCE_WIC)
+-        {
+-            // Explicit flag to use WIC code paths, skips all the case checks below
+-            return true;
+-        }
+-
+-        if (filter & TEX_FILTER_SEPARATE_ALPHA)
+-        {
+-            // Alpha is not premultiplied, so use non-WIC code paths
+-            return false;
+-        }
+-
+-        if (filter & TEX_FILTER_FLOAT_X2BIAS)
+-        {
+-            // X2 Scale & Bias conversions not supported by WIC code paths
+-            return false;
+-        }
+-
+-        // Check for special cases
+-    #if (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
+-        if (sformat == DXGI_FORMAT_R16G16B16A16_FLOAT
+-            || sformat == DXGI_FORMAT_R16_FLOAT
+-            || tformat == DXGI_FORMAT_R16G16B16A16_FLOAT
+-            || tformat == DXGI_FORMAT_R16_FLOAT)
+-        {
+-            // Use non-WIC code paths as these conversions are not supported by Xbox version of WIC
+-            return false;
+-        }
+-    #endif
+-
+-        switch (sformat)
+-        {
+-        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+-        case DXGI_FORMAT_R32G32B32_FLOAT:
+-        case DXGI_FORMAT_R32G32_FLOAT:
+-        case DXGI_FORMAT_R32_FLOAT:
+-        case DXGI_FORMAT_D32_FLOAT:
+-            switch (tformat)
+-            {
+-            case DXGI_FORMAT_R16G16B16A16_FLOAT:
+-            case DXGI_FORMAT_R16G16_FLOAT:
+-            case DXGI_FORMAT_R16_FLOAT:
+-                // WIC conversions for FP32->FP16 can result in NaN values instead of clamping for min/max value
+-                return false;
+-
+-            default:
+-                break;
+-            }
+-            break;
+-
+-        default:
+-            break;
+-        }
+-
+-        switch (sformat)
+-        {
+-        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+-        case DXGI_FORMAT_R32G32B32_FLOAT:
+-        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+-            switch (tformat)
+-            {
+-            case DXGI_FORMAT_R16_FLOAT:
+-            case DXGI_FORMAT_R32_FLOAT:
+-            case DXGI_FORMAT_D32_FLOAT:
+-                // WIC converts via UNORM formats and ends up converting colorspaces for these cases
+-            case DXGI_FORMAT_A8_UNORM:
+-                // Conversion logic for these kinds of textures is unintuitive for WIC code paths
+-                return false;
+-
+-            default:
+-                break;
+-            }
+-            break;
+-
+-        case DXGI_FORMAT_R16_FLOAT:
+-            switch (tformat)
+-            {
+-            case DXGI_FORMAT_R32_FLOAT:
+-            case DXGI_FORMAT_D32_FLOAT:
+-                // WIC converts via UNORM formats and ends up converting colorspaces for these cases
+-            case DXGI_FORMAT_A8_UNORM:
+-                // Conversion logic for these kinds of textures is unintuitive for WIC code paths
+-                return false;
+-
+-            default:
+-                break;
+-            }
+-            break;
+-
+-        case DXGI_FORMAT_A8_UNORM:
+-            // Conversion logic for these kinds of textures is unintuitive for WIC code paths
+-            return false;
+-
+-        default:
+-            switch (tformat)
+-            {
+-            case DXGI_FORMAT_A8_UNORM:
+-                // Conversion logic for these kinds of textures is unintuitive for WIC code paths
+-                return false;
+-
+-            default:
+-                break;
+-            }
+-        }
+-
+-        // Check for implicit color space changes
+-        if (IsSRGB(sformat))
+-            filter |= TEX_FILTER_SRGB_IN;
+-
+-        if (IsSRGB(tformat))
+-            filter |= TEX_FILTER_SRGB_OUT;
+-
+-        if ((filter & (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT)) == (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT))
+-        {
+-            filter &= ~(TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT);
+-        }
+-
+-        const auto wicsrgb = CheckWICColorSpace(pfGUID, targetGUID);
+-
+-        if (wicsrgb != (filter & (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT)))
+-        {
+-            // WIC will perform a colorspace conversion we didn't request
+-            return false;
+-        }
+-
+-        return true;
+-    #endif // WIN32
+-    }
+-
+-    //-------------------------------------------------------------------------------------
+-    // Convert the source image using WIC
+-    //-------------------------------------------------------------------------------------
+-    HRESULT ConvertUsingWIC(
+-        _In_ const Image& srcImage,
+-        _In_ const WICPixelFormatGUID& pfGUID,
+-        _In_ const WICPixelFormatGUID& targetGUID,
+-        _In_ TEX_FILTER_FLAGS filter,
+-        _In_ float threshold,
+-        _In_ const Image& destImage)
+-    {
+-    #ifndef _WIN32
+-        UNREFERENCED_PARAMETER(srcImage);
+-        UNREFERENCED_PARAMETER(pfGUID);
+-        UNREFERENCED_PARAMETER(targetGUID);
+-        UNREFERENCED_PARAMETER(filter);
+-        UNREFERENCED_PARAMETER(threshold);
+-        UNREFERENCED_PARAMETER(destImage);
+-        return E_NOTIMPL;
+-    #else
+-        assert(srcImage.width == destImage.width);
+-        assert(srcImage.height == destImage.height);
+-
+-        bool iswic2 = false;
+-        auto pWIC = GetWICFactory(iswic2);
+-        if (!pWIC)
+-            return E_NOINTERFACE;
+-
+-        ComPtr<IWICFormatConverter> FC;
+-        HRESULT hr = pWIC->CreateFormatConverter(FC.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        // Note that WIC conversion ignores the TEX_FILTER_SRGB_IN and TEX_FILTER_SRGB_OUT flags,
+-        // but also always assumes UNORM <-> FLOAT conversions are changing color spaces sRGB <-> scRGB
+-
+-        BOOL canConvert = FALSE;
+-        hr = FC->CanConvert(pfGUID, targetGUID, &canConvert);
+-        if (FAILED(hr) || !canConvert)
+-        {
+-            // This case is not an issue for the subset of WIC formats that map directly to DXGI
+-            return E_UNEXPECTED;
+-        }
+-
+-        if (srcImage.rowPitch > UINT32_MAX || srcImage.slicePitch > UINT32_MAX
+-            || destImage.rowPitch > UINT32_MAX || destImage.slicePitch > UINT32_MAX)
+-            return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-        ComPtr<IWICBitmap> source;
+-        hr = pWIC->CreateBitmapFromMemory(static_cast<UINT>(srcImage.width), static_cast<UINT>(srcImage.height), pfGUID,
+-            static_cast<UINT>(srcImage.rowPitch), static_cast<UINT>(srcImage.slicePitch),
+-            srcImage.pixels, source.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        hr = FC->Initialize(source.Get(), targetGUID, GetWICDither(filter), nullptr,
+-            static_cast<double>(threshold) * 100.0, WICBitmapPaletteTypeMedianCut);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        hr = FC->CopyPixels(nullptr, static_cast<UINT>(destImage.rowPitch), static_cast<UINT>(destImage.slicePitch), destImage.pixels);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        return S_OK;
+-    #endif // WIN32
+-    }
+-
+-    //-------------------------------------------------------------------------------------
+-    // Convert the source image (not using WIC)
+-    //-------------------------------------------------------------------------------------
++    // Convert the source image using portable routines
+     HRESULT ConvertCustom(
+         _In_ const Image& srcImage,
+         _In_ TEX_FILTER_FLAGS filter,
+@@ -5147,12 +4915,6 @@ HRESULT DirectX::ConvertEx(
+         }
+     }
+ 
+-    WICPixelFormatGUID pfGUID, targetGUID;
+-    if (UseWICConversion(options.filter, srcImage.format, format, pfGUID, targetGUID))
+-    {
+-        hr = ConvertUsingWIC(srcImage, pfGUID, targetGUID, options.filter, options.threshold, *rimage);
+-    }
+-    else
+     {
+         hr = ConvertCustom(srcImage, options.filter, *rimage, options.threshold, 0, statusCallback);
+     }
+@@ -5262,8 +5024,6 @@ HRESULT DirectX::ConvertEx(
+         }
+     }
+ 
+-    WICPixelFormatGUID pfGUID, targetGUID;
+-    const bool usewic = !metadata.IsPMAlpha() && UseWICConversion(options.filter, metadata.format, format, pfGUID, targetGUID);
+ 
+     switch (metadata.dimension)
+     {
+@@ -5293,11 +5053,6 @@ HRESULT DirectX::ConvertEx(
+                 return E_FAIL;
+             }
+ 
+-            if (usewic)
+-            {
+-                hr = ConvertUsingWIC(src, pfGUID, targetGUID, options.filter, options.threshold, dst);
+-            }
+-            else
+             {
+                 hr = ConvertCustom(src, options.filter, dst, options.threshold, 0, nullptr);
+             }
+@@ -5355,11 +5110,6 @@ HRESULT DirectX::ConvertEx(
+                         return E_FAIL;
+                     }
+ 
+-                    if (usewic)
+-                    {
+-                        hr = ConvertUsingWIC(src, pfGUID, targetGUID, options.filter, options.threshold, dst);
+-                    }
+-                    else
+                     {
+                         hr = ConvertCustom(src, options.filter, dst, options.threshold, slice, nullptr);
+                     }
+diff --git a/DirectXTex/DirectXTexMipmaps.cpp b/DirectXTex/DirectXTexMipmaps.cpp
+index 3f7f712..a20813a 100644
+--- a/DirectXTex/DirectXTexMipmaps.cpp
++++ b/DirectXTex/DirectXTexMipmaps.cpp
+@@ -65,63 +65,6 @@ namespace
+         return mipLevels;
+     }
+ 
+-#ifdef _WIN32
+-    HRESULT EnsureWicBitmapPixelFormat(
+-        _In_ IWICImagingFactory* pWIC,
+-        _In_ IWICBitmap* src,
+-        _In_ TEX_FILTER_FLAGS filter,
+-        _In_ const WICPixelFormatGUID& desiredPixelFormat,
+-        __RPC__deref_out_opt /* needed to match WIC annotation */ IWICBitmap** dest) noexcept
+-    {
+-        if (!dest)
+-            return E_POINTER;
+-
+-        *dest = nullptr;
+-
+-        if (!pWIC || !src)
+-            return E_POINTER;
+-
+-        WICPixelFormatGUID actualPixelFormat;
+-        HRESULT hr = src->GetPixelFormat(&actualPixelFormat);
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            if (memcmp(&actualPixelFormat, &desiredPixelFormat, sizeof(WICPixelFormatGUID)) == 0)
+-            {
+-                src->AddRef();
+-                *dest = src;
+-            }
+-            else
+-            {
+-                ComPtr<IWICFormatConverter> converter;
+-                hr = pWIC->CreateFormatConverter(converter.GetAddressOf());
+-
+-                if (SUCCEEDED(hr))
+-                {
+-                    BOOL canConvert = FALSE;
+-                    hr = converter->CanConvert(actualPixelFormat, desiredPixelFormat, &canConvert);
+-                    if (FAILED(hr) || !canConvert)
+-                    {
+-                        return E_UNEXPECTED;
+-                    }
+-                }
+-
+-                if (SUCCEEDED(hr))
+-                {
+-                    hr = converter->Initialize(src, desiredPixelFormat, GetWICDither(filter), nullptr,
+-                        0, WICBitmapPaletteTypeMedianCut);
+-                }
+-
+-                if (SUCCEEDED(hr))
+-                {
+-                    hr = pWIC->CreateBitmapFromSource(converter.Get(), WICBitmapCacheOnDemand, dest);
+-                }
+-            }
+-        }
+-
+-        return hr;
+-    }
+-#endif // WIN32
+ 
+ 
+ #if DIRECTX_MATH_VERSION >= 310
+@@ -402,447 +345,9 @@ bool DirectX::CalculateMipLevels3D(
+     return true;
+ }
+ 
+-#ifdef _WIN32
+-//--- Resizing color and alpha channels separately using WIC ---
+-_Use_decl_annotations_
+-HRESULT DirectX::Internal::ResizeSeparateColorAndAlpha(
+-    IWICImagingFactory* pWIC,
+-    bool iswic2,
+-    IWICBitmap* original,
+-    size_t newWidth,
+-    size_t newHeight,
+-    TEX_FILTER_FLAGS filter,
+-    const Image* img) noexcept
+-{
+-    if (!pWIC || !original || !img)
+-        return E_POINTER;
+-
+-    const WICBitmapInterpolationMode interpolationMode = GetWICInterp(filter);
+-
+-    WICPixelFormatGUID desiredPixelFormat = GUID_WICPixelFormatUndefined;
+-    HRESULT hr = original->GetPixelFormat(&desiredPixelFormat);
+-
+-    size_t colorBytesInPixel = 0;
+-    size_t colorBytesPerPixel = 0;
+-    size_t colorWithAlphaBytesPerPixel = 0;
+-    WICPixelFormatGUID colorPixelFormat = GUID_WICPixelFormatUndefined;
+-    WICPixelFormatGUID colorWithAlphaPixelFormat = GUID_WICPixelFormatUndefined;
+-
+-    if (SUCCEEDED(hr))
+-    {
+-        ComPtr<IWICComponentInfo> componentInfo;
+-        hr = pWIC->CreateComponentInfo(desiredPixelFormat, componentInfo.GetAddressOf());
+-
+-        ComPtr<IWICPixelFormatInfo> pixelFormatInfo;
+-        if (SUCCEEDED(hr))
+-        {
+-            hr = componentInfo.As(&pixelFormatInfo);
+-        }
+-
+-        UINT bitsPerPixel = 0;
+-        if (SUCCEEDED(hr))
+-        {
+-            hr = pixelFormatInfo->GetBitsPerPixel(&bitsPerPixel);
+-        }
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            if (bitsPerPixel <= 32)
+-            {
+-                colorBytesInPixel = colorBytesPerPixel = 3;
+-                colorPixelFormat = GUID_WICPixelFormat24bppBGR;
+-
+-                colorWithAlphaBytesPerPixel = 4;
+-                colorWithAlphaPixelFormat = GUID_WICPixelFormat32bppBGRA;
+-            }
+-            else
+-            {
+-                if (iswic2)
+-                {
+-                    colorBytesInPixel = colorBytesPerPixel = 12;
+-                    colorPixelFormat = GUID_WICPixelFormat96bppRGBFloat;
+-                }
+-                else
+-                {
+-                    colorBytesInPixel = 12;
+-                    colorBytesPerPixel = 16;
+-                    colorPixelFormat = GUID_WICPixelFormat128bppRGBFloat;
+-                }
+-
+-                colorWithAlphaBytesPerPixel = 16;
+-                colorWithAlphaPixelFormat = GUID_WICPixelFormat128bppRGBAFloat;
+-            }
+-        }
+-    }
+-
+-    // Resize color only image (no alpha channel)
+-    ComPtr<IWICBitmap> resizedColor;
+-    if (SUCCEEDED(hr))
+-    {
+-        ComPtr<IWICBitmapScaler> colorScaler;
+-        hr = pWIC->CreateBitmapScaler(colorScaler.GetAddressOf());
+-        if (SUCCEEDED(hr))
+-        {
+-            ComPtr<IWICBitmap> converted;
+-            hr = EnsureWicBitmapPixelFormat(pWIC, original, filter, colorPixelFormat, converted.GetAddressOf());
+-            if (SUCCEEDED(hr))
+-            {
+-                hr = colorScaler->Initialize(converted.Get(), static_cast<UINT>(newWidth), static_cast<UINT>(newHeight), interpolationMode);
+-            }
+-        }
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            ComPtr<IWICBitmap> resized;
+-            hr = pWIC->CreateBitmapFromSource(colorScaler.Get(), WICBitmapCacheOnDemand, resized.GetAddressOf());
+-            if (SUCCEEDED(hr))
+-            {
+-                hr = EnsureWicBitmapPixelFormat(pWIC, resized.Get(), filter, colorPixelFormat, resizedColor.GetAddressOf());
+-            }
+-        }
+-    }
+-
+-    // Resize color+alpha image
+-    ComPtr<IWICBitmap> resizedColorWithAlpha;
+-    if (SUCCEEDED(hr))
+-    {
+-        ComPtr<IWICBitmapScaler> colorWithAlphaScaler;
+-        hr = pWIC->CreateBitmapScaler(colorWithAlphaScaler.GetAddressOf());
+-        if (SUCCEEDED(hr))
+-        {
+-            ComPtr<IWICBitmap> converted;
+-            hr = EnsureWicBitmapPixelFormat(pWIC, original, filter, colorWithAlphaPixelFormat, converted.GetAddressOf());
+-            if (SUCCEEDED(hr))
+-            {
+-                hr = colorWithAlphaScaler->Initialize(converted.Get(), static_cast<UINT>(newWidth), static_cast<UINT>(newHeight), interpolationMode);
+-            }
+-        }
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            ComPtr<IWICBitmap> resized;
+-            hr = pWIC->CreateBitmapFromSource(colorWithAlphaScaler.Get(), WICBitmapCacheOnDemand, resized.GetAddressOf());
+-            if (SUCCEEDED(hr))
+-            {
+-                hr = EnsureWicBitmapPixelFormat(pWIC, resized.Get(), filter, colorWithAlphaPixelFormat, resizedColorWithAlpha.GetAddressOf());
+-            }
+-        }
+-    }
+-
+-    // Merge pixels (copying color channels from color only image to color+alpha image)
+-    if (SUCCEEDED(hr))
+-    {
+-        ComPtr<IWICBitmapLock> colorLock;
+-        ComPtr<IWICBitmapLock> colorWithAlphaLock;
+-        hr = resizedColor->Lock(nullptr, WICBitmapLockRead, colorLock.GetAddressOf());
+-        if (SUCCEEDED(hr))
+-        {
+-            hr = resizedColorWithAlpha->Lock(nullptr, WICBitmapLockWrite, colorWithAlphaLock.GetAddressOf());
+-        }
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            BYTE* colorWithAlphaData = nullptr;
+-            UINT colorWithAlphaSizeInBytes = 0;
+-            UINT colorWithAlphaStride = 0;
+-
+-            hr = colorWithAlphaLock->GetDataPointer(&colorWithAlphaSizeInBytes, &colorWithAlphaData);
+-            if (SUCCEEDED(hr))
+-            {
+-                if (!colorWithAlphaData)
+-                {
+-                    hr = E_POINTER;
+-                }
+-                else
+-                {
+-                    hr = colorWithAlphaLock->GetStride(&colorWithAlphaStride);
+-                }
+-            }
+-
+-            BYTE* colorData = nullptr;
+-            UINT colorSizeInBytes = 0;
+-            UINT colorStride = 0;
+-            if (SUCCEEDED(hr))
+-            {
+-                hr = colorLock->GetDataPointer(&colorSizeInBytes, &colorData);
+-                if (SUCCEEDED(hr))
+-                {
+-                    if (!colorData)
+-                    {
+-                        hr = E_POINTER;
+-                    }
+-                    else
+-                    {
+-                        hr = colorLock->GetStride(&colorStride);
+-                    }
+-                }
+-            }
+-
+-            for (size_t j = 0; SUCCEEDED(hr) && j < newHeight; j++)
+-            {
+-                for (size_t i = 0; SUCCEEDED(hr) && i < newWidth; i++)
+-                {
+-                    size_t colorWithAlphaIndex = (j * colorWithAlphaStride) + (i * colorWithAlphaBytesPerPixel);
+-                    const size_t colorIndex = (j * colorStride) + (i * colorBytesPerPixel);
+-
+-                    if (((colorWithAlphaIndex + colorBytesInPixel) > colorWithAlphaSizeInBytes)
+-                        || ((colorIndex + colorBytesPerPixel) > colorSizeInBytes))
+-                    {
+-                        hr = E_INVALIDARG;
+-                    }
+-                    else
+-                    {
+-                    #pragma warning( suppress : 26014 6386 ) // No overflow possible here
+-                        memcpy_s(colorWithAlphaData + colorWithAlphaIndex, colorWithAlphaBytesPerPixel, colorData + colorIndex, colorBytesInPixel);
+-                    }
+-                }
+-            }
+-        }
+-    }
+-
+-    if (SUCCEEDED(hr))
+-    {
+-        if (img->rowPitch > UINT32_MAX || img->slicePitch > UINT32_MAX)
+-            return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-        ComPtr<IWICBitmap> wicBitmap;
+-        hr = EnsureWicBitmapPixelFormat(pWIC, resizedColorWithAlpha.Get(), filter, desiredPixelFormat, wicBitmap.GetAddressOf());
+-        if (SUCCEEDED(hr))
+-        {
+-            hr = wicBitmap->CopyPixels(nullptr, static_cast<UINT>(img->rowPitch), static_cast<UINT>(img->slicePitch), img->pixels);
+-        }
+-    }
+-
+-    return hr;
+-}
+-#endif // WIN32
+ 
+ namespace
+ {
+-#ifdef _WIN32
+-    //--- determine when to use WIC vs. non-WIC paths ---
+-    bool UseWICFiltering(_In_ DXGI_FORMAT format, _In_ TEX_FILTER_FLAGS filter) noexcept
+-    {
+-        if (filter & TEX_FILTER_FORCE_NON_WIC)
+-        {
+-            // Explicit flag indicates use of non-WIC code paths
+-            return false;
+-        }
+-
+-        if (filter & TEX_FILTER_FORCE_WIC)
+-        {
+-            // Explicit flag to use WIC code paths, skips all the case checks below
+-            return true;
+-        }
+-
+-        if (IsSRGB(format) || (filter & TEX_FILTER_SRGB))
+-        {
+-            // Use non-WIC code paths for sRGB correct filtering
+-            return false;
+-        }
+-
+-    #if (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
+-        if (format == DXGI_FORMAT_R16G16B16A16_FLOAT
+-            || format == DXGI_FORMAT_R16_FLOAT)
+-        {
+-            // Use non-WIC code paths as these conversions are not supported by Xbox version of WIC
+-            return false;
+-        }
+-    #endif
+-
+-        static_assert(TEX_FILTER_POINT == 0x100000, "TEX_FILTER_ flag values don't match TEX_FILTER_MODE_MASK");
+-
+-        switch (filter & TEX_FILTER_MODE_MASK)
+-        {
+-        case TEX_FILTER_LINEAR:
+-            if (filter & TEX_FILTER_WRAP)
+-            {
+-                // WIC only supports 'clamp' semantics (MIRROR is equivalent to clamp for linear)
+-                return false;
+-            }
+-
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing Linear filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-
+-        case TEX_FILTER_CUBIC:
+-            if (filter & (TEX_FILTER_WRAP | TEX_FILTER_MIRROR))
+-            {
+-                // WIC only supports 'clamp' semantics
+-                return false;
+-            }
+-
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing Cubic filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-
+-        case TEX_FILTER_TRIANGLE:
+-            // WIC does not implement this filter
+-            return false;
+-
+-        default:
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-        }
+-
+-        return true;
+-    }
+-
+-
+-    //--- mipmap (1D/2D) generation using WIC image scalar ---
+-    HRESULT GenerateMipMapsUsingWIC(
+-        _In_ const Image& baseImage,
+-        _In_ TEX_FILTER_FLAGS filter,
+-        _In_ size_t levels,
+-        _In_ const WICPixelFormatGUID& pfGUID,
+-        _In_ const ScratchImage& mipChain,
+-        _In_ size_t item) noexcept
+-    {
+-        assert(levels > 1);
+-
+-        if (!baseImage.pixels || !mipChain.GetPixels())
+-            return E_POINTER;
+-
+-        bool iswic2 = false;
+-        auto pWIC = GetWICFactory(iswic2);
+-        if (!pWIC)
+-            return E_NOINTERFACE;
+-
+-        size_t width = baseImage.width;
+-        size_t height = baseImage.height;
+-
+-        if (baseImage.rowPitch > UINT32_MAX || baseImage.slicePitch > UINT32_MAX)
+-            return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-        ComPtr<IWICBitmap> source;
+-        HRESULT hr = pWIC->CreateBitmapFromMemory(static_cast<UINT>(width), static_cast<UINT>(height), pfGUID,
+-            static_cast<UINT>(baseImage.rowPitch), static_cast<UINT>(baseImage.slicePitch),
+-            baseImage.pixels, source.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        // Copy base image to top miplevel
+-        const Image *img0 = mipChain.GetImage(0, item, 0);
+-        if (!img0)
+-            return E_POINTER;
+-
+-        uint8_t* pDest = img0->pixels;
+-        if (!pDest)
+-            return E_POINTER;
+-
+-        const uint8_t *pSrc = baseImage.pixels;
+-        for (size_t h = 0; h < height; ++h)
+-        {
+-            const size_t msize = std::min<size_t>(img0->rowPitch, baseImage.rowPitch);
+-            memcpy_s(pDest, img0->rowPitch, pSrc, msize);
+-            pSrc += baseImage.rowPitch;
+-            pDest += img0->rowPitch;
+-        }
+-
+-        ComPtr<IWICComponentInfo> componentInfo;
+-        hr = pWIC->CreateComponentInfo(pfGUID, componentInfo.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        ComPtr<IWICPixelFormatInfo2> pixelFormatInfo;
+-        hr = componentInfo.As(&pixelFormatInfo);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        BOOL supportsTransparency = FALSE;
+-        hr = pixelFormatInfo->SupportsTransparency(&supportsTransparency);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        // Resize base image to each target mip level
+-        for (size_t level = 1; level < levels; ++level)
+-        {
+-            const Image *img = mipChain.GetImage(level, item, 0);
+-            if (!img)
+-                return E_POINTER;
+-
+-            if (height > 1)
+-                height >>= 1;
+-
+-            if (width > 1)
+-                width >>= 1;
+-
+-            assert(img->width == width && img->height == height && img->format == baseImage.format);
+-
+-            if ((filter & TEX_FILTER_SEPARATE_ALPHA) && supportsTransparency)
+-            {
+-                hr = ResizeSeparateColorAndAlpha(pWIC, iswic2, source.Get(), width, height, filter, img);
+-                if (FAILED(hr))
+-                    return hr;
+-            }
+-            else
+-            {
+-                ComPtr<IWICBitmapScaler> scaler;
+-                hr = pWIC->CreateBitmapScaler(scaler.GetAddressOf());
+-                if (FAILED(hr))
+-                    return hr;
+-
+-                if (img->rowPitch > UINT32_MAX || img->slicePitch > UINT32_MAX)
+-                    return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-                hr = scaler->Initialize(source.Get(),
+-                    static_cast<UINT>(width), static_cast<UINT>(height),
+-                    GetWICInterp(filter));
+-                if (FAILED(hr))
+-                    return hr;
+-
+-                WICPixelFormatGUID pfScaler;
+-                hr = scaler->GetPixelFormat(&pfScaler);
+-                if (FAILED(hr))
+-                    return hr;
+-
+-                if (memcmp(&pfScaler, &pfGUID, sizeof(WICPixelFormatGUID)) == 0)
+-                {
+-                    hr = scaler->CopyPixels(nullptr, static_cast<UINT>(img->rowPitch), static_cast<UINT>(img->slicePitch), img->pixels);
+-                    if (FAILED(hr))
+-                        return hr;
+-                }
+-                else
+-                {
+-                    // The WIC bitmap scaler is free to return a different pixel format than the source image, so here we
+-                    // convert it back
+-                    ComPtr<IWICFormatConverter> FC;
+-                    hr = pWIC->CreateFormatConverter(FC.GetAddressOf());
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    BOOL canConvert = FALSE;
+-                    hr = FC->CanConvert(pfScaler, pfGUID, &canConvert);
+-                    if (FAILED(hr) || !canConvert)
+-                    {
+-                        return E_UNEXPECTED;
+-                    }
+-
+-                    hr = FC->Initialize(scaler.Get(), pfGUID, GetWICDither(filter), nullptr,
+-                        0, WICBitmapPaletteTypeMedianCut);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    hr = FC->CopyPixels(nullptr, static_cast<UINT>(img->rowPitch), static_cast<UINT>(img->slicePitch), img->pixels);
+-                    if (FAILED(hr))
+-                        return hr;
+-                }
+-            }
+-        }
+-
+-        return S_OK;
+-    }
+-#endif // WIN32
+ 
+ 
+     //-------------------------------------------------------------------------------------
+@@ -2853,86 +2358,6 @@ HRESULT DirectX::GenerateMipMaps(
+ 
+     static_assert(TEX_FILTER_POINT == 0x100000, "TEX_FILTER_ flag values don't match TEX_FILTER_MODE_MASK");
+ 
+-#ifdef _WIN32
+-    bool usewic = UseWICFiltering(baseImage.format, filter);
+-
+-    WICPixelFormatGUID pfGUID = {};
+-    const bool wicpf = (usewic) ? DXGIToWIC(baseImage.format, pfGUID, true) : false;
+-
+-    if (usewic && !wicpf)
+-    {
+-        // Check to see if the source and/or result size is too big for WIC
+-        const uint64_t expandedSize = uint64_t(std::max<size_t>(1, baseImage.width >> 1)) * uint64_t(std::max<size_t>(1, baseImage.height >> 1)) * sizeof(float) * 4;
+-        const uint64_t expandedSize2 = uint64_t(baseImage.width) * uint64_t(baseImage.height) * sizeof(float) * 4;
+-        if (expandedSize > UINT32_MAX || expandedSize2 > UINT32_MAX)
+-        {
+-            if (filter & TEX_FILTER_FORCE_WIC)
+-                return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-            usewic = false;
+-        }
+-    }
+-
+-    if (usewic)
+-    {
+-        //--- Use WIC filtering to generate mipmaps -----------------------------------
+-        switch (filter & TEX_FILTER_MODE_MASK)
+-        {
+-        case 0:
+-        case TEX_FILTER_POINT:
+-        case TEX_FILTER_FANT: // Equivalent to Box filter
+-        case TEX_FILTER_LINEAR:
+-        case TEX_FILTER_CUBIC:
+-            {
+-                static_assert(TEX_FILTER_FANT == TEX_FILTER_BOX, "TEX_FILTER_ flag alias mismatch");
+-
+-                if (wicpf)
+-                {
+-                    // Case 1: Base image format is supported by Windows Imaging Component
+-                    hr = (baseImage.height > 1 || !allow1D)
+-                        ? mipChain.Initialize2D(baseImage.format, baseImage.width, baseImage.height, 1, levels)
+-                        : mipChain.Initialize1D(baseImage.format, baseImage.width, 1, levels);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    return GenerateMipMapsUsingWIC(baseImage, filter, levels, pfGUID, mipChain, 0);
+-                }
+-                else
+-                {
+-                    // Case 2: Base image format is not supported by WIC, so we have to convert, generate, and convert back
+-                    assert(baseImage.format != DXGI_FORMAT_R32G32B32A32_FLOAT);
+-                    ScratchImage temp;
+-                    hr = ConvertToR32G32B32A32(baseImage, temp);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    const Image *timg = temp.GetImage(0, 0, 0);
+-                    if (!timg)
+-                        return E_POINTER;
+-
+-                    ScratchImage tMipChain;
+-                    hr = (baseImage.height > 1 || !allow1D)
+-                        ? tMipChain.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, baseImage.width, baseImage.height, 1, levels)
+-                        : tMipChain.Initialize1D(DXGI_FORMAT_R32G32B32A32_FLOAT, baseImage.width, 1, levels);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    hr = GenerateMipMapsUsingWIC(*timg, filter, levels, GUID_WICPixelFormat128bppRGBAFloat, tMipChain, 0);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    temp.Release();
+-
+-                    return ConvertFromR32G32B32A32(tMipChain.GetImages(), tMipChain.GetImageCount(), tMipChain.GetMetadata(), baseImage.format, mipChain);
+-                }
+-            }
+-
+-        default:
+-            return HRESULT_E_NOT_SUPPORTED;
+-        }
+-    }
+-    else
+-    #endif // WIN32
+     {
+         //--- Use custom filters to generate mipmaps ----------------------------------
+         TexMetadata mdata = {};
+@@ -3068,99 +2493,6 @@ HRESULT DirectX::GenerateMipMaps(
+ 
+     static_assert(TEX_FILTER_POINT == 0x100000, "TEX_FILTER_ flag values don't match TEX_FILTER_MODE_MASK");
+ 
+-#ifdef _WIN32
+-    bool usewic = !metadata.IsPMAlpha() && UseWICFiltering(metadata.format, filter);
+-
+-    WICPixelFormatGUID pfGUID = {};
+-    const bool wicpf = (usewic) ? DXGIToWIC(metadata.format, pfGUID, true) : false;
+-
+-    if (usewic && !wicpf)
+-    {
+-        // Check to see if the source and/or result size is too big for WIC
+-        const uint64_t expandedSize = uint64_t(std::max<size_t>(1, metadata.width >> 1)) * uint64_t(std::max<size_t>(1, metadata.height >> 1)) * sizeof(float) * 4;
+-        const uint64_t expandedSize2 = uint64_t(metadata.width) * uint64_t(metadata.height) * sizeof(float) * 4;
+-        if (expandedSize > UINT32_MAX || expandedSize2 > UINT32_MAX)
+-        {
+-            if (filter & TEX_FILTER_FORCE_WIC)
+-                return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-            usewic = false;
+-        }
+-    }
+-
+-    if (usewic)
+-    {
+-        //--- Use WIC filtering to generate mipmaps -----------------------------------
+-        switch (filter & TEX_FILTER_MODE_MASK)
+-        {
+-        case 0:
+-        case TEX_FILTER_POINT:
+-        case TEX_FILTER_FANT: // Equivalent to Box filter
+-        case TEX_FILTER_LINEAR:
+-        case TEX_FILTER_CUBIC:
+-            {
+-                static_assert(TEX_FILTER_FANT == TEX_FILTER_BOX, "TEX_FILTER_ flag alias mismatch");
+-
+-                if (wicpf)
+-                {
+-                    // Case 1: Base image format is supported by Windows Imaging Component
+-                    TexMetadata mdata2 = metadata;
+-                    mdata2.mipLevels = levels;
+-                    hr = mipChain.Initialize(mdata2);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    for (size_t item = 0; item < metadata.arraySize; ++item)
+-                    {
+-                        hr = GenerateMipMapsUsingWIC(baseImages[item], filter, levels, pfGUID, mipChain, item);
+-                        if (FAILED(hr))
+-                        {
+-                            mipChain.Release();
+-                            return hr;
+-                        }
+-                    }
+-
+-                    return S_OK;
+-                }
+-                else
+-                {
+-                    // Case 2: Base image format is not supported by WIC, so we have to convert, generate, and convert back
+-                    assert(metadata.format != DXGI_FORMAT_R32G32B32A32_FLOAT);
+-
+-                    TexMetadata mdata2 = metadata;
+-                    mdata2.mipLevels = levels;
+-                    mdata2.format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+-                    ScratchImage tMipChain;
+-                    hr = tMipChain.Initialize(mdata2);
+-                    if (FAILED(hr))
+-                        return hr;
+-
+-                    for (size_t item = 0; item < metadata.arraySize; ++item)
+-                    {
+-                        ScratchImage temp;
+-                        hr = ConvertToR32G32B32A32(baseImages[item], temp);
+-                        if (FAILED(hr))
+-                            return hr;
+-
+-                        const Image *timg = temp.GetImage(0, 0, 0);
+-                        if (!timg)
+-                            return E_POINTER;
+-
+-                        hr = GenerateMipMapsUsingWIC(*timg, filter, levels, GUID_WICPixelFormat128bppRGBAFloat, tMipChain, item);
+-                        if (FAILED(hr))
+-                            return hr;
+-                    }
+-
+-                    return ConvertFromR32G32B32A32(tMipChain.GetImages(), tMipChain.GetImageCount(), tMipChain.GetMetadata(), metadata.format, mipChain);
+-                }
+-            }
+-
+-        default:
+-            return HRESULT_E_NOT_SUPPORTED;
+-        }
+-    }
+-    else
+-    #endif // WIN32
+     {
+         //--- Use custom filters to generate mipmaps ----------------------------------
+         TexMetadata mdata2 = metadata;
+@@ -3264,8 +2596,6 @@ HRESULT DirectX::GenerateMipMaps3D(
+     if (depth > INT16_MAX)
+         return E_INVALIDARG;
+ 
+-    if (filter & TEX_FILTER_FORCE_WIC)
+-        return HRESULT_E_NOT_SUPPORTED;
+ 
+     const DXGI_FORMAT format = baseImages[0].format;
+     const size_t width = baseImages[0].width;
+@@ -3375,8 +2705,6 @@ HRESULT DirectX::GenerateMipMaps3D(
+     if (levels > INT16_MAX)
+         return E_INVALIDARG;
+ 
+-    if (filter & TEX_FILTER_FORCE_WIC)
+-        return HRESULT_E_NOT_SUPPORTED;
+ 
+     if (!metadata.IsVolumemap()
+         || IsCompressed(metadata.format) || IsTypeless(metadata.format) || IsPlanar(metadata.format) || IsPalettized(metadata.format))
+diff --git a/DirectXTex/DirectXTexP.h b/DirectXTex/DirectXTexP.h
+index ff54891..9035945 100644
+--- a/DirectXTex/DirectXTexP.h
++++ b/DirectXTex/DirectXTexP.h
+@@ -168,18 +168,9 @@
+ 
+ #include "DirectXTex.h"
+ 
+-#ifdef _WIN32
+-#include <malloc.h>
+-
+-#if defined(NTDDI_WIN10_FE) || defined(__MINGW32__)
+-#include <ole2.h>
+-#else
+-#include <Ole2.h>
+-#endif
+-#include <wincodec.h>
+-#include <wrl\client.h>
+-#else
+-using WICPixelFormatGUID = GUID;
++#ifdef _WIN32
++#include <malloc.h>
++#include <wrl/client.h>
+ #endif
+ 
+ #include "scoped.h"
+@@ -238,93 +229,7 @@ namespace DirectX
+     namespace Internal
+     {
+         //-----------------------------------------------------------------------------
+-        // WIC helper functions
+-    #ifdef _WIN32
+-        DXGI_FORMAT __cdecl WICToDXGI(_In_ const GUID& guid) noexcept;
+-        bool __cdecl DXGIToWIC(_In_ DXGI_FORMAT format, _Out_ GUID& guid, _In_ bool ignoreRGBvsBGR = false) noexcept;
+-
+-        TEX_FILTER_FLAGS __cdecl CheckWICColorSpace(_In_ const GUID& sourceGUID, _In_ const GUID& targetGUID) noexcept;
+-
+-        inline WICBitmapDitherType __cdecl GetWICDither(_In_ TEX_FILTER_FLAGS flags) noexcept
+-        {
+-            static_assert(TEX_FILTER_DITHER == 0x10000, "TEX_FILTER_DITHER* flag values don't match mask");
+-
+-            static_assert(static_cast<int>(TEX_FILTER_DITHER) == static_cast<int>(WIC_FLAGS_DITHER), "TEX_FILTER_DITHER* should match WIC_FLAGS_DITHER*");
+-            static_assert(static_cast<int>(TEX_FILTER_DITHER_DIFFUSION) == static_cast<int>(WIC_FLAGS_DITHER_DIFFUSION), "TEX_FILTER_DITHER* should match WIC_FLAGS_DITHER*");
+-
+-            switch (flags & TEX_FILTER_DITHER_MASK)
+-            {
+-            case TEX_FILTER_DITHER:
+-                return WICBitmapDitherTypeOrdered4x4;
+-
+-            case TEX_FILTER_DITHER_DIFFUSION:
+-                return WICBitmapDitherTypeErrorDiffusion;
+-
+-            default:
+-                return WICBitmapDitherTypeNone;
+-            }
+-        }
+-
+-        inline WICBitmapDitherType __cdecl GetWICDither(_In_ WIC_FLAGS flags) noexcept
+-        {
+-            switch (flags & TEX_FILTER_DITHER_MASK)
+-            {
+-            case WIC_FLAGS_DITHER:
+-                return WICBitmapDitherTypeOrdered4x4;
+-
+-            case WIC_FLAGS_DITHER_DIFFUSION:
+-                return WICBitmapDitherTypeErrorDiffusion;
+-
+-            default:
+-                return WICBitmapDitherTypeNone;
+-            }
+-        }
+-
+-        inline WICBitmapInterpolationMode __cdecl GetWICInterp(_In_ WIC_FLAGS flags) noexcept
+-        {
+-            static_assert(TEX_FILTER_POINT == 0x100000, "TEX_FILTER_ flag values don't match TEX_FILTER_MASK");
+-
+-            static_assert(static_cast<int>(TEX_FILTER_POINT) == static_cast<int>(WIC_FLAGS_FILTER_POINT), "TEX_FILTER_* flags should match WIC_FLAGS_FILTER_*");
+-            static_assert(static_cast<int>(TEX_FILTER_LINEAR) == static_cast<int>(WIC_FLAGS_FILTER_LINEAR), "TEX_FILTER_* flags should match WIC_FLAGS_FILTER_*");
+-            static_assert(static_cast<int>(TEX_FILTER_CUBIC) == static_cast<int>(WIC_FLAGS_FILTER_CUBIC), "TEX_FILTER_* flags should match WIC_FLAGS_FILTER_*");
+-            static_assert(static_cast<int>(TEX_FILTER_FANT) == static_cast<int>(WIC_FLAGS_FILTER_FANT), "TEX_FILTER_* flags should match WIC_FLAGS_FILTER_*");
+-
+-            switch (flags & TEX_FILTER_MODE_MASK)
+-            {
+-            case TEX_FILTER_POINT:
+-                return WICBitmapInterpolationModeNearestNeighbor;
+-
+-            case TEX_FILTER_LINEAR:
+-                return WICBitmapInterpolationModeLinear;
+-
+-            case TEX_FILTER_CUBIC:
+-                return WICBitmapInterpolationModeCubic;
+-
+-            case TEX_FILTER_FANT:
+-            default:
+-                return WICBitmapInterpolationModeFant;
+-            }
+-        }
+-
+-        inline WICBitmapInterpolationMode __cdecl GetWICInterp(_In_ TEX_FILTER_FLAGS flags) noexcept
+-        {
+-            switch (flags & TEX_FILTER_MODE_MASK)
+-            {
+-            case TEX_FILTER_POINT:
+-                return WICBitmapInterpolationModeNearestNeighbor;
+-
+-            case TEX_FILTER_LINEAR:
+-                return WICBitmapInterpolationModeLinear;
+-
+-            case TEX_FILTER_CUBIC:
+-                return WICBitmapInterpolationModeCubic;
+-
+-            case TEX_FILTER_FANT:
+-            default:
+-                return WICBitmapInterpolationModeFant;
+-            }
+-        }
+-    #endif // WIN32
++        
+ 
+         //---------------------------------------------------------------------------------
+         // Image helper functions
+@@ -443,13 +348,6 @@ namespace DirectX
+         // Misc helper functions
+         bool __cdecl IsAlphaAllOpaqueBC(_In_ const Image& cImage) noexcept;
+ 
+-    #ifdef _WIN32
+-        HRESULT __cdecl ResizeSeparateColorAndAlpha(_In_ IWICImagingFactory* pWIC,
+-            _In_ bool iswic2,
+-            _In_ IWICBitmap* original,
+-            _In_ size_t newWidth, _In_ size_t newHeight, _In_ TEX_FILTER_FLAGS filter,
+-            _Inout_ const Image* img) noexcept;
+-    #endif
+ 
+     } // namespace Internal
+ } // namespace DirectX
+diff --git a/DirectXTex/DirectXTexResize.cpp b/DirectXTex/DirectXTexResize.cpp
+index ca5aa89..fcf3f21 100644
+--- a/DirectXTex/DirectXTexResize.cpp
++++ b/DirectXTex/DirectXTexResize.cpp
+@@ -19,233 +19,6 @@ using Microsoft::WRL::ComPtr;
+ 
+ namespace
+ {
+-#ifdef _WIN32
+-    //--- Do image resize using WIC ---
+-    HRESULT PerformResizeUsingWIC(
+-        const Image& srcImage,
+-        TEX_FILTER_FLAGS filter,
+-        const WICPixelFormatGUID& pfGUID,
+-        const Image& destImage) noexcept
+-    {
+-        if (!srcImage.pixels || !destImage.pixels)
+-            return E_POINTER;
+-
+-        assert(srcImage.format == destImage.format);
+-
+-        bool iswic2 = false;
+-        auto pWIC = GetWICFactory(iswic2);
+-        if (!pWIC)
+-            return E_NOINTERFACE;
+-
+-        ComPtr<IWICComponentInfo> componentInfo;
+-        HRESULT hr = pWIC->CreateComponentInfo(pfGUID, componentInfo.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        ComPtr<IWICPixelFormatInfo2> pixelFormatInfo;
+-        hr = componentInfo.As(&pixelFormatInfo);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        BOOL supportsTransparency = FALSE;
+-        hr = pixelFormatInfo->SupportsTransparency(&supportsTransparency);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        if (srcImage.rowPitch > UINT32_MAX || srcImage.slicePitch > UINT32_MAX
+-            || destImage.rowPitch > UINT32_MAX || destImage.slicePitch > UINT32_MAX)
+-            return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-        ComPtr<IWICBitmap> source;
+-        hr = pWIC->CreateBitmapFromMemory(static_cast<UINT>(srcImage.width), static_cast<UINT>(srcImage.height), pfGUID,
+-            static_cast<UINT>(srcImage.rowPitch), static_cast<UINT>(srcImage.slicePitch),
+-            srcImage.pixels, source.GetAddressOf());
+-        if (FAILED(hr))
+-            return hr;
+-
+-        if ((filter & TEX_FILTER_SEPARATE_ALPHA) && supportsTransparency)
+-        {
+-            hr = ResizeSeparateColorAndAlpha(pWIC, iswic2, source.Get(), destImage.width, destImage.height, filter, &destImage);
+-            if (FAILED(hr))
+-                return hr;
+-        }
+-        else
+-        {
+-            ComPtr<IWICBitmapScaler> scaler;
+-            hr = pWIC->CreateBitmapScaler(scaler.GetAddressOf());
+-            if (FAILED(hr))
+-                return hr;
+-
+-            hr = scaler->Initialize(source.Get(),
+-                static_cast<UINT>(destImage.width), static_cast<UINT>(destImage.height),
+-                GetWICInterp(filter));
+-            if (FAILED(hr))
+-                return hr;
+-
+-            WICPixelFormatGUID pfScaler;
+-            hr = scaler->GetPixelFormat(&pfScaler);
+-            if (FAILED(hr))
+-                return hr;
+-
+-            if (memcmp(&pfScaler, &pfGUID, sizeof(WICPixelFormatGUID)) == 0)
+-            {
+-                hr = scaler->CopyPixels(nullptr, static_cast<UINT>(destImage.rowPitch), static_cast<UINT>(destImage.slicePitch), destImage.pixels);
+-                if (FAILED(hr))
+-                    return hr;
+-            }
+-            else
+-            {
+-                // The WIC bitmap scaler is free to return a different pixel format than the source image, so here we
+-                // convert it back
+-                ComPtr<IWICFormatConverter> FC;
+-                hr = pWIC->CreateFormatConverter(FC.GetAddressOf());
+-                if (FAILED(hr))
+-                    return hr;
+-
+-                BOOL canConvert = FALSE;
+-                hr = FC->CanConvert(pfScaler, pfGUID, &canConvert);
+-                if (FAILED(hr) || !canConvert)
+-                {
+-                    return E_UNEXPECTED;
+-                }
+-
+-                hr = FC->Initialize(scaler.Get(), pfGUID, GetWICDither(filter), nullptr,
+-                    0, WICBitmapPaletteTypeMedianCut);
+-                if (FAILED(hr))
+-                    return hr;
+-
+-                hr = FC->CopyPixels(nullptr, static_cast<UINT>(destImage.rowPitch), static_cast<UINT>(destImage.slicePitch), destImage.pixels);
+-                if (FAILED(hr))
+-                    return hr;
+-            }
+-        }
+-
+-        return S_OK;
+-    }
+-
+-
+-    //--- Do conversion, resize using WIC, conversion cycle ---
+-    HRESULT PerformResizeViaF32(
+-        const Image& srcImage,
+-        TEX_FILTER_FLAGS filter,
+-        const Image& destImage) noexcept
+-    {
+-        if (!srcImage.pixels || !destImage.pixels)
+-            return E_POINTER;
+-
+-        assert(srcImage.format != DXGI_FORMAT_R32G32B32A32_FLOAT);
+-        assert(srcImage.format == destImage.format);
+-
+-        ScratchImage temp;
+-        HRESULT hr = ConvertToR32G32B32A32(srcImage, temp);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        const Image *tsrc = temp.GetImage(0, 0, 0);
+-        if (!tsrc)
+-            return E_POINTER;
+-
+-        ScratchImage rtemp;
+-        hr = rtemp.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, destImage.width, destImage.height, 1, 1);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        const Image *tdest = rtemp.GetImage(0, 0, 0);
+-        if (!tdest)
+-            return E_POINTER;
+-
+-        hr = PerformResizeUsingWIC(*tsrc, filter, GUID_WICPixelFormat128bppRGBAFloat, *tdest);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        temp.Release();
+-
+-        hr = ConvertFromR32G32B32A32(*tdest, destImage);
+-        if (FAILED(hr))
+-            return hr;
+-
+-        return S_OK;
+-    }
+-
+-
+-    //--- determine when to use WIC vs. non-WIC paths ---
+-    bool UseWICFiltering(_In_ DXGI_FORMAT format, _In_ TEX_FILTER_FLAGS filter) noexcept
+-    {
+-        if (filter & TEX_FILTER_FORCE_NON_WIC)
+-        {
+-            // Explicit flag indicates use of non-WIC code paths
+-            return false;
+-        }
+-
+-        if (filter & TEX_FILTER_FORCE_WIC)
+-        {
+-            // Explicit flag to use WIC code paths, skips all the case checks below
+-            return true;
+-        }
+-
+-        if (IsSRGB(format) || (filter & TEX_FILTER_SRGB))
+-        {
+-            // Use non-WIC code paths for sRGB correct filtering
+-            return false;
+-        }
+-
+-    #if (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
+-        if (format == DXGI_FORMAT_R16G16B16A16_FLOAT
+-            || format == DXGI_FORMAT_R16_FLOAT)
+-        {
+-            // Use non-WIC code paths as these conversions are not supported by Xbox version of WIC
+-            return false;
+-        }
+-    #endif
+-
+-        static_assert(TEX_FILTER_POINT == 0x100000, "TEX_FILTER_ flag values don't match TEX_FILTER_MASK");
+-
+-        switch (filter & TEX_FILTER_MODE_MASK)
+-        {
+-        case TEX_FILTER_LINEAR:
+-            if (filter & TEX_FILTER_WRAP)
+-            {
+-                // WIC only supports 'clamp' semantics (MIRROR is equivalent to clamp for linear)
+-                return false;
+-            }
+-
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing Linear filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-
+-        case TEX_FILTER_CUBIC:
+-            if (filter & (TEX_FILTER_WRAP | TEX_FILTER_MIRROR))
+-            {
+-                // WIC only supports 'clamp' semantics
+-                return false;
+-            }
+-
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing Cubic filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-
+-        case TEX_FILTER_TRIANGLE:
+-            // WIC does not implement this filter
+-            return false;
+-
+-        default:
+-            if (BitsPerColor(format) > 8)
+-            {
+-                // Avoid the WIC bitmap scaler when doing filtering of XR/HDR formats
+-                return false;
+-            }
+-            break;
+-        }
+-
+-        return true;
+-    }
+-#endif // WIN32
+ 
+     //-------------------------------------------------------------------------------------
+     // Resize custom filters
+@@ -876,26 +649,6 @@ HRESULT DirectX::Resize(
+         return HRESULT_E_NOT_SUPPORTED;
+     }
+ 
+-#ifdef _WIN32
+-    bool usewic = UseWICFiltering(srcImage.format, filter);
+-
+-    WICPixelFormatGUID pfGUID = {};
+-    const bool wicpf = (usewic) ? DXGIToWIC(srcImage.format, pfGUID, true) : false;
+-
+-    if (usewic && !wicpf)
+-    {
+-        // Check to see if the source and/or result size is too big for WIC
+-        const uint64_t expandedSize = uint64_t(width) * uint64_t(height) * sizeof(float) * 4;
+-        const uint64_t expandedSize2 = uint64_t(srcImage.width) * uint64_t(srcImage.height) * sizeof(float) * 4;
+-        if (expandedSize > UINT32_MAX || expandedSize2 > UINT32_MAX)
+-        {
+-            if (filter & TEX_FILTER_FORCE_WIC)
+-                return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-            usewic = false;
+-        }
+-    }
+-#endif // WIN32
+ 
+     HRESULT hr = image.Initialize2D(srcImage.format, width, height, 1, 1);
+     if (FAILED(hr))
+@@ -905,24 +658,8 @@ HRESULT DirectX::Resize(
+     if (!rimage)
+         return E_POINTER;
+ 
+-#ifdef _WIN32
+-    if (usewic)
+     {
+-        if (wicpf)
+-        {
+-            // Case 1: Source format is supported by Windows Imaging Component
+-            hr = PerformResizeUsingWIC(srcImage, filter, pfGUID, *rimage);
+-        }
+-        else
+-        {
+-            // Case 2: Source format is not supported by WIC, so we have to convert, resize, and convert back
+-            hr = PerformResizeViaF32(srcImage, filter, *rimage);
+-        }
+-    }
+-    else
+-    #endif
+-    {
+-        // Case 3: not using WIC resizing
++        // Resize using the portable filters
+         hr = PerformResizeUsingCustomFilters(srcImage, filter, *rimage);
+     }
+ 
+@@ -965,26 +702,6 @@ HRESULT DirectX::Resize(
+     if (FAILED(hr))
+         return hr;
+ 
+-#ifdef _WIN32
+-    bool usewic = !metadata.IsPMAlpha() && UseWICFiltering(metadata.format, filter);
+-
+-    WICPixelFormatGUID pfGUID = {};
+-    const bool wicpf = (usewic) ? DXGIToWIC(metadata.format, pfGUID, true) : false;
+-
+-    if (usewic && !wicpf)
+-    {
+-        // Check to see if the source and/or result size is too big for WIC
+-        const uint64_t expandedSize = uint64_t(width) * uint64_t(height) * sizeof(float) * 4;
+-        const uint64_t expandedSize2 = uint64_t(metadata.width) * uint64_t(metadata.height) * sizeof(float) * 4;
+-        if (expandedSize > UINT32_MAX || expandedSize2 > UINT32_MAX)
+-        {
+-            if (filter & TEX_FILTER_FORCE_WIC)
+-                return HRESULT_E_ARITHMETIC_OVERFLOW;
+-
+-            usewic = false;
+-        }
+-    }
+-#endif
+ 
+     switch (metadata.dimension)
+     {
+@@ -1021,24 +738,8 @@ HRESULT DirectX::Resize(
+                 return E_FAIL;
+             }
+ 
+-        #ifdef _WIN32
+-            if (usewic)
+-            {
+-                if (wicpf)
+-                {
+-                    // Case 1: Source format is supported by Windows Imaging Component
+-                    hr = PerformResizeUsingWIC(*srcimg, filter, pfGUID, *destimg);
+-                }
+-                else
+-                {
+-                    // Case 2: Source format is not supported by WIC, so we have to convert, resize, and convert back
+-                    hr = PerformResizeViaF32(*srcimg, filter, *destimg);
+-                }
+-            }
+-            else
+-            #endif
+             {
+-                // Case 3: not using WIC resizing
++                // Resize using the portable filters
+                 hr = PerformResizeUsingCustomFilters(*srcimg, filter, *destimg);
+             }
+ 
+@@ -1082,24 +783,8 @@ HRESULT DirectX::Resize(
+                 return E_FAIL;
+             }
+ 
+-        #ifdef _WIN32
+-            if (usewic)
+-            {
+-                if (wicpf)
+-                {
+-                    // Case 1: Source format is supported by Windows Imaging Component
+-                    hr = PerformResizeUsingWIC(*srcimg, filter, pfGUID, *destimg);
+-                }
+-                else
+-                {
+-                    // Case 2: Source format is not supported by WIC, so we have to convert, resize, and convert back
+-                    hr = PerformResizeViaF32(*srcimg, filter, *destimg);
+-                }
+-            }
+-            else
+-            #endif
+             {
+-                // Case 3: not using WIC resizing
++                // Resize using the portable filters
+                 hr = PerformResizeUsingCustomFilters(*srcimg, filter, *destimg);
+             }
+ 
+diff --git a/DirectXTex/DirectXTexUtil.cpp b/DirectXTex/DirectXTexUtil.cpp
+index 017544b..e800001 100644
+--- a/DirectXTex/DirectXTexUtil.cpp
++++ b/DirectXTex/DirectXTexUtil.cpp
+@@ -32,89 +32,11 @@ static_assert(WIN11_DXGI_FORMAT_A4B4G4R4_UNORM == DXGI_FORMAT_A4B4G4R4_UNORM, "W
+ #endif
+ 
+ using namespace DirectX;
+-using Microsoft::WRL::ComPtr;
++
+ 
+ namespace
+ {
+-#ifdef _WIN32
+-    //-------------------------------------------------------------------------------------
+-    // WIC Pixel Format Translation Data
+-    //-------------------------------------------------------------------------------------
+-    struct WICTranslate
+-    {
+-        const GUID& wic;
+-        DXGI_FORMAT format;
+-        bool        srgb;
+-
+-        constexpr WICTranslate(const GUID& wg, DXGI_FORMAT fmt, bool isrgb) noexcept :
+-            wic(wg),
+-            format(fmt),
+-            srgb(isrgb)
+-        {}
+-    };
+-
+-    constexpr WICTranslate g_WICFormats[] =
+-    {
+-        { GUID_WICPixelFormat128bppRGBAFloat,       DXGI_FORMAT_R32G32B32A32_FLOAT,         false },
+-
+-        { GUID_WICPixelFormat64bppRGBAHalf,         DXGI_FORMAT_R16G16B16A16_FLOAT,         false },
+-        { GUID_WICPixelFormat64bppRGBA,             DXGI_FORMAT_R16G16B16A16_UNORM,         true },
+-
+-        { GUID_WICPixelFormat32bppRGBA,             DXGI_FORMAT_R8G8B8A8_UNORM,             true },
+-        { GUID_WICPixelFormat32bppBGRA,             DXGI_FORMAT_B8G8R8A8_UNORM,             true }, // DXGI 1.1
+-        { GUID_WICPixelFormat32bppBGR,              DXGI_FORMAT_B8G8R8X8_UNORM,             true }, // DXGI 1.1
+-
+-        { GUID_WICPixelFormat32bppRGBA1010102XR,    DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM, true }, // DXGI 1.1
+-        { GUID_WICPixelFormat32bppRGBA1010102,      DXGI_FORMAT_R10G10B10A2_UNORM,          true },
+-
+-        { GUID_WICPixelFormat16bppBGRA5551,         DXGI_FORMAT_B5G5R5A1_UNORM,             true },
+-        { GUID_WICPixelFormat16bppBGR565,           DXGI_FORMAT_B5G6R5_UNORM,               true },
+-
+-        { GUID_WICPixelFormat32bppGrayFloat,        DXGI_FORMAT_R32_FLOAT,                  false },
+-        { GUID_WICPixelFormat16bppGrayHalf,         DXGI_FORMAT_R16_FLOAT,                  false },
+-        { GUID_WICPixelFormat16bppGray,             DXGI_FORMAT_R16_UNORM,                  true },
+-        { GUID_WICPixelFormat8bppGray,              DXGI_FORMAT_R8_UNORM,                   true },
+-
+-        { GUID_WICPixelFormat8bppAlpha,             DXGI_FORMAT_A8_UNORM,                   false },
+-
+-        { GUID_WICPixelFormatBlackWhite,            DXGI_FORMAT_R1_UNORM,                   false },
+-    };
+-
+-    bool g_WIC2 = false;
+-    IWICImagingFactory* g_Factory = nullptr;
+-
+-    BOOL WINAPI InitializeWICFactory(PINIT_ONCE, PVOID, PVOID *ifactory) noexcept
+-    {
+-        HRESULT hr = CoCreateInstance(
+-            CLSID_WICImagingFactory2,
+-            nullptr,
+-            CLSCTX_INPROC_SERVER,
+-            __uuidof(IWICImagingFactory2),
+-            ifactory
+-        );
+-
+-        if (SUCCEEDED(hr))
+-        {
+-            // WIC2 is available on Windows 10, Windows 8.x, and Windows 7 SP1 with KB 2670838 installed
+-            g_WIC2 = true;
+-            return TRUE;
+-        }
+-        else
+-        {
+-            g_WIC2 = false;
+-
+-            hr = CoCreateInstance(
+-                CLSID_WICImagingFactory1,
+-                nullptr,
+-                CLSCTX_INPROC_SERVER,
+-                __uuidof(IWICImagingFactory),
+-                ifactory
+-            );
+-            return SUCCEEDED(hr) ? TRUE : FALSE;
+-        }
+-    }
+-
+-#else // !WIN32
++#ifndef _WIN32
+     inline void * _aligned_malloc(size_t size, size_t alignment)
+     {
+         size = (size + alignment - 1) & ~(alignment - 1);
+@@ -122,213 +44,10 @@ namespace
+     }
+ 
+ #define _aligned_free free
+-#endif
+-}
+-
+-
+-#ifdef _WIN32
+-//=====================================================================================
+-// WIC Utilities
+-//=====================================================================================
+-
+-_Use_decl_annotations_
+-DXGI_FORMAT DirectX::Internal::WICToDXGI(const GUID& guid) noexcept
+-{
+-    for (size_t i = 0; i < std::size(g_WICFormats); ++i)
+-    {
+-        if (memcmp(&g_WICFormats[i].wic, &guid, sizeof(GUID)) == 0)
+-            return g_WICFormats[i].format;
+-    }
+-
+-    if (g_WIC2)
+-    {
+-        if (memcmp(&GUID_WICPixelFormat96bppRGBFloat, &guid, sizeof(GUID)) == 0)
+-            return DXGI_FORMAT_R32G32B32_FLOAT;
+-    }
+-
+-    return DXGI_FORMAT_UNKNOWN;
++#endif
+ }
+ 
+-_Use_decl_annotations_
+-bool DirectX::Internal::DXGIToWIC(DXGI_FORMAT format, GUID& guid, bool ignoreRGBvsBGR) noexcept
+-{
+-    switch (format)
+-    {
+-    case DXGI_FORMAT_R8G8B8A8_UNORM:
+-    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+-        if (ignoreRGBvsBGR)
+-        {
+-            // If we are not doing conversion so don't really care about BGR vs RGB color-order,
+-            // we can use the canonical WIC 32bppBGRA format which avoids an extra format conversion when using the WIC scaler
+-            memcpy(&guid, &GUID_WICPixelFormat32bppBGRA, sizeof(GUID));
+-        }
+-        else
+-        {
+-            memcpy(&guid, &GUID_WICPixelFormat32bppRGBA, sizeof(GUID));
+-        }
+-        return true;
+ 
+-    case DXGI_FORMAT_D32_FLOAT:
+-        memcpy(&guid, &GUID_WICPixelFormat32bppGrayFloat, sizeof(GUID));
+-        return true;
+-
+-    case DXGI_FORMAT_D16_UNORM:
+-        memcpy(&guid, &GUID_WICPixelFormat16bppGray, sizeof(GUID));
+-        return true;
+-
+-    case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+-        memcpy(&guid, &GUID_WICPixelFormat32bppBGRA, sizeof(GUID));
+-        return true;
+-
+-    case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+-        memcpy(&guid, &GUID_WICPixelFormat32bppBGR, sizeof(GUID));
+-        return true;
+-
+-    case DXGI_FORMAT_R32G32B32_FLOAT:
+-        if (g_WIC2)
+-        {
+-            memcpy(&guid, &GUID_WICPixelFormat96bppRGBFloat, sizeof(GUID));
+-            return true;
+-        }
+-        break;
+-
+-    default:
+-        for (size_t i = 0; i < std::size(g_WICFormats); ++i)
+-        {
+-            if (g_WICFormats[i].format == format)
+-            {
+-                memcpy(&guid, &g_WICFormats[i].wic, sizeof(GUID));
+-                return true;
+-            }
+-        }
+-        break;
+-    }
+-
+-    memset(&guid, 0, sizeof(GUID));
+-    return false;
+-}
+-
+-TEX_FILTER_FLAGS DirectX::Internal::CheckWICColorSpace(_In_ const GUID& sourceGUID, _In_ const GUID& targetGUID) noexcept
+-{
+-    TEX_FILTER_FLAGS srgb = TEX_FILTER_DEFAULT;
+-
+-    for (size_t i = 0; i < std::size(g_WICFormats); ++i)
+-    {
+-        if (memcmp(&g_WICFormats[i].wic, &sourceGUID, sizeof(GUID)) == 0)
+-        {
+-            if (g_WICFormats[i].srgb)
+-                srgb |= TEX_FILTER_SRGB_IN;
+-        }
+-
+-        if (memcmp(&g_WICFormats[i].wic, &targetGUID, sizeof(GUID)) == 0)
+-        {
+-            if (g_WICFormats[i].srgb)
+-                srgb |= TEX_FILTER_SRGB_OUT;
+-        }
+-    }
+-
+-    if ((srgb & (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT)) == (TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT))
+-    {
+-        srgb &= ~(TEX_FILTER_SRGB_IN | TEX_FILTER_SRGB_OUT);
+-    }
+-
+-    return srgb;
+-}
+-
+-
+-//-------------------------------------------------------------------------------------
+-// Public helper function to get common WIC codec GUIDs
+-//-------------------------------------------------------------------------------------
+-_Use_decl_annotations_
+-REFGUID DirectX::GetWICCodec(WICCodecs codec) noexcept
+-{
+-    switch (codec)
+-    {
+-    case WIC_CODEC_BMP:
+-        return GUID_ContainerFormatBmp;
+-
+-    case WIC_CODEC_JPEG:
+-        return GUID_ContainerFormatJpeg;
+-
+-    case WIC_CODEC_PNG:
+-        return GUID_ContainerFormatPng;
+-
+-    case WIC_CODEC_TIFF:
+-        return GUID_ContainerFormatTiff;
+-
+-    case WIC_CODEC_GIF:
+-        return GUID_ContainerFormatGif;
+-
+-    case WIC_CODEC_WMP:
+-        return GUID_ContainerFormatWmp;
+-
+-    case WIC_CODEC_ICO:
+-        return GUID_ContainerFormatIco;
+-
+-    #ifdef NTDDI_WIN10_RS4
+-    case WIC_CODEC_HEIF:
+-        // This requires installing https://aka.ms/heif
+-        return GUID_ContainerFormatHeif;
+-    #endif
+-
+-    default:
+-        return GUID_NULL;
+-    }
+-}
+-
+-
+-//-------------------------------------------------------------------------------------
+-// Singleton function for WIC factory
+-//-------------------------------------------------------------------------------------
+-IWICImagingFactory* DirectX::GetWICFactory(bool& iswic2) noexcept
+-{
+-    if (g_Factory)
+-    {
+-        iswic2 = g_WIC2;
+-        return g_Factory;
+-    }
+-
+-    static INIT_ONCE s_initOnce = INIT_ONCE_STATIC_INIT;
+-
+-    if (!InitOnceExecuteOnce(&s_initOnce,
+-        InitializeWICFactory,
+-        nullptr,
+-        reinterpret_cast<LPVOID*>(&g_Factory)))
+-    {
+-        return nullptr;
+-    }
+-
+-    iswic2 = g_WIC2;
+-    return g_Factory;
+-}
+-
+-
+-//-------------------------------------------------------------------------------------
+-// Optional initializer for WIC factory
+-//-------------------------------------------------------------------------------------
+-void DirectX::SetWICFactory(_In_opt_ IWICImagingFactory* pWIC) noexcept
+-{
+-    if (pWIC == g_Factory)
+-        return;
+-
+-    bool iswic2 = false;
+-    if (pWIC)
+-    {
+-        ComPtr<IWICImagingFactory2> wic2;
+-        HRESULT hr = pWIC->QueryInterface(IID_PPV_ARGS(wic2.GetAddressOf()));
+-        if (SUCCEEDED(hr))
+-        {
+-            iswic2 = true;
+-        }
+-        pWIC->AddRef();
+-    }
+-
+-    g_WIC2 = iswic2;
+-    std::swap(pWIC, g_Factory);
+-    if (pWIC)
+-        pWIC->Release();
+-}
+-#endif // WIN32
+ 
+ 
+ //=====================================================================================

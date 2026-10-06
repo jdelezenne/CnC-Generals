@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "mixfile.h"
+#include "Platform/Paths.h"
 #include "wwdebug.h"
 #include "ffactory.h"
 #include "wwfile.h"
@@ -369,8 +370,8 @@ MixFileFactoryClass::Flush_Changes (void)
 	//
 	//	Delete the old mix file and rename the new one
 	//
-	::DeleteFile (MixFilename);
-	::MoveFile (full_path, MixFilename);
+	Platform::RemoveUserFile(MixFilename);
+	Platform::RenameUserFile(full_path, MixFilename);
 
 	//
 	//	Reset the lists

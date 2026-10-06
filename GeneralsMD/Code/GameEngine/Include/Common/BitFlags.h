@@ -33,6 +33,7 @@
 #define __BitFlags_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Platform/StringCompare.h"
 #include "Common/STLTypedefs.h"
 
 class INI;
@@ -276,7 +277,7 @@ public:
     Int i = 0;
 	  for(const char** name = s_bitNameList; *name; ++name, ++i )
 	  {
-		  if( stricmp( *name, token ) == 0 )
+		  if( Platform::CompareNoCase( *name, token ) == 0 )
 		  {
         return i;
 		  }

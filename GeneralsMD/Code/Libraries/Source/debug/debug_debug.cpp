@@ -1367,7 +1367,7 @@ void Debug::FlushOutput(bool defaultLog)
 #ifdef HAS_LOGS
     // then force output to a very simple default log file
     // (non-Release builds only)
-    HANDLE h=CreateFile("default.log",GENERIC_WRITE,0,NULL,
+    HANDLE h=CreateFile(Platform::WritePath("default.log").c_str(),GENERIC_WRITE,0,NULL,
                         OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
     SetFilePointer(h,0,NULL,FILE_END);
     DWORD dwDummy;

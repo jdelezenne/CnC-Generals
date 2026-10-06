@@ -44,6 +44,8 @@
 //-----------------------------------------------------------------------------
 
 #include "W3DDevice/GameClient/heightmap.h"
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 #include "Platform/Windows/Window.h"
 #include "W3DDevice/GameClient/W3DWaterTracks.h"
 #include "GameClient/InGameUI.h"
@@ -827,10 +829,10 @@ void WaterTracksRenderSystem::shutdown( void )
 void WaterTracksRenderSystem::update()
 {
 
-	static  Int iLastTime=timeGetTime();
+	static  Int iLastTime=Platform::Milliseconds();
 	WaterTracksObj *mod=m_usedModules,*nextMod;
 
-	Int timeDiff = timeGetTime()-iLastTime;
+	Int timeDiff = Platform::Milliseconds()-iLastTime;
 	iLastTime += timeDiff;
 
 	//Lock framerate to 30 fps
@@ -954,7 +956,7 @@ void WaterTracksRenderSystem::saveTracks(void)
 	WaterTracksObj *umod;
 	Int trackCount=0;
 
-	FILE *fp=fopen(path,"wb");
+	FILE *fp=Platform::OpenStream(path,"wb");
 
 	if (fp)
 	{

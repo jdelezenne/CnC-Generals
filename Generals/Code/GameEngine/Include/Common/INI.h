@@ -33,6 +33,7 @@
 #define __INI_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/ScienceType.h"
 #include <stddef.h>	// for offsetof, which we don't use but everyone who includes us does
 #include "Common/STLTypedefs.h"
 #include "Common/AsciiString.h"

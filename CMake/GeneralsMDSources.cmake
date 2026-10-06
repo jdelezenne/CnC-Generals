@@ -99,7 +99,6 @@ set(GEN_wwlib_SOURCES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/TARGA.CPP"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/textfile.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/tgatodxt.cpp"
-    "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/thread.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/trim.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/vector.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Source/WWVegas/WWLib/verchk.cpp"
@@ -1253,6 +1252,7 @@ set(GEN_gameenginedevice_OPTIONS_RELEASE
 )
 
 set(GEN_generals_SOURCES
+    "${GEN_CODE_DIR}/Main/Application.cpp"
 )
 set(GEN_generals_INCLUDES
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/Libraries/Include"

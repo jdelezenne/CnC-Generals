@@ -21,6 +21,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Compression.h"
+#include "Platform/Paths.h"
 extern "C" {
 #include "ZLib/zlib.h"
 }
@@ -459,7 +460,7 @@ void DoCompressTest( void )
 	PerfGather::dumpAll(10000);
 	//PerfGather::displayGraph(TheGameLogic->getFrame());
 	PerfGather::resetAll();
-	CopyFile( "AAAPerfStats.csv", "AAACompressPerfStats.csv", FALSE );
+	Platform::CopyUserFile( "AAAPerfStats.csv", "AAACompressPerfStats.csv", FALSE );
 
 	for (i = 0; i < COMPRESSION_MAX+1; ++i) 
 	{

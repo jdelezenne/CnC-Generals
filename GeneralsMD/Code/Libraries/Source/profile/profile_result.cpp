@@ -27,6 +27,7 @@
 // Result function interface and result functions
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#include "Platform/Paths.h"
 #include <new>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +45,7 @@ void ProfileResultFileCSV::WriteThread(ProfileFuncLevel::Thread &thread)
   char help[40];
 
   sprintf(help,"prof%08x-all.csv",thread.GetId());
-  FILE *f=fopen(help,"wt");
+  FILE *f=Platform::OpenStream(help,"wt");
 
   // CSV file header
   fprintf(f,"Function\tFile\tCall count\tPTT (all)\tGTT (all)\tPT/C (all)\tGT/C (all)\tCaller (all)");
@@ -106,7 +107,7 @@ void ProfileResultFileCSV::WriteResults(void)
   for (unsigned k=0;ProfileFuncLevel::EnumThreads(k,t);k++)
     WriteThread(t);
 
-  FILE *f=fopen("profile-high.csv","wt");
+  FILE *f=Platform::OpenStream("profile-high.csv","wt");
 
   // CSV file header
   fprintf(f,"Profile\tUnit\ttotal");
@@ -206,7 +207,7 @@ void ProfileResultFileDOT::WriteResults(void)
     if (id.GetCalls(frame))
       active++;
 
-  FILE *f=fopen(m_fileName,"wt");
+  FILE *f=Platform::OpenStream(m_fileName,"wt");
   if (!f)
     return;
 

@@ -44,6 +44,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <always.h>
+#include "Platform/Paths.h"
 #include "W3DDevice/GameClient/W3DAssetManager.h"
 #include "proto.h"
 #include "rendobj.h"
@@ -250,7 +251,7 @@ TextureClass *W3DAssetManager::Get_Texture(
 		if (TheGlobalData->m_preloadReport)
 		{	
 			//loading a new asset and app is requesting a log of all loaded assets.
-			FILE *logfile=fopen("PreloadedAssets.txt","a+");	//append to log
+			FILE *logfile=Platform::OpenStream("PreloadedAssets.txt","a+");	//append to log
 			if (logfile)
 			{	
 				fprintf(logfile,"TX: %s\n",tex->Get_Texture_Name());
@@ -1050,7 +1051,7 @@ bool W3DAssetManager::Load_3D_Assets( const char * filename )
 	if (result && TheGlobalData->m_preloadReport)
 	{	
 		//loading a new asset and app is requesting a log of all loaded assets.
-		FILE *logfile=fopen("PreloadedAssets.txt","a+");	//append to log
+		FILE *logfile=Platform::OpenStream("PreloadedAssets.txt","a+");	//append to log
 		if (logfile)
 		{	
 			StringClass lower_case_name(filename,true);

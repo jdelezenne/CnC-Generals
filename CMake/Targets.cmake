@@ -1,24 +1,41 @@
 function(gen_legacy_settings name)
     target_include_directories(${name} PRIVATE ${GEN_${name}_INCLUDES}
-        "${GEN_DIRECTX_INCLUDE_DIR}" "${GEN_CODE_DIR}/Libraries/Include" "${PROJECT_SOURCE_DIR}")
+        "${GEN_CODE_DIR}/Libraries/Include" "${PROJECT_SOURCE_DIR}")
+    target_link_libraries(${name} PRIVATE gen_graphics_headers)
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Audio/Include")
     target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Bink")
     foreach(config DEBUG RELEASE)
         string(TOLOWER "${config}" config_lower)
-        target_compile_definitions(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_DEFINES_${config}}>")
-        target_compile_options(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_OPTIONS_${config}}>")
+        set(definitions ${GEN_${name}_DEFINES_${config}})
+        if(NOT WIN32)
+            list(REMOVE_ITEM definitions WIN32 _WINDOWS)
+        endif()
+        target_compile_definitions(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${definitions}>")
+        if(MSVC)
+            target_compile_options(${name} PRIVATE "$<$<CONFIG:${config_lower}>:${GEN_${name}_OPTIONS_${config}}>")
+        endif()
     endforeach()
-    target_compile_definitions(${name} PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS
-        WINVER=0x0A00 _WIN32_WINNT=0x0A00 NOMINMAX _CONST_RETURN=)
-    # Preserve VC6 x87 code generation and avoid EBX stack alignment in legacy assembly.
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        target_compile_definitions(${name} PRIVATE _USE_32BIT_TIME_T)
-        target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/arch:IA32>")
+    target_compile_definitions(${name} PRIVATE NOMINMAX _CONST_RETURN=)
+    if(WIN32)
+        target_compile_definitions(${name} PRIVATE WINVER=0x0A00 _WIN32_WINNT=0x0A00)
     endif()
-    target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4>"
-        "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/Zc:forScope-;/Zc:wchar_t-;/Zc:twoPhase-;/wd4430;/FI${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h>")
+    if(MSVC)
+        target_compile_definitions(${name} PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
+        # Preserve VC6 x87 code generation and avoid EBX stack alignment in legacy assembly.
+        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+            target_compile_definitions(${name} PRIVATE _USE_32BIT_TIME_T)
+            target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/arch:IA32>")
+        endif()
+        target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/W3;/MP4>"
+            "$<$<COMPILE_LANGUAGE:CXX>:/EHsc;/Zc:forScope-;/Zc:wchar_t-;/Zc:twoPhase-;/wd4430;/FI${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h>")
+    else()
+        target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall;-Wextra>")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            target_compile_options(${name} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-fms-extensions>")
+        endif()
+    endif()
     target_compile_features(${name} PRIVATE cxx_std_17)
-    if(name MATCHES "^(wwdownload|compression|gameengine|gameenginedevice|generals|profile|eadebug|wwshade)$")
+    if(MSVC AND name MATCHES "^(wwdownload|compression|gameengine|gameenginedevice|generals|profile|eadebug|wwshade)$")
         set_property(TARGET ${name} PROPERTY MSVC_RUNTIME_CHECKS
             "$<$<CONFIG:Debug>:StackFrameErrorCheck;UninitializedVariable>")
     endif()
@@ -36,6 +53,21 @@ set_target_properties(wwmath PROPERTIES OUTPUT_NAME WWMath)
 set_target_properties(wwutil PROPERTIES OUTPUT_NAME WWUtil)
 set_target_properties(wwsaveload PROPERTIES OUTPUT_NAME WWSaveLoad)
 set_target_properties(wwdownload PROPERTIES OUTPUT_NAME WWDownload)
+target_link_libraries(wwlib PRIVATE gen_platform SDL3::SDL3-static)
+target_link_libraries(wwdownload PRIVATE gen_platform)
+target_link_libraries(wwsaveload PRIVATE gen_platform)
+target_include_directories(wwlib PRIVATE "${GEN_CODE_DIR}/Libraries/Source/WWVegas/WWLib")
+target_sources(wwlib PRIVATE "${PROJECT_SOURCE_DIR}/Platform/SDL/Thread.cpp")
+if(GEN_GAME STREQUAL "ZeroHour")
+    target_compile_definitions(wwlib PRIVATE GEN_GAME_ZERO_HOUR=1)
+endif()
+if(WIN32)
+    target_sources(wwlib PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Windows/Thread.cpp")
+else()
+    target_sources(wwlib PRIVATE "${PROJECT_SOURCE_DIR}/Platform/POSIX/Thread.cpp")
+endif()
+target_link_libraries(wwutil PRIVATE gen_platform)
+target_link_libraries(ww3d2 PRIVATE gen_platform)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     target_sources(wwlib PRIVATE "${PROJECT_SOURCE_DIR}/Platform/Compression/LCW.cpp")
 endif()
@@ -48,24 +80,32 @@ if(GEN_GAME STREQUAL "ZeroHour")
         gen_legacy_settings(${name})
     endforeach()
     set_target_properties(eadebug PROPERTIES OUTPUT_NAME debug)
+    target_link_libraries(eadebug PRIVATE gen_platform)
+    target_link_libraries(profile PRIVATE gen_platform)
     set_target_properties(wwshade PROPERTIES OUTPUT_NAME WWShade)
 
-    # shdpp writes next to its input, so stage the original shaders and headers.
+    add_executable(gen_shader_text "${PROJECT_SOURCE_DIR}/Tools/ShaderText/ShaderText.cpp")
+    target_compile_features(gen_shader_text PRIVATE cxx_std_17)
+    set_target_properties(gen_shader_text PROPERTIES OUTPUT_NAME ShaderText
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Tools/$<CONFIG>")
+
     set(shader_dir "${CMAKE_BINARY_DIR}/Generated/WWShade")
-    set(shader_tool "${GEN_CODE_DIR}/Libraries/Source/WWVegas/wwshade/shdpp.exe")
     file(MAKE_DIRECTORY "${shader_dir}")
-    foreach(header IN LISTS GEN_wwshade_HEADERS)
-        get_filename_component(filename "${header}" NAME)
-        configure_file("${header}" "${shader_dir}/${filename}" COPYONLY)
-    endforeach()
     foreach(shader IN LISTS GEN_wwshade_SHADERS)
         get_filename_component(filename "${shader}" NAME)
+        string(REPLACE "." "_" symbol "${filename}")
+        set(preprocessed "${shader_dir}/${filename}.txt")
         set(output "${shader_dir}/${filename}_code.h")
+        if(MSVC)
+            set(preprocess_flags /nologo /EP /P /TC "/Fi${preprocessed}")
+        else()
+            set(preprocess_flags -E -P -x c -o "${preprocessed}")
+        endif()
         add_custom_command(OUTPUT "${output}"
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${shader}" "${shader_dir}/${filename}"
-            COMMAND "${shader_tool}" "${filename}"
-            WORKING_DIRECTORY "${shader_dir}"
-            DEPENDS "${shader}" "${shader_tool}" ${GEN_wwshade_HEADERS}
+            COMMAND "${CMAKE_C_COMPILER}" ${preprocess_flags} "${shader}"
+            COMMAND gen_shader_text "${preprocessed}" "${output}" "${symbol}_code"
+            BYPRODUCTS "${preprocessed}"
+            DEPENDS "${shader}" gen_shader_text ${GEN_wwshade_HEADERS}
             VERBATIM)
         target_sources(wwshade PRIVATE "${output}")
     endforeach()
@@ -73,6 +113,7 @@ if(GEN_GAME STREQUAL "ZeroHour")
 endif()
 
 # Keep generated COM files in the build directory, leaving the source tree clean.
+if(WIN32)
 set(browser_dir "${CMAKE_BINARY_DIR}/Generated/EABrowserDispatch")
 find_program(GEN_MIDL NAMES midl REQUIRED)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -90,13 +131,17 @@ add_custom_command(
     VERBATIM)
 add_library(eabrowserdispatch STATIC "${browser_dir}/BrowserDispatch_i.c")
 target_include_directories(eabrowserdispatch PUBLIC "${CMAKE_BINARY_DIR}/Generated")
+endif()
 
 if(GEN_ENABLE_GAMESPY)
     include("${PROJECT_SOURCE_DIR}/CMake/GameSpySources.cmake")
     add_library(gamespy STATIC ${GEN_gamespy_SOURCES})
     target_include_directories(gamespy PRIVATE "${GEN_GAMESPY_ROOT}")
-    target_compile_definitions(gamespy PRIVATE WIN32 _WINDOWS _MBCS
+    target_compile_definitions(gamespy PRIVATE _MBCS
         "$<$<CONFIG:Debug>:_DEBUG>" "$<$<CONFIG:Release>:NDEBUG>")
+    if(WIN32)
+        target_compile_definitions(gamespy PRIVATE WIN32 _WINDOWS)
+    endif()
     foreach(sdk HTTP Patching Peer Presence Stats)
         add_library(gamespy${sdk} ALIAS gamespy)
     endforeach()
@@ -122,6 +167,7 @@ foreach(source IN LISTS GEN_compression_SOURCES)
 endforeach()
 add_library(compression STATIC ${compression_sources})
 gen_legacy_settings(compression)
+target_link_libraries(compression PRIVATE gen_platform)
 # EA's sources include ZLib/zlib.h; provide an alias without copying the SDK.
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Generated/ZLib")
 file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/ZLib/zlib.h" CONTENT "#include \"${GEN_ZLIB_ROOT}/zlib.h\"\n" @ONLY)
@@ -136,12 +182,16 @@ foreach(name gameengine gameenginedevice)
         "${GEN_GAMESPY_ROOT}" "${GEN_CODE_DIR}/Libraries/Source/Compression")
     target_compile_definitions(${name} PUBLIC GEN_ENABLE_BINK=1
         GEN_ENABLE_GAMESPY=$<BOOL:${GEN_ENABLE_GAMESPY}>)
-    target_link_libraries(${name} PRIVATE eabrowserdispatch)
+    if(WIN32)
+        target_link_libraries(${name} PRIVATE eabrowserdispatch)
+    endif()
 endforeach()
 set_target_properties(gameengine PROPERTIES OUTPUT_NAME GameEngine)
 target_link_libraries(gameengine PRIVATE gen_platform)
-target_precompile_headers(gameengine PRIVATE "${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h"
-    "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
+if(MSVC)
+    target_precompile_headers(gameengine PRIVATE "${PROJECT_SOURCE_DIR}/CMake/MSVC2026Compat.h")
+endif()
+target_precompile_headers(gameengine PRIVATE "${GEN_CODE_DIR}/GameEngine/Include/Precompiled/PreRTS.h")
 set_target_properties(gameenginedevice PROPERTIES OUTPUT_NAME GameEngineDevice)
 target_sources(gameenginedevice PRIVATE "${PROJECT_SOURCE_DIR}/Platform/SDL/Keyboard.cpp")
 
@@ -166,6 +216,7 @@ configure_file("${PROJECT_SOURCE_DIR}/CMake/BuildVersion.h.in" "${CMAKE_BINARY_D
 configure_file("${PROJECT_SOURCE_DIR}/CMake/GeneratedVersion.h.in" "${CMAKE_BINARY_DIR}/Generated/GeneratedVersion.h" @ONLY)
 
 # The source release omits the splash bitmap and generated type library.
+if(WIN32)
 file(READ "${GEN_CODE_DIR}/Main/RTS.rc" game_resources)
 string(REPLACE "\"Generals.ico\"" "\"${GEN_CODE_DIR}/Main/Generals.ico\"" game_resources "${game_resources}")
 string(REPLACE "\"../Libraries/Include/EABrowserDispatch/BrowserDispatch.tlb\""
@@ -179,23 +230,36 @@ file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Generated/RTS.rc" CONTENT "${game_res
 list(REMOVE_ITEM GEN_generals_SOURCES "${GEN_CODE_DIR}/Main/RTS.RC")
 add_executable(generals WIN32 ${GEN_generals_SOURCES} "${CMAKE_BINARY_DIR}/Generated/RTS.rc")
 set_source_files_properties("${CMAKE_BINARY_DIR}/Generated/RTS.rc" PROPERTIES OBJECT_DEPENDS "${browser_dir}/BrowserDispatch.tlb")
+else()
+    add_executable(generals ${GEN_generals_SOURCES})
+endif()
 gen_legacy_settings(generals)
 set_target_properties(generals PROPERTIES OUTPUT_NAME "${game_executable_name}" DEBUG_POSTFIX "")
 target_link_directories(generals PRIVATE "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
 target_include_directories(generals PRIVATE "${GEN_CODE_DIR}/Main")
-target_link_options(generals PRIVATE /DEBUG)
-target_link_libraries(generals PRIVATE gameengine gameenginedevice compression ${GEN_CORE_LIBRARIES}
-    gamespyHTTP gamespyPatching gamespyPeer gamespyPresence gamespyStats eabrowserdispatch
-    dbghelp gen_graphics gen_d3dx dxguid
-    kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid
-    odbc32 odbccp32 winmm vfw32 wsock32 imm32 wininet)
-add_custom_command(TARGET generals POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-        "$<TARGET_FILE:Vendor::DXCompiler>" "${GEN_DXC_RUNTIME_DIRECTORY}/dxil.dll"
-        "$<TARGET_FILE_DIR:generals>"
-    VERBATIM)
-target_link_options(generals PRIVATE /NODEFAULTLIB:libci /NODEFAULTLIB:libc)
-target_link_libraries(generals PRIVATE legacy_stdio_definitions)
+if(MSVC)
+    target_link_options(generals PRIVATE /DEBUG /NODEFAULTLIB:libci /NODEFAULTLIB:libc)
+    target_link_libraries(generals PRIVATE legacy_stdio_definitions)
+endif()
+target_link_libraries(generals PRIVATE gen_platform SDL3::SDL3-static gameengine gameenginedevice compression ${GEN_CORE_LIBRARIES}
+    gamespyHTTP gamespyPatching gamespyPeer gamespyPresence gamespyStats gen_graphics gen_d3dx)
+if(WIN32)
+    target_link_libraries(generals PRIVATE eabrowserdispatch dbghelp dxguid
+        kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid
+        odbc32 odbccp32 winmm vfw32 wsock32 imm32 wininet)
+endif()
+if(WIN32)
+    add_custom_command(TARGET generals POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "$<TARGET_FILE:Vendor::DXCompiler>" "${GEN_DXC_RUNTIME_DIRECTORY}/dxil.dll"
+            "$<TARGET_FILE_DIR:generals>"
+        VERBATIM)
+else()
+    add_custom_command(TARGET generals POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "$<TARGET_FILE:Vendor::DXCompiler>" "$<TARGET_FILE_DIR:generals>"
+        VERBATIM)
+endif()
 if(TARGET profile)
     target_link_libraries(generals PRIVATE profile eadebug wwshade)
 endif()

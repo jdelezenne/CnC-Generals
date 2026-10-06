@@ -29,6 +29,7 @@
 
 
 #include "Common/GameMemory.h"
+#include "Platform/Clock.h"
 #include "Platform/Windows/Window.h"
 #include "WW3D2/DX8Wrapper.h"
 #include "WW3D2/RendObj.h"
@@ -421,7 +422,7 @@ void W3DMouse::setCursor( MouseCursor cursor )
 			m_pDev->ShowCursor(TRUE);	//Enable DX8 cursor
 			m_currentD3DFrame=(Int)m_currentAnimFrame;
 			m_currentD3DCursor = cursor;
-			m_lastAnimTime=timeGetTime();
+			m_lastAnimTime=Platform::Milliseconds();
 		}
 	}
 	else if (m_currentRedrawMode == RM_POLYGON)
@@ -501,7 +502,7 @@ void W3DMouse::draw(void)
 			//Check if animated cursor and new frame
 			if (m_currentFrames > 1)
 			{
-				Int msTime=timeGetTime();
+				Int msTime=Platform::Milliseconds();
 				m_currentAnimFrame += (msTime-m_lastAnimTime) * m_currentFMS;
 				m_currentAnimFrame=fmod(m_currentAnimFrame,m_currentFrames);
 				m_lastAnimTime=msTime;

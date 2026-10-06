@@ -36,22 +36,31 @@
 // different .cpp files, so I bit the bullet and included it here.
 // PLEASE DO NOT ABUSE WINDOWS OR IT WILL BE REMOVED ENTIRELY. :-)
 //--------------------------------------------------------------------------------- System Includes 
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <atlbase.h>
 #include <windows.h>
+#endif
 
 #include <assert.h>
 #include <ctype.h>
+#ifdef _WIN32
 #include <direct.h>
 #include <EXCPT.H>
+#endif
 #include <float.h>
 #include <fstream>
+#ifdef _WIN32
 #include <imagehlp.h>
 #include <io.h>
+#endif
 #include <limits.h>
+#ifdef _WIN32
 #include <lmcons.h>
+#endif
 #include <math.h>
 #include <memory.h>
+#ifdef _WIN32
 #include <mmsystem.h>
 #include <objbase.h>
 #include <ocidl.h>
@@ -60,6 +69,7 @@
 #include <shlobj.h>
 #include <shlguid.h>
 #include <snmp.h>
+#endif
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -68,18 +78,24 @@
 #include <sys/stat.h>
 #include <sys/timeb.h>
 #include <sys/types.h>
+#ifdef _WIN32
 #include <TCHAR.H>
+#endif
 #include <time.h>
+#ifdef _WIN32
 #include <vfw.h>
 #include <winerror.h>
 #include <wininet.h>
 #include <winreg.h>
+#endif
 
 #ifndef DIRECTINPUT_VERSION
 #	define DIRECTINPUT_VERSION	0x800
 #endif
 
+#ifdef _WIN32
 #include <dinput.h>
+#endif
 
 //------------------------------------------------------------------------------------ STL Includes
 // srj sez: no, include STLTypesdefs below, instead, thanks
@@ -96,7 +112,7 @@
 
 //------------------------------------------------------------------------------------ RTS Includes
 // Icky. These have to be in this order.
-#include "Lib/Basetype.h"
+#include "Lib/BaseType.h"
 #include "Common/STLTypedefs.h"
 #include "Common/Errors.h"
 #include "Common/Debug.h"

@@ -28,6 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "Common/Debug.h"
 #include "Common/MessageStream.h"
@@ -668,7 +669,7 @@ void Mouse::createStreamMessages( void )
 		return;  // no place to put messages
 
 	GameMessage *msg = NULL;
-	UnsignedInt now = timeGetTime();
+	UnsignedInt now = Platform::Milliseconds();
 
 	// basic position messages are always created
 	msg = TheMessageStream->appendMessage( GameMessage::MSG_RAW_MOUSE_POSITION );
@@ -684,7 +685,7 @@ void Mouse::createStreamMessages( void )
 		if (!m_displayTooltip)
 		{
 			m_highlightPos = 0;
-			m_highlightUpdateStart = timeGetTime();
+			m_highlightUpdateStart = Platform::Milliseconds();
 		}
 
 		// display tooltip for current window
@@ -969,7 +970,7 @@ void Mouse::draw( void )
 // ------------------------------------------------------------------------------------------------
 void Mouse::resetTooltipDelay( void )
 {
-	m_stillTime = timeGetTime();
+	m_stillTime = Platform::Milliseconds();
 	m_displayTooltip = FALSE;
 }
 
@@ -1030,7 +1031,7 @@ void Mouse::drawTooltip( void )
 		// get ready for the next part of the anim
 		if (m_highlightPos < width + HIGHLIGHT_WIDTH)
 		{
-			UnsignedInt now = timeGetTime();
+			UnsignedInt now = Platform::Milliseconds();
 			m_highlightPos = (width*(now-m_highlightUpdateStart))/m_tooltipFillTime;
 		}
 	}  // end if

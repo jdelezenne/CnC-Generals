@@ -27,6 +27,10 @@
 #include "osdep.h"
 #endif
 
+#include <atomic>
+#include "Platform/Threads.h"
+struct SDL_Thread;
+
 #include "always.h"
 
 
@@ -40,7 +44,7 @@
 // If the flag is false you must exit the asap. Stop() is the function that
 // will clear the flag and expect you to exit from the thread. If you are
 // not exiting in certain time (defined as a parameter to Stop()) it will
-// force-kill the thread to prevent the program from halting.
+// report the timeout and wait for the worker to finish.
 // 
 // ****************************************************************************
 
@@ -56,7 +60,7 @@ public:
 	// Thread priority 0 is normal, positive numbers are higher and normal and negative are lower.
 	void Set_Priority(int priority);
 
-	// Stop thread execution. Kill after ms milliseconds if not responding.
+	// Stop thread execution. Report a timeout after ms milliseconds, then join.
 	void Stop(unsigned ms=3000);
 
 	// Put current thread sleep for ms milliseconds (can be called from any thread, ThreadClass or other)
@@ -76,12 +80,13 @@ protected:
 	// User defined thread function. The thread function should check for "running" flag every now and then
 	// and exit the thread if running is false.
 	virtual void Thread_Function() = 0;
-	volatile bool running;
+	std::atomic<bool> running;
 
 private:
-	static void __cdecl Internal_Thread_Function(void*);
-	volatile std::uintptr_t handle;
-	int thread_priority;
+	static int Internal_Thread_Function(void*);
+	static void Invoke_Thread_Function(void*);
+	SDL_Thread* handle;
+	std::atomic<int> thread_priority;
 };
 
 #endif

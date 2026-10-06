@@ -29,6 +29,8 @@
 
 // USER INCLUDES //////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
+#include "Platform/UTF16.h"
+#include "Platform/Paths.h"
 #include "Common/Debug.h"
 #include "Common/GameState.h"
 #include "Common/Snapshot.h"
@@ -80,7 +82,7 @@ void XferLoad::open( AsciiString identifier )
 	Xfer::open( identifier );
 
 	// open the file
-	m_fileFP = fopen( identifier.str(), "rb" );
+	m_fileFP = Platform::OpenStream( identifier.str(), "rb" );
 	if( m_fileFP == NULL )
 	{
 		
@@ -224,16 +226,12 @@ void XferLoad::xferUnicodeString( UnicodeString *unicodeStringData )
 	UnsignedByte len;
 	xferUnsignedByte( &len );
 
-	// read all the string data
-	const Int MAX_XFER_LOAD_STRING_BUFFER = 1024;
-	static WideChar buffer[ MAX_XFER_LOAD_STRING_BUFFER ];
-
-	if( len > 0 )
-		xferUser( buffer, sizeof( WideChar ) * len );
-	buffer[ len ] = 0;  // terminate
-
-	// save into unicode string
-	unicodeStringData->set( buffer );
+	// The file stores UTF-16LE, including on hosts with four-byte wchar_t.
+	UnsignedByte buffer[255 * 2];
+	if (len > 0)
+		xferUser(buffer, len * 2);
+	const auto text = Platform::DecodeUTF16LE<WideChar>(buffer, len);
+	unicodeStringData->set(text.c_str());
 
 }  // end xferUnicodeString
 

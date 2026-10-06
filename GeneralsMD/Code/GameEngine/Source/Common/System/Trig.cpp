@@ -28,6 +28,7 @@
 // Converted to Generals by Matthew D. Campbell, February 2002
 
 #include "PreRTS.h"
+#include "Platform/Paths.h"
 
 #include <math.h>
 #include <limits.h>
@@ -1693,7 +1694,7 @@ void initTrig( void )
 
 	static int columns = 8;
 	int column = 0;
-	FILE *fp = fopen("trig.txt", "w");
+	FILE *fp = Platform::OpenStream("trig.txt", "w");
 	fprintf(fp, "static Int sinLookup[TRIG_RES] = {\n");
 	for( i=0; i<TRIG_RES; i++ ) {
 		angle = TWOPI * i / (Real)TRIG_RES;

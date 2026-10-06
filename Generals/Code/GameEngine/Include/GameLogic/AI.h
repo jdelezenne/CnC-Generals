@@ -63,15 +63,7 @@ typedef VecObjectID::iterator VecObjectIDIt;
 typedef std::list<Object *> ListObjectPtr;
 typedef ListObjectPtr::iterator ListObjectPtrIt;
 
-enum AIDebugOptions
-{
-	AI_DEBUG_NONE = 0, 
-	AI_DEBUG_PATHS,
-	AI_DEBUG_TERRAIN,
-	AI_DEBUG_CELLS,
-	AI_DEBUG_GROUND_PATHS,
-	AI_DEBUG_END
-};
+#include "GameLogic/AIDebugOptions.h"
 
 enum 
 {

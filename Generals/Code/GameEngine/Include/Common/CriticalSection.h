@@ -32,6 +32,7 @@
 #define __CRITICALSECTION_H__
 
 #include "Common/PerfTimer.h"
+#include "Platform/Synchronization.h"
 
 #ifdef PERF_TIMERS
 extern PerfGather TheCritSecPerfGather;
@@ -39,7 +40,7 @@ extern PerfGather TheCritSecPerfGather;
 
 class CriticalSection
 {
-	CRITICAL_SECTION m_windowsCriticalSection;
+	void* m_criticalSection;
 
 	public:
 		CriticalSection()
@@ -47,7 +48,7 @@ class CriticalSection
 			#ifdef PERF_TIMERS
 			AutoPerfGather a(TheCritSecPerfGather);
 			#endif
-			InitializeCriticalSection( &m_windowsCriticalSection );
+			m_criticalSection = Platform::CreateCriticalSection();
 		}
 
 		virtual ~CriticalSection()
@@ -55,7 +56,7 @@ class CriticalSection
 			#ifdef PERF_TIMERS
 			AutoPerfGather a(TheCritSecPerfGather);
 			#endif
-			DeleteCriticalSection( &m_windowsCriticalSection );
+			Platform::DestroyCriticalSection(m_criticalSection);
 		}
 
 	public:	// Use these when entering/exiting a critical section.
@@ -64,7 +65,7 @@ class CriticalSection
 			#ifdef PERF_TIMERS
 			AutoPerfGather a(TheCritSecPerfGather);
 			#endif
-			EnterCriticalSection( &m_windowsCriticalSection );
+			Platform::EnterCriticalSection(m_criticalSection);
 		}
 		
 		void exit( void )
@@ -72,7 +73,7 @@ class CriticalSection
 			#ifdef PERF_TIMERS
 			AutoPerfGather a(TheCritSecPerfGather);
 			#endif
-			LeaveCriticalSection( &m_windowsCriticalSection );
+			Platform::LeaveCriticalSection(m_criticalSection);
 		}
 };
 

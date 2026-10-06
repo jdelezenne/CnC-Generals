@@ -133,3 +133,19 @@ void Win32GameEngine::serviceWindowsOS( void )
 {
 	Platform::PumpInput();
 }
+
+// CreateGameEngine ===========================================================
+/** Create the Win32 game engine we're going to use */
+//=============================================================================
+GameEngine *CreateGameEngine( void )
+{
+	Win32GameEngine *engine;
+
+	engine = NEW Win32GameEngine;
+	//game engine may not have existed when app got focus so make sure it
+	//knows about current focus state.
+	engine->setIsActive(Platform::WindowHasFocus());
+
+	return engine;
+
+}  // end CreateGameEngine

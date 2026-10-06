@@ -53,6 +53,7 @@
 
 
 #include	"always.h"
+#include "Platform/Paths.h"
 #include	"rawfile.h"
 #include	<direct.h>
 //#include	<share.h>
@@ -439,29 +440,29 @@ int RawFileClass::Open(int rights)
 
 			case READ:
 				#ifdef _UNIX
-					Handle = fopen(Filename, "r");
+					Handle = Platform::OpenStream(Filename, "r");
 				#else
-					Handle = CreateFileA(Filename, GENERIC_READ, FILE_SHARE_READ,
+					Handle = CreateFileA(Platform::ReadPath(Filename).c_str(), GENERIC_READ, FILE_SHARE_READ,
 												NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 				#endif
 				break;
 
 			case WRITE:
 				#ifdef _UNIX
-					Handle = fopen(Filename, "w");
+					Handle = Platform::OpenStream(Filename, "w");
 				#else
-					Handle = CreateFileA(Filename, GENERIC_WRITE, 0,
+					Handle = CreateFileA(Platform::WritePath(Filename).c_str(), GENERIC_WRITE, 0,
 												NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				#endif
 				break;
 
 			case READ|WRITE:
 				#ifdef _UNIX
-					Handle = fopen(Filename, "w");
+					Handle = Platform::OpenStream(Filename, "w");
 				#else
 					// SKB 5/13/99 use OPEN_ALWAYS instead of CREATE_ALWAYS so that files
 					//					does not get destroyed.
-					Handle = CreateFileA(Filename, GENERIC_READ | GENERIC_WRITE, 0,
+					Handle = CreateFileA(Platform::WritePath(Filename).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
 												NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 				#endif
 				break;
@@ -537,9 +538,9 @@ bool RawFileClass::Is_Available(int forced)
 	for (;;) {
 
 		#ifdef _UNIX
-			Handle=fopen(Filename,"r");
+			Handle=Platform::OpenStream(Filename,"r");
 		#else
-			Handle = CreateFileA(Filename, GENERIC_READ, FILE_SHARE_READ,
+			Handle = CreateFileA(Platform::ReadPath(Filename).c_str(), GENERIC_READ, FILE_SHARE_READ,
 											NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		#endif
 
@@ -1010,9 +1011,9 @@ int RawFileClass::Delete(void)
 
 		int deleteok;
 		#ifdef _UNIX
-			deleteok=(unlink(Filename)==0)?TRUE:FALSE;
+			deleteok=(unlink(Platform::WritePath(Filename).c_str())==0)?TRUE:FALSE;
 		#else
-			deleteok=DeleteFile(Filename);
+			deleteok=Platform::RemoveUserFile(Filename);
 		#endif
 
 		if (! deleteok) {

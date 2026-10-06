@@ -30,6 +30,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #include <fcntl.h>
 
@@ -151,16 +152,16 @@ static Bool hasWriteAccess()
 {
 	const char* filename = "PatchAccessTest.txt";	
 
-	remove(filename);
+	Platform::RemoveUserFile(filename);
 
-	int handle = _open( filename, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
+	int handle = _open( Platform::WritePath(filename).c_str(), _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
 	if (handle == -1)
 	{
 		return false;
 	}
 
 	_close(handle);
-	remove(filename);
+	Platform::RemoveUserFile(filename);
 	
 	unsigned int val;
 	if (!GetUnsignedIntFromRegistry("", "Version", val))
@@ -395,7 +396,7 @@ static GHTTPBool configCallback( GHTTPRequest request, GHTTPResult result,
 
 	AsciiString fname;
 	fname.format("%sGeneralsOnline\\Config.txt", TheGlobalData->getPath_UserData().str());
-	FILE *fp = fopen(fname.str(), "wb");
+	FILE *fp = Platform::OpenStream(fname.str(), "wb");
 	if (fp)
 	{
 		fwrite(configBuffer, bufferLen, 1, fp);
@@ -450,7 +451,7 @@ static GHTTPBool configHeadCallback( GHTTPRequest request, GHTTPResult result,
 				Int fileLen = 0;
 				AsciiString fname;
 				fname.format("%sGeneralsOnline\\Config.txt", TheGlobalData->getPath_UserData().str());
-				FILE *fp = fopen(fname.str(), "rb");
+				FILE *fp = Platform::OpenStream(fname.str(), "rb");
 				if (fp)
 				{
 					fseek(fp, 0, SEEK_END);
@@ -477,7 +478,7 @@ static GHTTPBool configHeadCallback( GHTTPRequest request, GHTTPResult result,
 
 					AsciiString fname;
 					fname.format("%sGeneralsOnline\\Config.txt", TheGlobalData->getPath_UserData().str());
-					FILE *fp = fopen(fname.str(), "rb");
+					FILE *fp = Platform::OpenStream(fname.str(), "rb");
 					if (fp)
 					{
 						configBuffer = NEW char[fileLen];

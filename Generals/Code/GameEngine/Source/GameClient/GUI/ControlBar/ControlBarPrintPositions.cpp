@@ -48,6 +48,7 @@
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 #include <stdio.h>
 //-----------------------------------------------------------------------------
 // USER INCLUDES //////////////////////////////////////////////////////////////
@@ -87,7 +88,7 @@ void PrintOffsetsFromControlBarParent( void )
 	WindowLayout *layout = TheWindowManager->winCreateLayout("controlBarHidden.wnd");
 	if(!layout)
 		return;
-	FILE *fp = fopen("ControlBarEasier.txt", "w");
+	FILE *fp = Platform::OpenStream("ControlBarEasier.txt", "w");
 	if(!fp)
 		return;
 

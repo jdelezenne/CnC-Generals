@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "Common/RandomValue.h"
 #include "GameClient/Shell.h"
@@ -177,9 +178,9 @@ void Shell::reset( void )
 //-------------------------------------------------------------------------------------------------
 void Shell::update( void )
 {
-	static Int lastUpdate = timeGetTime();
+	static Int lastUpdate = Platform::Milliseconds();
 	static const Int shellUpdateDelay = 30;  // try to update 30 frames a second
-	Int now = timeGetTime();
+	Int now = Platform::Milliseconds();
 	
 	//
 	// we keep the shell updates fixed in time so that we can write consitent animation

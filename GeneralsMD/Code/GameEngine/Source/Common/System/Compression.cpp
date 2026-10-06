@@ -27,6 +27,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"
+#include "Platform/Paths.h"
 #include "Compression.h"
 
 #ifdef _INTERNAL
@@ -187,7 +188,7 @@ void DoCompressTest( void )
 	/*
 	PerfGather::dumpAll(10000);
 	PerfGather::resetAll();
-	CopyFile( "AAAPerfStats.csv", "AAACompressPerfStats.csv", FALSE );
+	Platform::CopyUserFile( "AAAPerfStats.csv", "AAACompressPerfStats.csv", FALSE );
 
 	for (i = TEST_COMPRESSION_MIN; i < TEST_COMPRESSION_MAX+1; ++i) 
 	{

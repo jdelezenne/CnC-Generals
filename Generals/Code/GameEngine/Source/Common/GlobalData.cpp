@@ -1025,6 +1025,8 @@ GlobalData::GlobalData()
 	
 	m_shouldUpdateTGAToDDS = FALSE;
 	
+	m_userDataDir = Platform::PreferenceDirectory(Platform::GameTitle::Generals);
+
 	// Default DoubleClickTime to System double click time.
 	m_doubleClickTimeMS = Platform::DoubleClickTime(); // Note: This is actual MS, not frames.
 	
@@ -1173,14 +1175,7 @@ void GlobalData::parseGameDataDefinition( INI* ini )
 	// parse the ini weapon definition
 	ini->initFromINI( TheWritableGlobalData, s_GlobalDataFieldParseTable );
 
-	TheWritableGlobalData->m_userDataDir.clear();
-
-	char temp[1024];
-	if (Platform::UserDataDirectory(Platform::GameTitle::Generals,
-		TheWritableGlobalData->m_userDataLeafName.str(), temp, sizeof(temp)))
-	{
-		TheWritableGlobalData->m_userDataDir = temp;
-	}
+	TheWritableGlobalData->m_userDataDir = Platform::PreferenceDirectory(Platform::GameTitle::Generals);
 
 	// override INI values with user preferences
 	OptionPreferences optionPref;

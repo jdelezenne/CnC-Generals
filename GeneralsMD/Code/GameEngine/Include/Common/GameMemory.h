@@ -62,7 +62,7 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 
-#include <new.h>
+#include "Platform/Allocation.h"
 #include <stdio.h>
 #ifdef MEMORYPOOL_OVERRIDE_MALLOC
 	#include <malloc.h>

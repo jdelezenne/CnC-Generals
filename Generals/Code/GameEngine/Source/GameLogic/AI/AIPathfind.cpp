@@ -26,6 +26,7 @@
 // AI pathfinding system
 // Author: Michael S. Booth, October 2001
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "GameLogic/AIPathfind.h"
 
@@ -5387,7 +5388,7 @@ void Pathfinder::processPathfindQueue(void)
 	}
 #ifdef DEBUG_QPF
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 	__int64 startTime64;
 	double timeToUpdate=0.0f;
 	__int64 endTime64,freq64;
@@ -5439,7 +5440,7 @@ void Pathfinder::processPathfindQueue(void)
 		if (timeToUpdate>0.01f) 
 		{
 			DEBUG_LOG(("%d Pathfind queue: %d paths, %d cells", TheGameLogic->getFrame(), pathsFound, m_cumulativeCellsAllocated));
-			DEBUG_LOG(("Time %f (%f)", timeToUpdate, (::GetTickCount()-startTimeMS)/1000.0f));
+			DEBUG_LOG(("Time %f (%f)", timeToUpdate, (Platform::Milliseconds()-startTimeMS)/1000.0f));
 			DEBUG_LOG(("\n"));
 		}
 #endif
@@ -5953,7 +5954,7 @@ Path *Pathfinder::internalFindPath( Object *obj, const LocomotorSet& locomotorSe
 #endif
 
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 	Bool centerInCell = true;
 	Int radius = 0;
@@ -6184,7 +6185,7 @@ Path *Pathfinder::internalFindPath( Object *obj, const LocomotorSet& locomotorSe
 
 		DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 		DEBUG_LOG(("Pathfind failed from (%f,%f) to (%f,%f), OV %d\n", from->x, from->y, to->x, to->y, valid));
-		DEBUG_LOG(("Unit '%s', time %f, cells %d\n", obj->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f,cellCount));
+		DEBUG_LOG(("Unit '%s', time %f, cells %d\n", obj->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f,cellCount));
 #ifdef DUMP_PERF_STATS
 		TheGameLogic->incrementOverallFailedPathfinds();
 #endif
@@ -6465,7 +6466,7 @@ Path *Pathfinder::findGroundPath( const Coord3D *from,
 {
 	//CRCDEBUG_LOG(("Pathfinder::findGroundPath()\n"));
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 #ifdef INTENSE_DEBUG
 	DEBUG_LOG(("Find ground path..."));
@@ -6593,7 +6594,7 @@ Path *Pathfinder::findGroundPath( const Coord3D *from,
 		{
 			// success - found a path to the goal	 
 #ifdef INTENSE_DEBUG
-	DEBUG_LOG((" time %d msec %d cells", (::GetTickCount()-startTimeMS), cellCount));
+	DEBUG_LOG((" time %d msec %d cells", (Platform::Milliseconds()-startTimeMS), cellCount));
 	DEBUG_LOG((" SUCCESS\n"));
 #endif	
 #if defined _DEBUG || defined _INTERNAL
@@ -6787,7 +6788,7 @@ Path *Pathfinder::findGroundPath( const Coord3D *from,
 
 	DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 	DEBUG_LOG(("FindGroundPath failed from (%f,%f) to (%f,%f)\n", from->x, from->y, to->x, to->y));
-	DEBUG_LOG(("time %f\n", (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("time %f\n", (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #endif
 #ifdef DUMP_PERF_STATS
 	TheGameLogic->incrementOverallFailedPathfinds();
@@ -6905,7 +6906,7 @@ Path *Pathfinder::internal_findHierarchicalPath( Bool isHuman, const LocomotorSu
 {
 	//CRCDEBUG_LOG(("Pathfinder::findGroundPath()\n"));
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 	
 	if (rawTo->x == 0.0f && rawTo->y == 0.0f) {
@@ -7402,7 +7403,7 @@ Path *Pathfinder::internal_findHierarchicalPath( Bool isHuman, const LocomotorSu
 
 	DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 	DEBUG_LOG(("FindHierarchicalPath failed from (%f,%f) to (%f,%f)\n", from->x, from->y, to->x, to->y));
-	DEBUG_LOG(("time %f\n", (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("time %f\n", (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #endif
 #ifdef DUMP_PERF_STATS
 	TheGameLogic->incrementOverallFailedPathfinds();
@@ -8046,7 +8047,7 @@ Path *Pathfinder::findClosestPath( Object *obj, const LocomotorSet& locomotorSet
 {
 	//CRCDEBUG_LOG(("Pathfinder::findClosestPath()\n"));
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 	Bool isHuman = true;
 	if (obj && obj->getControllingPlayer() && (obj->getControllingPlayer()->getPlayerType()==PLAYER_COMPUTER)) {
@@ -8297,7 +8298,7 @@ Path *Pathfinder::findClosestPath( Object *obj, const LocomotorSet& locomotorSet
 
 			DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 			DEBUG_LOG(("Pathfind(findClosestPath) chugged from (%f,%f) to (%f,%f), --", from->x, from->y, to->x, to->y));
-			DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+			DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #ifdef INTENSE_DEBUG
 			TheScriptEngine->AppendDebugMessage("Big path FCP CC", false);
 #endif
@@ -8323,7 +8324,7 @@ Path *Pathfinder::findClosestPath( Object *obj, const LocomotorSet& locomotorSet
 
 	DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 	DEBUG_LOG(("Pathfind(findClosestPath) failed from (%f,%f) to (%f,%f), original valid %d --", from->x, from->y, to->x, to->y, valid));
-	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 	if (TheGlobalData->m_debugAI) 
 		debugShowSearch(false);
 #endif
@@ -9555,7 +9556,7 @@ Path *Pathfinder::getMoveAwayFromPath(Object* obj, Object *otherObj,
 {
 	if (m_isMapReady == false) return false; // Should always be ok.
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 	Bool isHuman = true;
 	if (obj && obj->getControllingPlayer() && (obj->getControllingPlayer()->getPlayerType()==PLAYER_COMPUTER)) {
@@ -9712,7 +9713,7 @@ Path *Pathfinder::getMoveAwayFromPath(Object* obj, Object *otherObj,
 	debugShowSearch(true);
 	DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 	DEBUG_LOG(("getMoveAwayFromPath pathfind failed  -- "));
-	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #endif
 	m_isTunneling = false;
 	cleanOpenAndClosedLists();
@@ -9728,7 +9729,7 @@ Path *Pathfinder::patchPath( const Object *obj, const LocomotorSet& locomotorSet
 {
 	//CRCDEBUG_LOG(("Pathfinder::patchPath()\n"));
 #if defined _DEBUG || defined _INTERNAL
-	Int startTimeMS = ::GetTickCount();
+	Int startTimeMS = Platform::Milliseconds();
 #endif
 	if (originalPath==NULL) return NULL;
 	Bool centerInCell;
@@ -9892,7 +9893,7 @@ Path *Pathfinder::patchPath( const Object *obj, const LocomotorSet& locomotorSet
 #if defined _DEBUG || defined _INTERNAL
 	DEBUG_LOG(("%d ", TheGameLogic->getFrame()));
 	DEBUG_LOG(("patchPath Pathfind failed  -- "));
-	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("Unit '%s', time %f\n", obj->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 	if (TheGlobalData->m_debugAI) {
 		debugShowSearch(true);
 	}
@@ -10191,7 +10192,7 @@ Path *Pathfinder::findAttackPath( const Object *obj, const LocomotorSet& locomot
 #if defined _DEBUG || defined _INTERNAL
 	DEBUG_LOG(("%d (%d cells)", TheGameLogic->getFrame(), cellCount));
 	DEBUG_LOG(("Attack Pathfind failed from (%f,%f) to (%f,%f) -- \n", from->x, from->y, victim->getPosition()->x, victim->getPosition()->y));
-	DEBUG_LOG(("Unit '%s', attacking '%s' time %f\n", obj->getTemplate()->getName().str(),  victim->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("Unit '%s', attacking '%s' time %f\n", obj->getTemplate()->getName().str(),  victim->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #endif
 #endif
 #ifdef DUMP_PERF_STATS
@@ -10352,7 +10353,7 @@ Path *Pathfinder::findSafePath( const Object *obj, const LocomotorSet& locomotor
 #if defined _DEBUG || defined _INTERNAL
 	DEBUG_LOG(("%d (%d cells)", TheGameLogic->getFrame(), cellCount));
 	DEBUG_LOG(("Attack Pathfind failed from (%f,%f) to (%f,%f) -- \n", from->x, from->y, victim->getPosition()->x, victim->getPosition()->y));
-	DEBUG_LOG(("Unit '%s', attacking '%s' time %f\n", obj->getTemplate()->getName().str(),  victim->getTemplate()->getName().str(), (::GetTickCount()-startTimeMS)/1000.0f));
+	DEBUG_LOG(("Unit '%s', attacking '%s' time %f\n", obj->getTemplate()->getName().str(),  victim->getTemplate()->getName().str(), (Platform::Milliseconds()-startTimeMS)/1000.0f));
 #endif
 #endif
 #ifdef DUMP_PERF_STATS

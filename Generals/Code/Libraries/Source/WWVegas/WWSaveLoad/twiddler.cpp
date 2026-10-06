@@ -36,6 +36,7 @@
 
 
 #include "twiddler.h"
+#include "Platform/Clock.h"
 #include "random.h"
 #include "saveloadids.h"
 #include "simpledefinitionfactory.h"
@@ -111,7 +112,7 @@ TwiddlerClass::Twiddle (void) const
 		//
 		//	Get a random index into our definition list
 		//
-		RandomClass randomizer (::GetTickCount ());
+		RandomClass randomizer (Platform::Milliseconds());
 		int index = randomizer (0, m_DefinitionList.Count () - 1);
 
 		//

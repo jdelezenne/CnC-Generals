@@ -2,7 +2,6 @@
 #include "Platform/Input.h"
 #include "Platform/SDL/InputInternal.h"
 #include <windows.h>
-#include <mmsystem.h>
 #include <string>
 #include <cstdint>
 
@@ -24,4 +23,3 @@ void Platform::ConfigureNativeInput()
     const std::string doubleClickRadius = std::to_string(radius > 0 ? radius : 1);
     SDL_SetHint(SDL_HINT_MOUSE_DOUBLE_CLICK_RADIUS, doubleClickRadius.c_str());
 }
-unsigned int Platform::NativeInputTimeOffset() { return timeGetTime() - static_cast<unsigned int>(SDL_GetTicks()); }

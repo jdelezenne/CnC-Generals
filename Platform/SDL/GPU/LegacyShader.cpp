@@ -1,13 +1,12 @@
 #include "LegacyShader.h"
+#include "ShaderCompiler.h"
 #include <SDL3/SDL.h>
-#include <dxcapi.h>
 #include <array>
 #include <bit>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
-#include <memory>
 
 namespace {
 unsigned Arguments(unsigned opcode)
@@ -162,8 +161,6 @@ struct Translator {
     }
     std::string Pending;
 };
-template<class T> struct Release {void operator()(T* object)const{if(object)object->Release();}};
-template<class T> using Com=std::unique_ptr<T,Release<T>>;
 }
 
 bool Platform::GPU::ReadShader(const DWORD* code,std::vector<DWORD>& result,std::string& error)
@@ -230,22 +227,10 @@ bool Platform::GPU::TranslateShader(const std::vector<DWORD>& code,bool vertex,s
 }
 SDL_GPUShader* Platform::GPU::CompileShader(SDL_GPUDevice* device,const std::string& source,bool vertex,bool spirv)
 {
-    IDxcCompiler3* rawCompiler=nullptr;
-    if(FAILED(DxcCreateInstance(CLSID_DxcCompiler,__uuidof(IDxcCompiler3),reinterpret_cast<void**>(&rawCompiler)))){SDL_SetError("Cannot initialize DXC");return nullptr;}
-    Com<IDxcCompiler3> compiler(rawCompiler);
-    std::vector<LPCWSTR> arguments{L"-E",L"main",L"-T",vertex?L"vs_6_0":L"ps_6_0",L"-O3",L"-Zpr",L"-Gis"};
-    if(spirv){arguments.push_back(L"-spirv");arguments.push_back(L"-fspv-target-env=vulkan1.0");arguments.push_back(L"-fvk-use-dx-layout");}
-    DxcBuffer buffer{source.data(),source.size(),DXC_CP_UTF8};IDxcResult* rawResult=nullptr;
-    HRESULT status=compiler->Compile(&buffer,arguments.data(),static_cast<UINT32>(arguments.size()),nullptr,__uuidof(IDxcResult),reinterpret_cast<void**>(&rawResult));
-    if(FAILED(status)){SDL_SetError("DXC compile call failed (0x%08x)",static_cast<unsigned>(status));return nullptr;}
-    Com<IDxcResult> result(rawResult);result->GetStatus(&status);
-    if(FAILED(status)){
-        IDxcBlobUtf8* rawErrors=nullptr;result->GetOutput(DXC_OUT_ERRORS,__uuidof(IDxcBlobUtf8),reinterpret_cast<void**>(&rawErrors),nullptr);Com<IDxcBlobUtf8> errors(rawErrors);
-        SDL_SetError("Legacy shader compilation: %s",errors?errors->GetStringPointer():"unknown error");return nullptr;
-    }
-    IDxcBlob* rawObject=nullptr;result->GetOutput(DXC_OUT_OBJECT,__uuidof(IDxcBlob),reinterpret_cast<void**>(&rawObject),nullptr);Com<IDxcBlob> object(rawObject);
-    if(!object){SDL_SetError("DXC returned no shader object");return nullptr;}
-    SDL_GPUShaderCreateInfo info{};info.code_size=object->GetBufferSize();info.code=static_cast<const Uint8*>(object->GetBufferPointer());info.entrypoint="main";
+    std::vector<std::uint8_t> bytecode;
+    std::string error;
+    if(!CompileHLSL(source,vertex,spirv,bytecode,error)){SDL_SetError("Legacy shader compilation: %s",error.c_str());return nullptr;}
+    SDL_GPUShaderCreateInfo info{};info.code_size=bytecode.size();info.code=bytecode.data();info.entrypoint="main";
     info.format=spirv?SDL_GPU_SHADERFORMAT_SPIRV:SDL_GPU_SHADERFORMAT_DXIL;info.stage=vertex?SDL_GPU_SHADERSTAGE_VERTEX:SDL_GPU_SHADERSTAGE_FRAGMENT;
     info.num_samplers=vertex?0:8;info.num_uniform_buffers=1;
     return SDL_CreateGPUShader(device,&info);

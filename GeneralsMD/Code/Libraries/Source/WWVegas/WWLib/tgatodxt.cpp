@@ -38,6 +38,7 @@
 #if 0 
 
 #include "always.h"
+#include "Platform/Paths.h"
 #include "nvdxtlib.h"
 #include "targa.h"
 #include "tgatodxt.h"
@@ -207,7 +208,7 @@ void TGAToDXTClass::Write (const char *outputpathname)
 	HANDLE hfile;
 	DWORD  bytecountwritten;
 	
-	hfile = ::CreateFile (outputpathname, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0L, NULL);
+	hfile = ::CreateFile (Platform::WritePath(outputpathname).c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0L, NULL);
 	if (hfile != INVALID_HANDLE_VALUE) {
       LockFile (hfile, 0, 0, BufferCount, 0); 
       WriteFile (hfile, Buffer, BufferCount, &bytecountwritten, NULL);

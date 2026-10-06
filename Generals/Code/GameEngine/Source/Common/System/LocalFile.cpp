@@ -46,6 +46,7 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"
+#include "Platform/Paths.h"
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -220,7 +221,7 @@ Bool LocalFile::open( const Char *filename, Int access )
 
 	*m++ = 0;
 
-	m_file = fopen(filename, mode);
+	m_file = Platform::OpenStream(filename, mode);
 	if (m_file == NULL)
 	{
 		goto error;
@@ -230,6 +231,8 @@ Bool LocalFile::open( const Char *filename, Int access )
 
 #else
 
+	const std::string resolved = (m_access & (WRITE | CREATE | APPEND | TRUNCATE)) ?
+		Platform::WritePath(filename) : Platform::ReadPath(filename);
 	int flags = 0;
 
 	if (m_access & CREATE)
@@ -267,7 +270,7 @@ Bool LocalFile::open( const Char *filename, Int access )
 		flags |= _O_RDONLY;
 	}
 
-	m_handle = _open( filename, flags , _S_IREAD | _S_IWRITE);
+	m_handle = _open( resolved.c_str(), flags , _S_IREAD | _S_IWRITE);
 
 	if( m_handle == -1 )
 	{

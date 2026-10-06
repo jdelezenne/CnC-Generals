@@ -27,6 +27,7 @@
 // Debug I/O class con (console window)
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#include "Platform/Clock.h"
 #include <stdlib.h>
 #include <new>      // needed for placement new prototype
 
@@ -156,7 +157,7 @@ int DebugIOCon::Read(char *buf, int maxchar)
   }
 
   // fake another cursor
-  if (GetTickCount()&512)
+  if (Platform::Milliseconds()&512)
     ci[m_inputUsed].Attributes=BACKGROUND_BLUE|BACKGROUND_GREEN
                               |BACKGROUND_RED|BACKGROUND_INTENSITY|FOREGROUND_GREEN;
   

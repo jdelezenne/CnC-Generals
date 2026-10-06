@@ -27,6 +27,7 @@
 // Profile module main code
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
+#include "Platform/Clock.h"
 #include <new>
 #include "mmsystem.h"
 
@@ -105,15 +106,15 @@ static _int64 GetClockCyclesFast(void)
   for (int k=0;k<3;k++)
   {
     // wait for end of current tick
-    unsigned timeEnd=timeGetTime()+2;
-    while (timeGetTime()<timeEnd);
+    unsigned timeEnd=Platform::Milliseconds()+2;
+    while (Platform::Milliseconds()<timeEnd);
 
     // get cycles
     _int64 start,startQPC,endQPC;
     QueryPerformanceCounter((LARGE_INTEGER *)&startQPC);
     ProfileGetTime(start);
     timeEnd+=20;
-    while (timeGetTime()<timeEnd);
+    while (Platform::Milliseconds()<timeEnd);
     ProfileGetTime(n[k]);
     n[k]-=start;
 

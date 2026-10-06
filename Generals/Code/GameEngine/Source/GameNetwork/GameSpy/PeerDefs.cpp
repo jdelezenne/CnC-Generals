@@ -21,6 +21,8 @@
 // Author: Matthew D. Campbell, June 2002
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 #include <set>
 
 #include "Common/GameState.h"
@@ -535,7 +537,7 @@ void GameSpyInfo::markAsStagingRoomHost( void )
 	m_joinedStagingRoom = FALSE; m_isHosting = TRUE;
 	m_localStagingRoom.reset();
 	m_localStagingRoom.enterGame();
-	m_localStagingRoom.setSeed(GetTickCount());
+	m_localStagingRoom.setSeed(Platform::Milliseconds());
 	
 	GameSlot newSlot;
 	UnicodeString uName;
@@ -611,11 +613,11 @@ void SetUpGameSpy( const char *motdBuffer, const char *configBuffer )
 	TearDownGameSpy();
 
 	AsciiString dir = TheGlobalData->getPath_UserData();
-	CreateDirectory(dir.str(), NULL);
+	Platform::CreateUserDirectory(dir.str());
 	dir.format("%sGeneralsOnline", TheGlobalData->getPath_UserData().str());
-	CreateDirectory(dir.str(), NULL);
+	Platform::CreateUserDirectory(dir.str());
 	dir.format("%sGeneralsOnline\\Ladders", TheGlobalData->getPath_UserData().str());
-	CreateDirectory(dir.str(), NULL);
+	Platform::CreateUserDirectory(dir.str());
 
 	TheGameSpyBuddyMessageQueue = GameSpyBuddyMessageQueueInterface::createNewMessageQueue();
 	TheGameSpyBuddyMessageQueue->startThread();

@@ -43,6 +43,7 @@
 // ----------------------------------------------------------------------------
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 // SYSTEM INCLUDES 
 
@@ -2983,7 +2984,7 @@ void MemoryPoolFactory::memoryPoolUsageReport( const char* filename, FILE *appen
 		char tmp[256];
 		strcpy(tmp,filename);
 		strcat(tmp,".csv");
-		perfStatsFile = fopen(tmp, "w");
+		perfStatsFile = Platform::OpenStream(tmp, "w");
 	}
 	else
 	{

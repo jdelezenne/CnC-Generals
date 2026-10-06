@@ -12,7 +12,6 @@ std::deque<Platform::KeyEvent> Keys;
 std::deque<Platform::MouseEvent> Mouse;
 std::array<bool, 256> Down{};
 unsigned int Sequence = 0;
-unsigned int TimeOffset = 0;
 std::array<bool, 4> MouseDown{};
 int MouseX = 0, MouseY = 0;
 void QueueKey(unsigned key, bool down)
@@ -32,11 +31,10 @@ void QueueMouse(const Platform::MouseEvent& event)
 }
 }
 
-bool Platform::InitializeInput(SDL_Window* window, unsigned int timeOffset)
+bool Platform::InitializeInput(SDL_Window* window)
 {
     if (!window || Window) return false;
     Window = window;
-    TimeOffset = timeOffset;
     ResetKeyboardInput();
     ResetMouseInput();
     return true;
@@ -108,27 +106,27 @@ void Platform::PumpInput()
                 Mouse.clear();
                 for (unsigned button = 1; button < MouseDown.size(); ++button)
                     if (MouseDown[button]) QueueMouse({MouseEventType::Button, MouseX, MouseY, 0,
-                        TimeOffset + static_cast<unsigned>(event.window.timestamp / 1000000), button, 0, false});
+                        static_cast<unsigned>(event.window.timestamp / 1000000), button, 0, false});
                 DispatchWindowEvent(WindowEvent::FocusLost);
             }
             break;
         case SDL_EVENT_MOUSE_MOTION:
             if (event.motion.windowID == windowID)
                 QueueMouse({MouseEventType::Move, static_cast<int>(event.motion.x), static_cast<int>(event.motion.y),
-                    0, TimeOffset + static_cast<unsigned>(event.motion.timestamp / 1000000), 0, 0, false});
+                    0, static_cast<unsigned>(event.motion.timestamp / 1000000), 0, 0, false});
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
             if (event.button.windowID == windowID && event.button.button <= SDL_BUTTON_RIGHT)
                 QueueMouse({MouseEventType::Button, static_cast<int>(event.button.x), static_cast<int>(event.button.y),
-                    0, TimeOffset + static_cast<unsigned>(event.button.timestamp / 1000000), event.button.button,
+                    0, static_cast<unsigned>(event.button.timestamp / 1000000), event.button.button,
                     event.button.clicks, event.button.down});
             break;
         case SDL_EVENT_MOUSE_WHEEL:
             if (event.wheel.windowID == windowID) {
                 const float sign = event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1.0f : 1.0f;
                 QueueMouse({MouseEventType::Wheel, static_cast<int>(event.wheel.mouse_x), static_cast<int>(event.wheel.mouse_y),
-                    static_cast<int>(event.wheel.y * sign * 120), TimeOffset + static_cast<unsigned>(event.wheel.timestamp / 1000000), 0, 0, false});
+                    static_cast<int>(event.wheel.y * sign * 120), static_cast<unsigned>(event.wheel.timestamp / 1000000), 0, 0, false});
             }
             break;
         default: break;

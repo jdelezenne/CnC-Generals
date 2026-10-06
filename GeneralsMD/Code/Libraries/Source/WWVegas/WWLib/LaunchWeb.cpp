@@ -32,6 +32,7 @@
 ******************************************************************************/
 
 #include "LaunchWeb.h"
+#include "Platform/Paths.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <stdio.h>
@@ -64,16 +65,9 @@ bool LaunchWebBrowser(const char* url)
 		}
 
 	// Create a temporary file with HTML content
-	char tempPath[MAX_PATH];
-	GetWindowsDirectory(tempPath, MAX_PATH);
-	
-	char filename[MAX_PATH];
-	GetTempFileName(tempPath, "WWS", 0, filename);
+	const std::string filename = Platform::UserPath("Temp/Browser.html");
 
-	char* extPtr = strrchr(filename, '.');
-	strcpy(extPtr, ".html");
-
-	HANDLE file = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+	HANDLE file = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 			FILE_ATTRIBUTE_NORMAL, NULL);
 
 	assert(INVALID_HANDLE_VALUE != file && "Failed to create temporary HTML file.");
@@ -91,11 +85,11 @@ bool LaunchWebBrowser(const char* url)
 
 	// Find the executable that can launch this file
 	char exeName[MAX_PATH];
-	HINSTANCE hInst = FindExecutable(filename, NULL, exeName);
+	HINSTANCE hInst = FindExecutable(filename.c_str(), NULL, exeName);
 	assert(((int)hInst > 32) && "Unable to find executable that will display HTML files.");
 
 	// Delete temporary file
-	DeleteFile(filename);
+	Platform::RemoveUserFile(filename.c_str());
 
 	if ((int)hInst <= 32)
 		{

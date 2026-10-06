@@ -27,6 +27,7 @@
 // Author: Michael S. Booth, April 2001
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
+#include "Platform/Clock.h"
 
 #include "Common/ActionManager.h"
 #include "Common/AudioAffect.h"
@@ -183,8 +184,8 @@ Int GameEngine::getFramesPerSecondLimit( void )
 //-------------------------------------------------------------------------------------------------
 GameEngine::GameEngine( void )
 {
-	// Set the time slice size to 1 ms.
-	timeBeginPeriod(1);
+	// Initialize the shared clock; SDL manages timer resolution.
+	Platform::Milliseconds();
 
 	// initialize to non garbage values
 	m_maxFPS = 0;
@@ -232,8 +233,7 @@ GameEngine::~GameEngine()
 	PerfGather::termPerfDump();
 #endif
 
-	// Restore the previous time slice for Windows.
-	timeEndPeriod(1);
+
 }
 
 void GameEngine::setFramesPerSecondLimit( Int fps )
@@ -604,9 +604,9 @@ extern bool DX8Wrapper_IsWindowed;
 void GameEngine::execute( void )
 {
 	
-	DWORD prevTime = timeGetTime();
+	DWORD prevTime = Platform::Milliseconds();
 #if defined(_DEBUG) || defined(_INTERNAL)
-	DWORD startTime = timeGetTime() / 1000;
+	DWORD startTime = Platform::Milliseconds() / 1000;
 #endif
 
 	// pretty basic for now
@@ -627,7 +627,7 @@ void GameEngine::execute( void )
 				// enter only if in benchmark mode
 				if (TheGlobalData->m_benchmarkTimer > 0)
 				{
-					DWORD currentTime = timeGetTime() / 1000;
+					DWORD currentTime = Platform::Milliseconds() / 1000;
 					if (TheGlobalData->m_benchmarkTimer < currentTime - startTime)
 					{
 						if (TheGameLogic->isInGame())
@@ -685,12 +685,12 @@ void GameEngine::execute( void )
 		#endif
 
 					// limit the framerate
-					DWORD now = timeGetTime();
+					DWORD now = Platform::Milliseconds();
 					DWORD limit = (1000.0f/m_maxFPS)-1;
 					while (TheGlobalData->m_useFpsLimit && (now - prevTime) < limit) 
 					{
 						::Sleep(0);
-						now = timeGetTime();
+						now = Platform::Milliseconds();
 					}
 					//Int slept = now - prevTime;
 					//DEBUG_LOG(("delayed %d\n",slept));

@@ -109,7 +109,7 @@
 #include <ini.h>
 #include <windows.h>
 #include <stdio.h>
-#include <D3dx8core.h>
+#include <d3dx8core.h>
 
 #include "texture.h"
 #include "wwprofile.h"

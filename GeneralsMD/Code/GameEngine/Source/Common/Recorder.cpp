@@ -23,6 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #include "Common/Recorder.h"
 #include "Common/FileSystem.h"
@@ -99,7 +100,7 @@ void RecorderClass::logGameStart(AsciiString options)
 			TheFileSystem->createDirectory(statsFile);
 			statsFile.concat(computerName);
 			statsFile.concat(".txt");
-			FILE *logFP = fopen(statsFile.str(), "a+");
+			FILE *logFP = Platform::OpenStream(statsFile.str(), "a+");
 			if (!logFP)
 			{
 				// try again locally
@@ -107,7 +108,7 @@ void RecorderClass::logGameStart(AsciiString options)
 				statsFile = TheGlobalData->m_baseStatsDir;
 				statsFile.concat(computerName);
 				statsFile.concat(".txt");
-				logFP = fopen(statsFile.str(), "a+");
+				logFP = Platform::OpenStream(statsFile.str(), "a+");
 			}
 			if (logFP)
 			{
@@ -157,7 +158,7 @@ void RecorderClass::logPlayerDisconnect(UnicodeString player, Int slot)
 		AsciiString statsFile = TheGlobalData->m_baseStatsDir;
 		statsFile.concat(computerName);
 		statsFile.concat(".txt");
-		FILE *logFP = fopen(statsFile.str(), "a+");
+		FILE *logFP = Platform::OpenStream(statsFile.str(), "a+");
 		if (logFP)
 		{
 			time_t t;
@@ -203,7 +204,7 @@ void RecorderClass::logCRCMismatch( void )
 		AsciiString statsFile = TheGlobalData->m_baseStatsDir;
 		statsFile.concat(computerName);
 		statsFile.concat(".txt");
-		FILE *logFP = fopen(statsFile.str(), "a+");
+		FILE *logFP = Platform::OpenStream(statsFile.str(), "a+");
 		if (logFP)
 		{
 			time_t t;
@@ -258,7 +259,7 @@ void RecorderClass::logGameEnd( void )
 			AsciiString statsFile = TheGlobalData->m_baseStatsDir;
 			statsFile.concat(computerName);
 			statsFile.concat(".txt");
-			FILE *logFP = fopen(statsFile.str(), "a+");
+			FILE *logFP = Platform::OpenStream(statsFile.str(), "a+");
 			if (logFP)
 			{
 				struct tm *t2 = localtime(&t);
@@ -297,7 +298,7 @@ void RecorderClass::cleanUpReplayFile( void )
 		DEBUG_LOG(("Saving replay to %s\n", fname));
 		AsciiString oldFname;
 		oldFname.format("%s%s", getReplayDir().str(), m_fileName.str());
-		CopyFile(oldFname.str(), fname, TRUE);
+		Platform::CopyUserFile(oldFname.str(), fname, TRUE);
 #ifdef DEBUG_FILE_NAME
 		AsciiString debugFname = fname;
 		debugFname.removeLastChar();
@@ -305,7 +306,7 @@ void RecorderClass::cleanUpReplayFile( void )
 		debugFname.removeLastChar();
 		debugFname.concat("txt");
 		UnsignedInt fileSize = 0;
-		FILE *fp = fopen(DEBUG_FILE_NAME, "rb");
+		FILE *fp = Platform::OpenStream(DEBUG_FILE_NAME, "rb");
 		if (fp)
 		{
 			fseek(fp, 0, SEEK_END);
@@ -319,13 +320,13 @@ void RecorderClass::cleanUpReplayFile( void )
 		if (fileSize <= MAX_DEBUG_SIZE || TheGlobalData->m_saveAllStats)
 		{
 			DEBUG_LOG(("Using CopyFile to copy %s\n", DEBUG_FILE_NAME));
-			CopyFile(DEBUG_FILE_NAME, debugFname.str(), TRUE);
+			Platform::CopyUserFile(DEBUG_FILE_NAME, debugFname.str(), TRUE);
 		}
 		else
 		{
 			DEBUG_LOG(("manual copy of %s\n", DEBUG_FILE_NAME));
-			FILE *ifp = fopen(DEBUG_FILE_NAME, "rb");
-			FILE *ofp = fopen(debugFname.str(), "wb");
+			FILE *ifp = Platform::OpenStream(DEBUG_FILE_NAME, "rb");
+			FILE *ofp = Platform::OpenStream(debugFname.str(), "wb");
 			if (ifp && ofp)
 			{
 				fseek(ifp, fileSize-MAX_DEBUG_SIZE, SEEK_SET);
@@ -545,7 +546,7 @@ void RecorderClass::startRecording(GameDifficulty diff, Int originalGameMode, In
 	m_fileName = getLastReplayFileName();
 	m_fileName.concat(getReplayExtention());
 	filepath.concat(m_fileName);
-	m_file = fopen(filepath.str(), "wb");
+	m_file = Platform::OpenStream(filepath.str(), "wb");
 	if (m_file == NULL) {
 		DEBUG_ASSERTCRASH(m_file != NULL, ("Failed to create replay file"));
 		return;
@@ -817,7 +818,7 @@ Bool RecorderClass::readReplayHeader(ReplayHeader& header)
 {
 	AsciiString filepath = getReplayDir();
 	filepath.concat(header.filename.str());
-	m_file = fopen(filepath.str(), "rb");
+	m_file = Platform::OpenStream(filepath.str(), "rb");
 	if (m_file == NULL)
 	{
 		DEBUG_LOG(("Can't open %s (%s)\n", filepath.str(), header.filename.str()));
@@ -1533,7 +1534,7 @@ AsciiString RecorderClass::getLastReplayFileName()
 			testString.format("%s%s%s", getReplayDir().str(), full.str(), replayExtention);
 
 			FILE *fp;
-			fp = fopen(testString.str(), "rb");
+			fp = Platform::OpenStream(testString.str(), "rb");
 			if (fp)
 			{
 				fclose(fp);
@@ -1547,7 +1548,7 @@ AsciiString RecorderClass::getLastReplayFileName()
 			{
 				fullPlusNum.format("%s_%d", full.str(), test);
 				testString.format("%s%s%s", getReplayDir().str(), fullPlusNum.str(), replayExtention);
-				fp = fopen(testString.str(), "rb");
+				fp = Platform::OpenStream(testString.str(), "rb");
 				if (fp)
 				{
 					fclose(fp);

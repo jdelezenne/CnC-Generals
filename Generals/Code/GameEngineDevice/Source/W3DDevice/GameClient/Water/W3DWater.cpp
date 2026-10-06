@@ -32,6 +32,7 @@
 										 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "stdio.h"
+#include "Platform/Clock.h"
 #include "W3DDevice/GameClient/W3DWater.h"
 #include "W3DDevice/GameClient/heightmap.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
@@ -968,7 +969,7 @@ Int WaterRenderObjClass::init(Real waterLevel, Real dx, Real dy, SceneClass *par
 	m_dy=dy;
 	m_level=waterLevel;
 
-	m_LastUpdateTime=timeGetTime();
+	m_LastUpdateTime=Platform::Milliseconds();
 	m_uScrollPerMs=0.001f;
 	m_vScrollPerMs=0.001f;
 	m_uOffset=0;
@@ -2012,7 +2013,7 @@ void WaterRenderObjClass::renderSky(void)
 
 	Setting *setting=&m_settings[m_tod];
 
-	timeNow=timeGetTime();
+	timeNow=Platform::Milliseconds();
 
 	timeDiff=timeNow-m_LastUpdateTime;
 	m_LastUpdateTime=timeNow;

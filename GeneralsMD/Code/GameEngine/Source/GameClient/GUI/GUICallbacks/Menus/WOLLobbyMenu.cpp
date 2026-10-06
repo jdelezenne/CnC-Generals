@@ -30,6 +30,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
 
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
@@ -868,14 +869,14 @@ static void refreshGameList( Bool forceRefresh )
 {
 	Int refreshInterval = gameListRefreshInterval;
 
-	if (forceRefresh || ((gameListRefreshTime == 0) || ((gameListRefreshTime + refreshInterval) <= timeGetTime())))
+	if (forceRefresh || ((gameListRefreshTime == 0) || ((gameListRefreshTime + refreshInterval) <= Platform::Milliseconds())))
 	{
 		if (TheGameSpyInfo->hasStagingRoomListChanged())
 		{
 			//DEBUG_LOG(("################### refreshing game list\n"));
 			//DEBUG_LOG(("gameRefreshTime=%d, refreshInterval=%d, now=%d\n", gameListRefreshTime, refreshInterval, timeGetTime()));
 			RefreshGameListBoxes();
-			gameListRefreshTime = timeGetTime();
+			gameListRefreshTime = Platform::Milliseconds();
 		} else {
 			//DEBUG_LOG(("-"));
 		}
@@ -891,10 +892,10 @@ static void refreshPlayerList( Bool forceRefresh )
 {
 		Int refreshInterval = playerListRefreshInterval;
 
-		if (forceRefresh ||((playerListRefreshTime == 0) || ((playerListRefreshTime + refreshInterval) <= timeGetTime())))
+		if (forceRefresh ||((playerListRefreshTime == 0) || ((playerListRefreshTime + refreshInterval) <= Platform::Milliseconds())))
 		{
 				PopulateLobbyPlayerListbox();
-				playerListRefreshTime = timeGetTime();
+				playerListRefreshTime = Platform::Milliseconds();
 		}
 }
 //-------------------------------------------------------------------------------------------------
@@ -936,8 +937,8 @@ void WOLLobbyMenuUpdate( WindowLayout * layout, void *userData)
 		HandlePersistentStorageResponses();
 
 #ifdef PERF_TEST
-		UnsignedInt start = timeGetTime();
-		UnsignedInt end = timeGetTime();
+		UnsignedInt start = Platform::Milliseconds();
+		UnsignedInt end = Platform::Milliseconds();
 		std::list<Int> responses;
 		Int numMessages = 0;
 #endif // PERF_TEST
@@ -1293,7 +1294,7 @@ void WOLLobbyMenuUpdate( WindowLayout * layout, void *userData)
 
 #ifdef PERF_TEST
 		// check performance
-		end = timeGetTime();
+		end = Platform::Milliseconds();
 		PERF_LOG(("Frame time was %d ms\n", end-start));
 		std::list<Int>::const_iterator it;
 		for (it = responses.begin(); it != responses.end(); ++it)
@@ -1307,14 +1308,14 @@ void WOLLobbyMenuUpdate( WindowLayout * layout, void *userData)
 // Removed 2-17-03 to pull out into a function so we can do the same checks 
 		Int refreshInterval = gameListRefreshInterval;
 
-		if ((gameListRefreshTime == 0) || ((gameListRefreshTime + refreshInterval) <= timeGetTime()))
+		if ((gameListRefreshTime == 0) || ((gameListRefreshTime + refreshInterval) <= Platform::Milliseconds()))
 		{
 			if (TheGameSpyInfo->hasStagingRoomListChanged())
 			{
 				//DEBUG_LOG(("################### refreshing game list\n"));
 				//DEBUG_LOG(("gameRefreshTime=%d, refreshInterval=%d, now=%d\n", gameListRefreshTime, refreshInterval, timeGetTime()));
 				RefreshGameListBoxes();
-				gameListRefreshTime = timeGetTime();
+				gameListRefreshTime = Platform::Milliseconds();
 			} else {
 				//DEBUG_LOG(("-"));
 			}

@@ -46,6 +46,7 @@
 //         Includes                                                      
 //-----------------------------------------------------------------------------
 #include <stdlib.h>
+#include "Platform/Clock.h"
 
 #include "W3DDevice/GameClient/TerrainTex.h"
 #include "W3DDevice/GameClient/WorldHeightMap.h"
@@ -978,7 +979,7 @@ void CloudMapTerrainTextureClass::Apply(unsigned int stage)
 	D3DXMATRIX offset;
 
 	Int delta = m_curTick;
-	m_curTick = ::GetTickCount();
+	m_curTick = Platform::Milliseconds();
 	delta = m_curTick-delta;
 	m_xOffset += m_xSlidePerSecond*delta/1000;
 	m_yOffset += m_ySlidePerSecond*delta/1000;

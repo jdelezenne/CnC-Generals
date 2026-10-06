@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "systimer.h"
+#include "Platform/Clock.h"
 
 SysTimeClass SystemTime;
 
@@ -55,8 +56,8 @@ SysTimeClass SystemTime;
  *=============================================================================================*/
 SysTimeClass::SysTimeClass(void)
 {
-	//tell windows we need single ms precision.
-	timeBeginPeriod(1);
+	// SDL initializes the shared clock and manages its timer resolution.
+	Platform::Milliseconds();
 }
 
 /***********************************************************************************************
@@ -75,8 +76,7 @@ SysTimeClass::SysTimeClass(void)
  *=============================================================================================*/
 SysTimeClass::~SysTimeClass(void)
 {
-	//tell windows we need single ms precision.
-	timeEndPeriod(1);
+
 }
 
 /***********************************************************************************************
@@ -95,8 +95,8 @@ SysTimeClass::~SysTimeClass(void)
  *=============================================================================================*/
 void SysTimeClass::Reset(void)
 {
-	StartTime = timeGetTime();
-	WrapAdd = 0 - StartTime;
+	StartTime = Platform::Milliseconds();
+	WrapAdd = static_cast<std::uint32_t>(0 - StartTime);
 }
 
 

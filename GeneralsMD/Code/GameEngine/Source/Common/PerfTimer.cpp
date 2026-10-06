@@ -27,6 +27,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 
 #include "Common/PerfTimer.h"
 #if defined(_M_X64)
@@ -94,15 +96,15 @@ void InitPrecisionTimer()
   for( int k = 0; k < 3; k++ )
   {
     // wait for end of current tick
-    unsigned timeEnd = timeGetTime() + 2;
-    while( timeGetTime() < timeEnd ); //do nothing
+    unsigned timeEnd = Platform::Milliseconds() + 2;
+    while( Platform::Milliseconds() < timeEnd ); //do nothing
  
     // get cycles
     _int64 start, startQPC, endQPC;
     QueryPerformanceCounter( (LARGE_INTEGER *)&startQPC );
     ProfileGetTime( start );
     timeEnd += 20;
-    while( timeGetTime() < timeEnd ); //do nothing
+    while( Platform::Milliseconds() < timeEnd ); //do nothing
     ProfileGetTime( n[ k ] );
     n[ k ] -= start;
  
@@ -172,11 +174,11 @@ void InitPrecisionTimer()
 			Int64		   StartTicks;
 			Int64		   EndTicks;
 
-			TimeStart = timeGetTime();
+			TimeStart = Platform::Milliseconds();
 			GetPrecisionTimer(&StartTicks);
 			for(;;)
 			{
-				TimeStop = timeGetTime();
+				TimeStop = Platform::Milliseconds();
 				if ((TimeStop - TimeStart) > 1000)
 				{
 					GetPrecisionTimer(&EndTicks);
@@ -377,7 +379,7 @@ void PerfGather::reset()
 	strcpy(tmp, s_buf);
 	strcat(tmp, ".csv");
 
-	s_perfStatsFile = fopen(tmp, "w");
+	s_perfStatsFile = Platform::OpenStream(tmp, "w");
 	s_perfDumpOptions = options;
 
 	if (s_perfStatsFile == NULL)

@@ -28,6 +28,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 
 #include "Common/AudioAffect.h"
 #include "Common/AudioHandleSpecialValues.h"
@@ -1602,7 +1604,7 @@ void GameLogic::startNewGame( Bool saveGame )
 	#endif
 
 	progressCount = LOAD_PROGRESS_LOOP_ALL_THE_FREAKN_OBJECTS;
-	Int timer = timeGetTime();
+	Int timer = Platform::Milliseconds();
 	if( saveGame == FALSE )
 	{
 
@@ -1689,12 +1691,12 @@ void GameLogic::startNewGame( Bool saveGame )
 
 			}  // end if
 		
-			if(timeGetTime() > timer + 500)
+			if(Platform::Milliseconds() > timer + 500)
 			{
 				if(progressCount < LOAD_PROGRESS_MAX_ALL_THE_FREAKN_OBJECTS)
 					progressCount ++;
 				updateLoadProgress(progressCount);
-				timer = timeGetTime();
+				timer = Platform::Milliseconds();
 			}
 
 		}	// for, loading map objects
@@ -1966,8 +1968,8 @@ void GameLogic::startNewGame( Bool saveGame )
 	g_UT_curThing = TheThingFactory->firstTemplate();
 	g_UT_startTiming = true;
 	g_UT_gotUnit = false;
-	g_UT_timingLog = fopen("TimingLog.txt", "w");	 
-	g_UT_commaLog = fopen("TimingCDL.txt", "w");
+	g_UT_timingLog = Platform::OpenStream("TimingLog.txt", "w");
+	g_UT_commaLog = Platform::OpenStream("TimingCDL.txt", "w");
 	fputs("Full,100*ms,NoPart-NoSpawn,,No Spawn,100*ms,Logic,100*ms,Thing,Model,Kind,Side,DrawCalls All,DrawCalls NoPart-NoSpawn,DrawCalls NoSpawn\n", g_UT_commaLog); 
 
 	// Turn off shadows
@@ -3741,7 +3743,7 @@ void GameLogic::lastHeardFrom( Int playerId )
 {
 	if( playerId < 0 || playerId >= MAX_SLOTS)
 		return;
-	m_progressCompleteTimeout[playerId] = timeGetTime();
+	m_progressCompleteTimeout[playerId] = Platform::Milliseconds();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -3752,7 +3754,7 @@ void GameLogic::testTimeOut( void )
 	if(isProgressComplete())
 		return;
 
-	Int curTime = timeGetTime();
+	Int curTime = Platform::Milliseconds();
 	// Loop and test everyone in our game.
 	for(Int i =0; i < MAX_SLOTS; ++i)
 	{
@@ -3782,7 +3784,7 @@ void GameLogic::initTimeOutValues( void )
 		return;
 	for(Int i = 0; i < TheNetwork->getNumPlayers(); ++i)
 	{
-		m_progressCompleteTimeout[i] = timeGetTime();
+		m_progressCompleteTimeout[i] = Platform::Milliseconds();
 	}
 }
 

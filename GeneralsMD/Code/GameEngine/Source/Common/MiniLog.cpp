@@ -28,6 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 #include "Common/MiniLog.h"
 
 #ifdef DEBUG_LOGGING
@@ -48,7 +49,7 @@ LogClass::LogClass(const char *fname)
 	}
 	AsciiString fullPath;
 	fullPath.format("%s\\%s", buffer, fname);
-	m_fp = fopen(fullPath.str(), "wt");
+	m_fp = Platform::OpenStream(fullPath.str(), "wt");
 }
 
 LogClass::~LogClass()

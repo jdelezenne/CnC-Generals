@@ -35,6 +35,8 @@ static void drawFramerateBar(void);
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include <stdlib.h>
+#include "Platform/Clock.h"
+#include "Platform/Paths.h"
 #include "Platform/Windows/Window.h"
 #include <windows.h>
 #include <io.h>
@@ -165,7 +167,7 @@ StatDumpClass::StatDumpClass( const char *fname )
 	}
 	AsciiString fullPath;
 	fullPath.format( "%s\\%s", buffer, fname );
-	m_fp = fopen( fullPath.str(), "wt" );
+	m_fp = Platform::OpenStream( fullPath.str(), "wt" );
 }
 
 //=============================================================================
@@ -924,7 +926,7 @@ void W3DDisplay::gatherDebugStats( void )
 		static Int64 lastFrameTime=0;
 		static samples = 0;
 		if (pListFile == NULL) {
-			pListFile = fopen("FrameRateLog.txt", "w");
+			pListFile = Platform::OpenStream("FrameRateLog.txt", "w");
 		}
 		samples++;
 		if (pListFile && lastFrameTime && samples<100) {
@@ -1704,9 +1706,9 @@ AGAIN:
 
 	// Fast & Frozen time limits the time to 33 fps.
 	Int minTime = 30;
-	static Int prevTime = timeGetTime(), now;	
+	static Int prevTime = Platform::Milliseconds(), now;
 
-	now=timeGetTime();
+	now=Platform::Milliseconds();
 	if (TheTacticalView->getTimeMultiplier()>1) 
 	{
 		static Int timeMultiplierCounter = 1;
@@ -1718,7 +1720,7 @@ AGAIN:
 	}	
 	else 
 	{
-		now = timeGetTime();
+		now = Platform::Milliseconds();
 		prevTime = now - minTime;		 // do the first frame immediately.
 	} 
 
@@ -1732,7 +1734,7 @@ AGAIN:
 				// limit the framerate
 				while(TheGlobalData->m_useFpsLimit && (now - prevTime) < minTime-1)
 				{
-					now = timeGetTime();
+					now = Platform::Milliseconds();
 				}
 				prevTime = now;
 			}
@@ -1980,7 +1982,7 @@ void W3DDisplay::createLightPulse( const Coord3D *pos, const RGBColor *color,
 void W3DDisplay::toggleLetterBox(void)
 {
 	m_letterBoxEnabled = !m_letterBoxEnabled;
-	m_letterBoxFadeStartTime = timeGetTime();
+	m_letterBoxFadeStartTime = Platform::Milliseconds();
 }
 
 void W3DDisplay::enableLetterBox(Bool enable)
@@ -1990,7 +1992,7 @@ void W3DDisplay::enableLetterBox(Bool enable)
 		if (!m_letterBoxEnabled)
 		{	//letterbox mode not previously enabled
 			m_letterBoxEnabled = TRUE;
-			m_letterBoxFadeStartTime = timeGetTime();
+			m_letterBoxFadeStartTime = Platform::Milliseconds();
 		}
 	}
 	else
@@ -1998,7 +2000,7 @@ void W3DDisplay::enableLetterBox(Bool enable)
 		if (m_letterBoxEnabled)
 		{	//letterbox mode no previously disabled
 			m_letterBoxEnabled = FALSE;
-			m_letterBoxFadeStartTime = timeGetTime();
+			m_letterBoxFadeStartTime = Platform::Milliseconds();
 		}
 	}
 }
@@ -2800,7 +2802,7 @@ static void CreateBMPFile(LPTSTR pszFile, char *image, Int width, Int height)
     lpBits = (LPBYTE) image;
 
     // Create the .BMP file. 
-    hf = CreateFile(pszFile, 
+    hf = CreateFile(Platform::WritePath(pszFile).c_str(),
                    GENERIC_READ | GENERIC_WRITE, 
                    (DWORD) 0, 
                     NULL, 
@@ -2862,7 +2864,7 @@ void W3DDisplay::takeScreenShot(void)
 #endif
 		strcpy(pathname, TheGlobalData->getPath_UserData().str());
 		strcat(pathname, leafname);
-		if (_access( pathname, 0 ) == -1)
+		if (_access( Platform::ReadPath(pathname).c_str(), 0 ) == -1)
 			done = true;
 	}
 
@@ -3042,7 +3044,7 @@ void W3DDisplay::dumpModelAssets(const char *path)
 {
 	if (m_3DScene)
 	{	
-		AssetDumpFile=fopen(path,"w");
+		AssetDumpFile=Platform::OpenStream(path,"w");
 		if (AssetDumpFile)
 		{
 			fprintf(AssetDumpFile,"Models and Textures used on %s:\n\n",TheGlobalData->m_mapName.str());
@@ -3154,12 +3156,12 @@ void W3DDisplay::dumpAssetUsage(const char* mapname)
 	while (true)
 	{
 		sprintf(buf, "AssetUsage_%s_%04d.txt",leafname,idx);
-		if (_access(buf, 0) != 0)
+		if (_access(Platform::ReadPath(buf).c_str(), 0) != 0)
 			break;	// it exists, we're good
 		++idx;
 	}
 	
-	FILE *fp = fopen(buf, "w");
+	FILE *fp = Platform::OpenStream(buf, "w");
 	if (fp)
 	{
 		for (int i=0; i<names.Count(); i++) 
@@ -3175,8 +3177,8 @@ void W3DDisplay::dumpAssetUsage(const char* mapname)
 //-------------------------------------------------------------------------------------------------
 static void drawFramerateBar(void)
 {
-	static DWORD prevTime = timeGetTime();
-	DWORD now = timeGetTime();
+	static DWORD prevTime = Platform::Milliseconds();
+	DWORD now = Platform::Milliseconds();
 	Real percTime = (1000.0f / (now - prevTime) ) / (1000.0f / TheGlobalData->m_framesPerSecondLimit);
 
 	if (percTime > 1.0f)
