@@ -35,6 +35,7 @@
 #define __MODULE_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/StaticGameLODLevel.h"
 #include "Common/INI.h"
 #include "Common/GameMemory.h"
 #include "Common/NameKeyGenerator.h"

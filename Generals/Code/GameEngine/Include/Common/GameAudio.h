@@ -45,6 +45,8 @@
 #define __COMMON_GAMEAUDIO_H_
 
 // Includes                                                      
+#include "Common/AudioTypes.h"
+#include "Common/AudioAffect.h"
 #include <cstdint>
 #include "Lib/BaseType.h"
 #include "Common/STLTypedefs.h"

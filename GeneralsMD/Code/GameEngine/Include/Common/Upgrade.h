@@ -33,6 +33,7 @@
 #define __UPGRADE_H_
 
 // USER INCLUDES //////////////////////////////////////////////////////////////////////////////////
+#include "Common/UpgradeStatusType.h"
 #include "Common/AudioEventRTS.h"
 #include "Common/INI.h"
 #include "Common/Snapshot.h"
@@ -46,12 +47,7 @@ enum AcademyClassificationType;
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-enum UpgradeStatusType
-{
-	UPGRADE_STATUS_INVALID = 0,
-	UPGRADE_STATUS_IN_PRODUCTION,
-	UPGRADE_STATUS_COMPLETE
-};
+
 
 //The maximum number of upgrades. 
 #define UPGRADE_MAX_COUNT 128

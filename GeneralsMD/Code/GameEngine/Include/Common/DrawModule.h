@@ -33,6 +33,8 @@
 #define __DRAWMODULE_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "GameClient/TerrainDecalType.h"
+#include "GameClient/ShadowType.h"
 #include "Common/GameType.h"
 #include "Common/Module.h"
 #include "Common/ModelState.h"

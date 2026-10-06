@@ -144,3 +144,13 @@ The complete game build then stopped on two concrete remaining dependencies:
 - Both engines' shared `PreRTS.h` still imports Windows ATL/COM and other native headers; Generals first fails on `atlbase.h` at line 40. This requires the planned platform separation and embedded-browser work. Installing Linux packages cannot replace that Windows application code.
 
 The native executable is still incomplete. The next code batch addresses these SDK/header boundaries without vendor compatibility patches, diagnostic suppression, runtime migration or game testing.
+
+### SDK and common-header separation (2026-10-07)
+
+- Microsoft SAL is now a hash-pinned public SDK header dependency, matching Renegade's committed setup. No substitute annotation macros or vendor compatibility patch was introduced. DirectXTex's complete Linux static-library build passed.
+- Both `PreRTS.h` headers select their existing Windows SDK/ATL imports only on Windows. Windows import ordering remains unchanged; Linux's common Generals precompiled header now builds successfully. Clang's Microsoft-extension mode enables existing language declarations such as `__int64` without substituting gameplay types.
+- String comparisons use an explicit native CRT interface, preserving the existing locale-based comparison behavior. SDL's Unicode folding was inspected and deliberately not substituted for the original CRT operation. The standard C++ allocation header supplies standard/placement operators while retaining the game's file/line overload declarations and existing allocation macros.
+- Enum definitions needed before use are being split into lightweight headers. All 30 moved enum definitions across both titles were compared with baseline `c1b857f` and are unchanged, including Zero Hour's extra AI debug value. Original name-table macros remain in their original owning headers. The new headers are listed explicitly in both CMake source lists. Two missing dependent-type `typename` keywords were added to each sparse-match template; its matching algorithm is unchanged.
+- The repository now contains checkpoint `6411a9c` (`linux`); remaining changes continue on top of it. Both Windows x64 Release header rebuilds are running. The native engine build has advanced into ordinary module sources and still reports incomplete enum dependencies in Object/Team/Player/UpdateModule/View and related headers. Their definitions must be available before use without changing enum values, declaring replacement types, suppressing compiler errors or removing game macros/asserts.
+
+This remains a partial source port. Zero Hour's native full build, Windows checks for this header batch and the remaining nine-phase gates are not complete. Runtime testing remains stopped.

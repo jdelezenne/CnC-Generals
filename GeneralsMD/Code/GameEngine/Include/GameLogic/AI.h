@@ -31,6 +31,7 @@
 #ifndef _AI_H_
 #define _AI_H_
 
+#include "GameLogic/AttitudeType.h"
 #include "Common/Snapshot.h"
 #include "Common/SubsystemInterface.h"
 #include "Common/GameMemory.h"
@@ -52,7 +53,6 @@ class UpgradeTemplate;
 class WeaponTemplate;
 
 enum GUICommandType;
-enum HackerAttackMode;
 enum WeaponSetType;
 enum WeaponLockType;
 enum SpecialPowerType;
@@ -303,7 +303,7 @@ class Team;
 class Weapon;
 
 // Note - written out in save/load xfer and .map files, don't change these numbers.  
-enum AttitudeType { AI_SLEEP = -2, AI_PASSIVE=-1, AI_NORMAL=0, AI_ALERT=1, AI_AGGRESSIVE=2, AI_INVALID=3 };		///< AI "attitude" behavior modifiers
+		///< AI "attitude" behavior modifiers
 
 enum CommandSourceType;
 

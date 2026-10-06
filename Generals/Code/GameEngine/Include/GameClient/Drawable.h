@@ -30,6 +30,7 @@
 #ifndef _DRAWABLE_H_
 #define _DRAWABLE_H_
 
+#include "GameClient/TerrainDecalType.h"
 #include "Common/AudioEventRTS.h"
 #include "Common/GameType.h"
 #include "Common/ModelState.h"
@@ -249,22 +250,7 @@ enum TintStatus
 // Note: these values are saved in save files, so you MUST NOT REMOVE OR CHANGE
 // existing values!
 //
-enum TerrainDecalType
-{
-#ifdef ALLOW_DEMORALIZE
-	TERRAIN_DECAL_DEMORALIZED = 0,
-#else
-	TERRAIN_DECAL_DEMORALIZED_OBSOLETE = 0,
-#endif
-	TERRAIN_DECAL_HORDE,
-	TERRAIN_DECAL_HORDE_WITH_NATIONALISM_UPGRADE,
-	TERRAIN_DECAL_HORDE_VEHICLE,
-	TERRAIN_DECAL_HORDE_WITH_NATIONALISM_UPGRADE_VEHICLE,
-	TERRAIN_DECAL_CRATE,
-	TERRAIN_DECAL_NONE,
 
-	TERRAIN_DECAL_MAX	///< keep this last
-};
 
 //-----------------------------------------------------------------------------
 

@@ -30,6 +30,10 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
+#include "GameLogic/WeaponBonusConditionType.h"
+#include "GameLogic/WeaponStatus.h"
+#include "Common/SpecialPowerType.h"
+#include "Common/RadarPriorityType.h"
 #include "Lib/BaseType.h"
 
 #include "Common/Geometry.h"
@@ -110,7 +114,6 @@ class ObjectWeaponStatusHelper;
 class ObjectDefectionHelper;
 
 enum CommandSourceType;
-enum HackerAttackMode;
 enum NameKeyType;
 enum SpecialPowerType;
 enum WeaponBonusConditionType;

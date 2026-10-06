@@ -31,6 +31,7 @@
 #ifndef _TEAM_H_
 #define _TEAM_H_
 
+#include "GameLogic/AttitudeType.h"
 #include "Common/GameType.h"
 #include "Common/Snapshot.h"
 #include "Common/Thing.h"

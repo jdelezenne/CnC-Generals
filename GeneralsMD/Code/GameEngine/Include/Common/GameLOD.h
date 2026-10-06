@@ -36,20 +36,14 @@
 #ifndef _GAME_LOD_H_
 #define _GAME_LOD_H_
 
+#include "Common/StaticGameLODLevel.h"
+
 enum ParticlePriorityType;
 
 #define MAX_LOD_PRESETS_PER_LEVEL	32	//number of hardware configs preset for each low,medium,high
 
 //Make sure this enum stays in sync with GameLODNames[]
-enum StaticGameLODLevel
-{
-	STATIC_GAME_LOD_UNKNOWN=-1,
-	STATIC_GAME_LOD_LOW,
-	STATIC_GAME_LOD_MEDIUM,
-	STATIC_GAME_LOD_HIGH,
-	STATIC_GAME_LOD_CUSTOM,	//make sure this remains last!
-	STATIC_GAME_LOD_COUNT
-};
+
 
 enum DynamicGameLODLevel
 {

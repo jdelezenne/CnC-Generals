@@ -32,6 +32,7 @@
 #ifndef __UpdateModule_H_
 #define __UpdateModule_H_
 
+#include "GameClient/CommandOption.h"
 #include "Common/Module.h"
 #include "Common/GameType.h"
 #include "Common/DisabledTypes.h"

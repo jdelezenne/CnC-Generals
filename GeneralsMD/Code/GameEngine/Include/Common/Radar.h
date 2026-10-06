@@ -33,6 +33,7 @@
 #define __RADAR_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/RadarPriorityType.h"
 #include "Lib/BaseType.h"
 #include "Common/SubsystemInterface.h"
 #include "Common/GameMemory.h"
@@ -126,16 +127,7 @@ protected:
 //-------------------------------------------------------------------------------------------------
 /** Radar priorities.  Keep this in sync with the priority names list below */
 //-------------------------------------------------------------------------------------------------
-enum RadarPriorityType
-{
-	RADAR_PRIORITY_INVALID,					// a priority that has not been set (in general it won't show up on the radar)
-	RADAR_PRIORITY_NOT_ON_RADAR,		// object specifically forbidden from being on the radar
-	RADAR_PRIORITY_STRUCTURE,				// structure level drawing priority
-	RADAR_PRIORITY_UNIT,						// unit level drawing priority
-	RADAR_PRIORITY_LOCAL_UNIT_ONLY,	// unit priority, but only on the radar if controlled by the local player
 
-	RADAR_PRIORITY_NUM_PRIORITIES		// keep this last
-};
 #ifdef DEFINE_RADAR_PRIORITY_NAMES
 static const char *RadarPriorityNames[] = 
 {

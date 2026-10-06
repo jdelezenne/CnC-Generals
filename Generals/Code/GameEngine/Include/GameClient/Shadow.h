@@ -38,17 +38,7 @@
 //
 
 // shadow bit flags, keep this in sync with TheShadowNames
-enum ShadowType
-{
-	SHADOW_NONE											=	0x00000000, 
-	SHADOW_DECAL										=	0x00000001,		//shadow decal applied via modulate blend
-	SHADOW_VOLUME										=	0x00000002, 
-	SHADOW_PROJECTION								=	0x00000004,
-	SHADOW_DYNAMIC_PROJECTION				= 0x00000008,		//extra setting for shadows which need dynamic updates
-	SHADOW_DIRECTIONAL_PROJECTION		= 0x00000010,		//extra setting for shadow decals that rotate with sun direction
-	SHADOW_ALPHA_DECAL							= 0x00000020,		//not really for shadows but for other decal uses. Alpha blended.
-	SHADOW_ADDITIVE_DECAL						= 0x00000040		//not really for shadows but for other decal uses. Additive blended. 
-};
+#include "GameClient/ShadowType.h"
 #ifdef DEFINE_SHADOW_NAMES
 static const char* TheShadowNames[] = 
 {

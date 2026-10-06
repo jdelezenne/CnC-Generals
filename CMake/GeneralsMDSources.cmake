@@ -505,6 +505,18 @@ set(GEN_compression_OPTIONS_RELEASE
 )
 
 set(GEN_gameengine_SOURCES
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/NameKeyType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/ScienceType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/StaticGameLODLevel.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/AudioTypes.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/RadarPriorityType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/Common/EditorSortingType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameClient/TerrainLOD.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameClient/TerrainDecalType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameClient/ShadowType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameLogic/AIDebugOptions.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameLogic/BodyDamageType.h"
+    "${GEN_CODE_DIR}/GameEngine/Include/GameLogic/DamageType.h"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngine/Source/Common/Thing/DrawModule.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngine/Source/Common/Thing/Module.cpp"
     "${PROJECT_SOURCE_DIR}/GeneralsMD/Code/GameEngine/Source/Common/Thing/ModuleFactory.cpp"

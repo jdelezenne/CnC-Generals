@@ -47,6 +47,8 @@
 #ifndef _PLAYER_H_
 #define _PLAYER_H_
 
+#include "GameLogic/BattlePlanStatus.h"
+#include "Common/UpgradeStatusType.h"
 #include "Common/Debug.h"
 #include "Common/Energy.h"
 #include "Common/GameType.h"

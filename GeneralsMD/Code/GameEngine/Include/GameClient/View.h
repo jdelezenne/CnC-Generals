@@ -33,6 +33,7 @@
 #define _VIEW_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "GameClient/ViewFilter.h"
 #include "Common/GameType.h"
 #include "Common/Snapshot.h"
 #include "Lib/BaseType.h"

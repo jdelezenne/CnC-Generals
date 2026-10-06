@@ -33,6 +33,9 @@
 #define __THINGTEMPLATE_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/RadarPriorityType.h"
+#include "Common/EditorSortingType.h"
+#include "GameClient/ShadowType.h"
 #include "Lib/BaseType.h"
  
 #include "Common/AudioEventRTS.h"

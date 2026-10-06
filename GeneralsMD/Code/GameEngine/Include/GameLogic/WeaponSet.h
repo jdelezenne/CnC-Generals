@@ -29,13 +29,14 @@
 #ifndef _WeaponSet_H_
 #define _WeaponSet_H_
 
+#include "GameLogic/DamageType.h"
 #include "Lib/BaseType.h"
 #include "Common/GameType.h"
 #include "Common/KindOf.h"
 #include "Common/ModelState.h"
 #include "Common/SparseMatchFinder.h"
 #include "Common/Snapshot.h"
-#include "GameLogic/Damage.h"
+#include "GameLogic/DamageType.h"
 
 //-------------------------------------------------------------------------------------------------
 class INI;

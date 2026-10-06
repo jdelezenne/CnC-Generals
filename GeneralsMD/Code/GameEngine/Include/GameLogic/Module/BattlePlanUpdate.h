@@ -33,6 +33,7 @@
 #define __BATTLE_PLAN_UPDATE_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "GameLogic/BattlePlanStatus.h"
 #include "Common/KindOf.h"
 #include "GameLogic/Module/SpecialPowerUpdateModule.h"
 
@@ -98,13 +99,7 @@ enum TransitionStatus
 	TRANSITIONSTATUS_PACKING,
 };
 
-enum BattlePlanStatus
-{
-	PLANSTATUS_NONE,
-	PLANSTATUS_BOMBARDMENT,
-	PLANSTATUS_HOLDTHELINE,
-	PLANSTATUS_SEARCHANDDESTROY,
-};
+
 
 class BattlePlanBonuses : public MemoryPoolObject
 {

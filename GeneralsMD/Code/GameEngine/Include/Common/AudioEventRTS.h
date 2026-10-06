@@ -30,6 +30,7 @@
 #ifndef _H_AUDIOEVENTRTS_
 #define _H_AUDIOEVENTRTS_
 
+#include "Common/AudioTypes.h"
 #include "Common/AsciiString.h"
 #include "Common/GameAudio.h"
 #include "Common/GameMemory.h"
