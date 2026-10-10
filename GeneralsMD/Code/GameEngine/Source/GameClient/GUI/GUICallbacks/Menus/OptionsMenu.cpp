@@ -29,6 +29,8 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/IntegerText.h"
+#include "Platform/StringCompare.h"
 
 #include "GameSpy/ghttp/ghttp.h"
 
@@ -39,7 +41,7 @@
 #include "Common/UserPreferences.h"
 #include "Common/GameLOD.h"
 #include "Common/Registry.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 
 #include "GameClient/GameClient.h"
 #include "GameClient/InGameUI.h"
@@ -325,7 +327,7 @@ Bool OptionPreferences::getAlternateMouseModeEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useAlternateMouse;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -337,7 +339,7 @@ Bool OptionPreferences::getRetaliationModeEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_clientRetaliationModeEnabled;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -349,7 +351,7 @@ Bool OptionPreferences::getDoubleClickAttackMoveEnabled(void)
 	if( it == end() )
 		return TheGlobalData->m_doubleClickAttackMove;
 
-	if( stricmp( it->second.str(), "yes" ) == 0 )
+	if( Platform::CompareNoCase( it->second.str(), "yes" ) == 0 )
 		return TRUE;
 
 	return FALSE;
@@ -376,7 +378,7 @@ Bool OptionPreferences::usesSystemMapDir(void)
 	if (it == end())
 		return TRUE;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -388,7 +390,7 @@ Bool OptionPreferences::saveCameraInReplays(void)
 	if (it == end())
 		return TRUE;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -400,7 +402,7 @@ Bool OptionPreferences::useCameraInReplays(void)
 	if (it == end())
 		return TRUE;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -430,7 +432,7 @@ Bool OptionPreferences::getSendDelay(void)
 	if (it == end())
 		return TheGlobalData->m_firewallSendDelay;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -569,7 +571,7 @@ Bool OptionPreferences::getCloudShadowsEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useCloudMap;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -581,7 +583,7 @@ Bool OptionPreferences::getLightmapEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useLightMap;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -593,7 +595,7 @@ Bool OptionPreferences::getSmoothWaterEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_showSoftWaterEdge;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -605,7 +607,7 @@ Bool OptionPreferences::getTreesEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useTrees;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -617,7 +619,7 @@ Bool OptionPreferences::getExtraAnimationsDisabled(void)
 	if (it == end())
 		return TheGlobalData->m_useDrawModuleLOD;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return FALSE;	//we are enabling extra animations, so disabled LOD
 	}
 	return TRUE;
@@ -629,7 +631,7 @@ Bool OptionPreferences::getUseHeatEffects(void)
 	if (it == end())
 		return TheGlobalData->m_useHeatEffects;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -641,7 +643,7 @@ Bool OptionPreferences::getDynamicLODEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_enableDynamicLOD;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -653,7 +655,7 @@ Bool OptionPreferences::getFPSLimitEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useFpsLimit;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -665,7 +667,7 @@ Bool OptionPreferences::get3DShadowsEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useShadowVolumes;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -677,7 +679,7 @@ Bool OptionPreferences::get2DShadowsEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_useShadowDecals;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -689,7 +691,7 @@ Bool OptionPreferences::getBuildingOcclusionEnabled(void)
 	if (it == end())
 		return TheGlobalData->m_enableBehindBuildingMarkers;
 
-	if (stricmp(it->second.str(), "yes") == 0) {
+	if (Platform::CompareNoCase(it->second.str(), "yes") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -1613,7 +1615,8 @@ void OptionsMenuInit( WindowLayout *layout, void *userData )
 	// populate resolution modes
 	GadgetComboBoxReset(comboBoxResolution);
 	Int numResolutions = TheDisplay->getDisplayModeCount();
-	for( i = 0; i < numResolutions; ++i )
+	Int i;
+ for( i = 0; i < numResolutions; ++i )
 	{	Int xres,yres,bitDepth;
 		TheDisplay->getDisplayModeDescription(i,&xres,&yres,&bitDepth);
 		str.format(L"%d x %d",xres,yres);
@@ -2113,7 +2116,7 @@ WindowMsgHandledType OptionsMenuSystem( GameWindow *window, UnsignedInt msg,
 				char num[16];
 				num[0] = 0;
 				TheWritableGlobalData->m_firewallBehavior = FirewallHelperClass::FIREWALL_TYPE_UNKNOWN;
-				itoa(TheGlobalData->m_firewallBehavior, num, 10);
+				Platform::IntegerText(TheGlobalData->m_firewallBehavior, num, 10);
 				AsciiString numstr;
 				numstr = num;
 				(*pref)["FirewallBehavior"] = numstr;

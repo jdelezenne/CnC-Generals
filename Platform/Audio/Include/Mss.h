@@ -19,6 +19,8 @@ using U32 = std::uint32_t;
 #define AILCALL
 #endif
 static_assert(sizeof(S32) == 4 && sizeof(U32) == 4);
+inline constexpr U32 AIL_WAVE_FORMAT_PCM = 0x0001;
+inline constexpr U32 AIL_WAVE_FORMAT_IMA_ADPCM = 0x0011;
 using F32 = float;
 using C8 = char;
 struct MilesSample;

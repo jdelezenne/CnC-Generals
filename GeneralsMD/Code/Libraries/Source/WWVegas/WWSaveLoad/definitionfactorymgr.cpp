@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "definitionfactorymgr.h"
+#include "Platform/StringCompare.h"
 #include "definitionfactory.h"
 #include "wwdebug.h"
 #include <string.h>
@@ -99,7 +100,7 @@ DefinitionFactoryMgrClass::Find_Factory (const char *name)
 		//
 		//	Is this the factory we were looking for?
 		//
-		if (::stricmp (curr_factory->Get_Name (), name) == 0) {
+		if (Platform::CompareNoCase(curr_factory->Get_Name (), name) == 0) {
 			factory = curr_factory;
 		}
 	}

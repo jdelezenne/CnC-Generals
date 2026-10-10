@@ -121,13 +121,13 @@ void destroyQuitMenu()
 	if(fullQuitMenuLayout)
 	{
 		fullQuitMenuLayout->destroyWindows();
-		fullQuitMenuLayout->deleteInstance();
+		Platform::DeletePoolObject(fullQuitMenuLayout);
 	}
 	fullQuitMenuLayout = NULL;
 	if(noSaveLoadQuitMenuLayout)
 	{
 		noSaveLoadQuitMenuLayout->destroyWindows();
-		noSaveLoadQuitMenuLayout->deleteInstance();
+		Platform::DeletePoolObject(noSaveLoadQuitMenuLayout);
 	}
 	noSaveLoadQuitMenuLayout = NULL;
 	quitMenuLayout = NULL;
@@ -301,7 +301,7 @@ void ToggleQuitMenu()
 	// BGC- this is kind of hackish, but its the safest way to do it I think.
 	// Basically we're seeing if either the save/load window or the options window is up
 	// and if one of them is, we quit out of them rather than toggle the quit menu.
-	if (TheShell->getOptionsLayout(FALSE) != FALSE) {
+	if (TheShell->getOptionsLayout(FALSE) != NULL) {
 		WindowLayout *optLayout = TheShell->getOptionsLayout(FALSE);
 		GameWindow *optionsParent = optLayout->getFirstWindow();
 		DEBUG_ASSERTCRASH(optionsParent != NULL, ("Not able to get the options layout parent window"));

@@ -43,17 +43,19 @@
 
 #ifdef INCLUDE_GRANNY_IN_BUILD
 
+#include "Platform/StringCompare.h"
+#include "Platform/Paths.h"
 #include "W3DDevice/GameClient/W3DGranny.h"
 #include "Platform/Clock.h"
-#include "common/GlobalData.h"
+#include "Common/GlobalData.h"
 #include "texture.h"
 #include "colmath.h"
 #include "coltest.h"
 #include "rinfo.h"
 #include "camera.h"
 #include "assetmgr.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/Scene.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/scene.h"
 
 #pragma comment( lib, "granny2" )
 
@@ -140,7 +142,7 @@ GrannyRenderObjClass::GrannyRenderObjClass(const GrannyPrototypeClass &proto)
 		{
 			granny_model *sourceModel =  fileInfo->Models[modelIndex];
 			//ignore bounding boxes since they are never rendered
-			if (stricmp(sourceModel->Name,"AABOX") != 0)
+			if (Platform::CompareNoCase(sourceModel->Name,"AABOX") != 0)
 				m_modelInstance =  GrannyInstantiateModel(fileInfo->Models[modelIndex]);
 		}
 
@@ -422,7 +424,7 @@ GrannyLoaderClass::Load -- reads in a granny model and creates a prototype for i
 */
 PrototypeClass * GrannyLoaderClass::Load_W3D(const char *filename)
 {
-    char drive[_MAX_DRIVE],dir[_MAX_DIR],fname[_MAX_FNAME],ext[_MAX_EXT];
+    char drive[_MAX_DRIVE],dir[_MAX_DIR],fname[Platform::LegacyFileNameCapacity],ext[Platform::LegacyExtensionCapacity];
 
     granny_file *File = GrannyReadEntireFile(filename);
 	granny_file_info *fileInfo;
@@ -453,7 +455,7 @@ PrototypeClass * GrannyLoaderClass::Load_W3D(const char *filename)
 			for (Int modelIndex=0; modelIndex<fileInfo->ModelCount; modelIndex++)
 			{
 				granny_model *sourceModel =  fileInfo->Models[modelIndex];
-				if (stricmp(sourceModel->Name,"AABOX") == 0)
+				if (Platform::CompareNoCase(sourceModel->Name,"AABOX") == 0)
 				{	//found a collision box, copy out data
 					int MeshCount = sourceModel->MeshBindingCount;
 					if (MeshCount==1)

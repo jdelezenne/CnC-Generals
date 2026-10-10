@@ -27,7 +27,7 @@
 #include "Platform/Clock.h"
 
 #include "GameNetwork/Connection.h"
-#include "GameNetwork/NetworkUtil.h"
+#include "GameNetwork/networkutil.h"
 #include "GameLogic/GameLogic.h"
 
 enum { MaxQuitFlushTime = 30000 }; // wait this many milliseconds at most to retry things before quitting
@@ -60,12 +60,12 @@ Connection::Connection() {
  */
 Connection::~Connection() {
 	if (m_user != NULL) {
-		m_user->deleteInstance();
+		Platform::DeletePoolObject(m_user);
 		m_user = NULL;
 	}
 
 	if (m_netCommandList != NULL) {
-		m_netCommandList->deleteInstance();
+		Platform::DeletePoolObject(m_netCommandList);
 		m_netCommandList = NULL;
 	}
 }
@@ -77,7 +77,7 @@ void Connection::init() {
 	m_transport = NULL;
 
 	if (m_user != NULL) {
-		m_user->deleteInstance();
+		Platform::DeletePoolObject(m_user);
 		m_user = NULL;
 	}
 
@@ -125,7 +125,7 @@ void Connection::attachTransport(Transport *transport) {
  */
 void Connection::setUser(User *user) {
 	if (m_user != NULL) {
-		m_user->deleteInstance();
+		Platform::DeletePoolObject(m_user);
 	}
 
 	m_user = user;
@@ -165,7 +165,7 @@ void Connection::sendNetCommandMsg(NetCommandMsg *msg, UnsignedByte relay) {
 		NetCommandRef *tempref = NEW_NETCOMMANDREF(msg);
 
 		Bool msgFits = packet->addCommand(tempref);
-		tempref->deleteInstance(); // delete the temporary reference.
+		Platform::DeletePoolObject(tempref); // delete the temporary reference.
 		tempref = NULL;
 
 		if (!msgFits) {
@@ -187,15 +187,15 @@ void Connection::sendNetCommandMsg(NetCommandMsg *msg, UnsignedByte relay) {
 					ref1 = ref1->getNext();
 				}
 
-				tempPacket->deleteInstance();
+				Platform::DeletePoolObject(tempPacket);
 				tempPacket = NULL;
 				++tempPacketPtr;
 
-				list->deleteInstance();
+				Platform::DeletePoolObject(list);
 				list = NULL;
 			}
 
-			origref->deleteInstance();
+			Platform::DeletePoolObject(origref);
 			origref = NULL;
 
 			return;
@@ -235,7 +235,7 @@ void Connection::clearCommandsExceptFrom( Int playerIndex )
 			m_netCommandList->removeMessage(tmp);
 			NetCommandRef *toDelete = tmp;
 			tmp = tmp->getNext();
-			toDelete->deleteInstance();
+			Platform::DeletePoolObject(toDelete);
 		} else {
 			tmp = tmp->getNext();
 		}
@@ -306,7 +306,7 @@ UnsignedInt Connection::doSend() {
 						msg->setTimeLastSent(curtime);
 					} else {
 						m_netCommandList->removeMessage(msg);
-						msg->deleteInstance();
+						Platform::DeletePoolObject(msg);
 					}
 				}
 			}
@@ -327,7 +327,7 @@ UnsignedInt Connection::doSend() {
 			m_lastTimeSent = curtime;
 		}
 		if (packet != NULL) {
-			packet->deleteInstance(); // delete the packet now that we're done with it.
+			Platform::DeletePoolObject(packet); // delete the packet now that we're done with it.
 		}
 	}
 

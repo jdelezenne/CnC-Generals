@@ -46,11 +46,13 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
+#include "Platform/StringCompare.h"
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
 #include "Lib/BaseType.h"
 #include "Common/Debug.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GameMemory.h"
 #include "Common/NameKeyGenerator.h"
@@ -213,7 +215,7 @@ static Bool parseBitFlag( const char *flagString, UnsignedInt *bits,
 	for( i = 0, c = flagList; *c; i++, c++ )
 	{
 
-		if( !stricmp( *c, flagString ) )
+		if( !Platform::CompareNoCase( *c, flagString ) )
 		{
 			*bits |= (1 << i);
 			return TRUE;
@@ -847,7 +849,7 @@ static Bool parseListboxData( char *token, WinInstanceData *instData,
 
 	// "SCROLLIFATEND" (optional)
 	c = strtok( NULL, seps );  // label
-	if ( !stricmp(c, "ScrollIfAtEnd") )
+	if ( !Platform::CompareNoCase(c, "ScrollIfAtEnd") )
 	{
 		c = strtok( NULL, seps );  // value
 		scanBool( c, listData->scrollIfAtEnd );
@@ -2660,7 +2662,7 @@ WindowLayout *GameWindowManager::winCreateLayout( AsciiString filename )
 	if( layout->load( filename ) == FALSE )
 	{
 
-		layout->deleteInstance();
+		Platform::DeletePoolObject(layout);
 		return NULL;
 
 	}  // end if
@@ -2710,7 +2712,7 @@ GameWindow *GameWindowManager::winCreateFromScript( AsciiString filenameString,
 	static char buffer[ WIN_BUFFER_LENGTH ]; 		// input buffer for reading
 	GameWindow *firstWindow = NULL;
   GameWindow *window;
-  char filepath[ _MAX_PATH ] = "Window\\";
+  char filepath[ Platform::LegacyPathCapacity ] = "Window\\";
   File *inFile;
 	WindowLayoutInfo scriptInfo;
 	AsciiString asciibuf;
@@ -2759,7 +2761,7 @@ GameWindow *GameWindowManager::winCreateFromScript( AsciiString filenameString,
 		{
 
 			DEBUG_LOG(( "WinCreateFromScript: Error parsing layout block\n" ));
-			return FALSE;
+			return NULL;
 
 		}  // end if
 

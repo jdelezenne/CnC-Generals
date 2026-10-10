@@ -48,6 +48,7 @@
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Input.h"
 #include "Platform/Clock.h"
 
 #include "Common/AudioEventRTS.h"
@@ -73,7 +74,7 @@
 // DEFINES ////////////////////////////////////////////////////////////////////
 // Sets up the user's OS set doubleclick time so if they don't like it... they can
 // change it in their OS.
-static UnsignedInt doubleClickTime = GetDoubleClickTime();
+static UnsignedInt doubleClickTime = Platform::DoubleClickTime();
 
 // PRIVATE TYPES //////////////////////////////////////////////////////////////
 typedef struct _AddMessageStruct
@@ -717,7 +718,8 @@ WindowMsgHandledType GadgetListBoxInput( GameWindow *window, UnsignedInt msg,
 								
 								ListEntryCell *cell = NULL;
 								// go through the columns until we find a column with text
-								for(Int j = 0; j < list->columns; ++j)
+								Int j;
+ for(j = 0; j < list->columns; ++j)
 								{
 									cell = &list->listData[position].cell[j];
 									if(cell && cell->cellType == LISTBOX_TEXT && cell->data)
@@ -1634,7 +1636,8 @@ WindowMsgHandledType GadgetListBoxSystem( GameWindow *window, UnsignedInt msg,
 			if( list->multiSelect )
 			{
 				// forced selections override the entire selection list.
-				for (Int i=0; i<selectCount && i<list->endPos; ++i)
+				Int i;
+				for (i=0; i<selectCount && i<list->endPos; ++i)
 				{
 					// don't select off the end
 					if (list->listLength <= selectList[i])
@@ -1717,7 +1720,8 @@ WindowMsgHandledType GadgetListBoxSystem( GameWindow *window, UnsignedInt msg,
 			// the position mData1 contains
 			//
 			ListEntryCell *cells = NULL;
-			for (Int i = 0; i < (Int)mData1; i++)
+			Int i;
+ for (i = 0; i < (Int)mData1; i++)
 			{
 				cells = list->listData[i].cell;
 				

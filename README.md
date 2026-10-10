@@ -21,7 +21,37 @@ If you wish to rebuild the source code and tools successfully you will need to f
 - LZH-Light (1.0) - (expected path `\Code\Libraries\Source\Compression\LZHCompress\CompLibSource` and `CompLibHeader`)
 
 
-## Compiling (Win32 Only)
+## Linux x64
+
+Use CMake 4.2 or newer, Ninja, Clang 21 with matching libc++ and libc++abi development packages, Python 3, Git, FreeType and HarfBuzz development packages. SDL's Linux desktop backends use the system ALSA, PulseAudio, X11, Wayland, xkbcommon, DRM and GBM development packages. Install dependencies through your distribution's package manager. Rendering requires a Vulkan driver.
+
+Build from a native Linux filesystem:
+
+```sh
+cmake --preset Generals-Linux-Clang-x64-Release
+cmake --build --preset Generals-Linux-Clang-x64-Release --parallel
+cmake --preset ZeroHour-Linux-Clang-x64-Release
+cmake --build --preset ZeroHour-Linux-Clang-x64-Release --parallel
+```
+
+The presets use `clang` and `clang++`; ensure those commands select the installed compiler and matching C++ library. CMake fetches pinned dependencies. Linux uses system FreeType and HarfBuzz.
+
+Copy your existing retail game installations to Linux. Keep the archive files and loose asset directories together. Zero Hour also needs the Generals installation. Set `[Installation]` and `InstallPath=/absolute/path/to/game/` in each game's `Settings.ini`, under `${XDG_DATA_HOME:-$HOME/.local/share}/Electronic Arts/Generals/` and `Electronic Arts/ZeroHour/`. Set `Language` in that section to the language of your retail data; it defaults to `english`.
+
+Import the original font files from your existing Windows installation before running either game:
+
+```sh
+python3 Tools/ImportFonts.py /path/to/Windows/Fonts "$HOME/.local/share/Electronic Arts/Generals"
+python3 Tools/ImportFonts.py /path/to/Windows/Fonts "$HOME/.local/share/Electronic Arts/ZeroHour"
+```
+
+Use your configured XDG data directory instead when it differs from the default. The importer copies Arial, Times New Roman, Courier New, FixedSys and Courier files, and Arial Unicode MS when present.
+
+Run `Binaries/Generals/Linux-Clang-x64/Release/Generals -win` from the Generals retail directory, or `Binaries/ZeroHour/Linux-Clang-x64/Release/GeneralsZH -win` from the Zero Hour retail directory, using the executable's absolute path. Add `-quickstart` to skip the sizzle video and use a static menu background.
+
+To package either build, run `cmake --install Build/ZeroHour/Linux-Clang-x64/Release --component Game --prefix /path/to/output`, substituting the Generals build directory as needed. Keep the executable and `libdxcompiler.so` together. Retail assets and fonts are imported separately.
+
+## Compiling the original Win32 projects
 
 To use the compiled binaries, you must own the game. The C&C Ultimate Collection is available for purchase on [EA App](https://www.ea.com/en-gb/games/command-and-conquer/command-and-conquer-the-ultimate-collection/buy/pc) or [Steam](https://store.steampowered.com/bundle/39394/Command__Conquer_The_Ultimate_Collection/).
 

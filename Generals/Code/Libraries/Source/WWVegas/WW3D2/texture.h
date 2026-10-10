@@ -42,6 +42,7 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
+class TextureClass;
 #include "always.h"
 #include "refcount.h"
 #include "chunkio.h"

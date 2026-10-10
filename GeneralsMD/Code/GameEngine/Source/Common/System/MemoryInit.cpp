@@ -43,6 +43,9 @@
 // ----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Paths.h"
+#include "Platform/StringCompare.h"
+#include <cstdio>
+#include <stdexcept>
 
 // SYSTEM INCLUDES
 
@@ -115,7 +118,6 @@ static PoolSizeRec sizes[] =
 	{ "CommandButton", 1024, 256 },
 	{ "CommandSet", 820, 16 },
 	{ "DisplayString", 32, 32 },
-	{ "WebBrowserURL", 16, 16 },
 	{ "Drawable", 4096, 32 },
 	{ "Image", 2048, 32 },
 	{ "ParticlePool", 1400, 1024 },  
@@ -761,26 +763,17 @@ void userMemoryManagerInitPools()
 	
 	// since we're called prior to main, the cur dir might not be what
 	// we expect. so do it the hard way.
-	char buf[_MAX_PATH];
-	::GetModuleFileName(NULL, buf, sizeof(buf));
-	char* pEnd = buf + strlen(buf);
-	while (pEnd != buf) 
-	{
-		if (*pEnd == '\\') 
-		{
-			*pEnd = 0;
-			break;
-		}
-		--pEnd;
-	}
-	strcat(buf, "\\Data\\INI\\MemoryPools.ini");
+    char buf[260];
+    const int length = std::snprintf(buf, sizeof(buf), "%sData/INI/MemoryPools.ini", Platform::ExecutableDirectory());
+    if (length < 0 || static_cast<std::size_t>(length) >= sizeof(buf))
+        throw std::length_error("Memory-pool configuration path exceeds its buffer");
 
 	FILE* fp = Platform::OpenStream(buf, "r");
 	if (fp)
 	{
 		char poolName[256];
 		int initial, overflow;
-		while (fgets(buf, _MAX_PATH, fp))
+		while (fgets(buf, sizeof(buf), fp))
 		{
 			if (buf[0] == ';')
 				continue;
@@ -788,7 +781,7 @@ void userMemoryManagerInitPools()
 			{
 				for (PoolSizeRec* p = sizes; p->name != NULL; ++p)
 				{
-					if (stricmp(p->name, poolName) == 0)
+					if (Platform::CompareNoCase(p->name, poolName) == 0)
 					{
 						// currently, these must be multiples of 4. so round up.
 						p->initial = roundUpMemBound(initial);

@@ -106,7 +106,7 @@ AIGroup::~AIGroup()
 		}
 	}
 	if (m_groundPath) {
-		m_groundPath->deleteInstance();
+		Platform::DeletePoolObject(m_groundPath);
 		m_groundPath = NULL;
 	}
 	//DEBUG_LOG(( "AIGroup #%d destroyed\n", m_id ));
@@ -408,7 +408,7 @@ void AIGroup::recompute( void )
 	getCenter( &center );
 
 	if (m_groundPath) {
-		m_groundPath->deleteInstance();
+		Platform::DeletePoolObject(m_groundPath);
 		m_groundPath = NULL;
 	}
 
@@ -680,7 +680,7 @@ Bool AIGroup::friend_moveInfantryToPos( const Coord3D *pos, CommandSourceType cm
 		}
 	}
 	if (startNode==NULL || endNode==NULL) {
-		m_groundPath->deleteInstance();
+		Platform::DeletePoolObject(m_groundPath);
 		m_groundPath = NULL;
 		return false;
 	}
@@ -1037,7 +1037,7 @@ void AIGroup::friend_moveFormationToPos( const Coord3D *pos, CommandSourceType c
 			tmpNode = tmpNode->getNextOptimized();
 		}
 		if (startNode==NULL || endNode==NULL) {
-			m_groundPath->deleteInstance();
+			Platform::DeletePoolObject(m_groundPath);
 			m_groundPath = NULL;
 			startNode = NULL;
 			endNode = NULL;
@@ -1144,7 +1144,7 @@ Bool AIGroup::friend_moveVehicleToPos( const Coord3D *pos, CommandSourceType cmd
 		endNode = NULL;
 	}
 	if (startNode==NULL || endNode==NULL) {
-		m_groundPath->deleteInstance();
+		Platform::DeletePoolObject(m_groundPath);
 		m_groundPath = NULL;
 		return false;
 	}

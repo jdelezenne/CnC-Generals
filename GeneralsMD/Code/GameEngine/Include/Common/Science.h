@@ -43,7 +43,7 @@ class Player;
 #include "Common/ScienceType.h"
 
 //-------------------------------------------------------------------------------------------------
-typedef std::vector<ScienceType> ScienceVec;
+
 
 //-------------------------------------------------------------------------------------------------
 class ScienceInfo : public Overridable

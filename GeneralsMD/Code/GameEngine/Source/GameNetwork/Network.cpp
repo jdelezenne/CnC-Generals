@@ -30,14 +30,15 @@
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
-#include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "PreRTS.h"
+#include "Platform/Clock.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "Common/GameEngine.h"
 #include "Common/MessageStream.h"
 #include "Common/Player.h"
 #include "Common/PlayerList.h"
 #include "GameNetwork/NetworkInterface.h"
-#include "GameNetwork/Udp.h"
+#include "GameNetwork/udp.h"
 #include "GameNetwork/Transport.h"
 #include "strtok_r.h"
 #include "GameClient/Shell.h"
@@ -342,7 +343,7 @@ void Network::init()
 
 	m_localStatus = NETLOCALSTATUS_PREGAME;
 
-	QueryPerformanceFrequency((LARGE_INTEGER *)&m_perfCountFreq);
+	m_perfCountFreq = Platform::PerformanceFrequency();
 	m_nextFrameTime = 0;
 	m_sawCRCMismatch = FALSE;
 	m_checkCRCsThisFrame = FALSE;
@@ -475,11 +476,11 @@ void Network::GetCommandsFromCommandList() {
 				m_conMgr->sendLocalGameMessage(msg, getExecutionFrame());
 			}
 			TheCommandList->removeMessage(msg); // This does not destroy msg's prev and next pointers, so they should still be valid.
-			msg->deleteInstance();
+			Platform::DeletePoolObject(msg);
 		} else {
 			if (processCommand(msg)) {
 				TheCommandList->removeMessage(msg);
-				msg->deleteInstance();
+				Platform::DeletePoolObject(msg);
 			}
 		}
 		msg = next;
@@ -513,7 +514,7 @@ Bool Network::processCommand(GameMessage *msg)
 			if (TheGameLogic->getFrame() == 1) {
 				m_localStatus = NETLOCALSTATUS_INGAME;
 				NetCommandList *netcmdlist = m_conMgr->getFrameCommandList(0); // clear out frame 0 since we skipped it
-				netcmdlist->deleteInstance();
+				Platform::DeletePoolObject(netcmdlist);
 			} else {
 				return FALSE;
 			}
@@ -610,7 +611,7 @@ void Network::RelayCommandsToCommandList(UnsignedInt frame) {
 	}
 	m_playersToDisconnect.clear();
 
-	netcmdlist->deleteInstance();
+	Platform::DeletePoolObject(netcmdlist);
 }
 
 /**
@@ -759,7 +760,7 @@ void Network::endOfGameCheck() {
 
 Bool Network::timeForNewFrame() {
 	__int64 curTime;
-	QueryPerformanceCounter((LARGE_INTEGER *)&curTime);
+	curTime = Platform::PerformanceCounter();
 	__int64 frameDelay = m_perfCountFreq / m_frameRate;
 
 	/*

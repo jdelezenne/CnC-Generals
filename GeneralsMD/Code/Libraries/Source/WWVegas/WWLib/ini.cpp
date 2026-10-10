@@ -88,26 +88,28 @@
 #include	"b64pipe.h"
 #include	"b64straw.h"
 #include	"cstraw.h"
-#include	"ini.h"
+#include	"INI.H"
+#include "Platform/StringCompare.h"
+#include "Platform/Dialogs.h"
 #include	"readline.h"
 #include	"trim.h"
 #include	"win.h"
-#include	"xpipe.h"
-#include	"xstraw.h"
+#include	"XPIPE.H"
+#include	"XSTRAW.H"
 #include	<stdio.h>
 #include <malloc.h>
 #ifdef _UNIX
 #include <ctype.h>
 #endif
-#include "rawfile.h"
+#include "RAWFILE.H"
 #include "ffactory.h"
 
 // recently transferred from ini.h
 #include "inisup.h"
 #include	"trect.h"
-#include	"wwfile.h"
-#include	"pk.h"
-#include	"pipe.h"
+#include	"WWFILE.H"
+#include	"PK.H"
+#include	"PIPE.H"
 #include	"wwstring.h"
 #include "widestring.h"
 #include "nstrdup.h"
@@ -1642,12 +1644,12 @@ bool INIClass::Put_String(char const * section, char const * entry, char const *
          DuplicateCRCError("INIClass::Put_String", section, entry);
       } else {
 #if 0
-			OutputDebugString("INIClass::Put_String - Duplicate Entry \"");
-	   	OutputDebugString(entry);
-		   OutputDebugString("\"\n");
+			Platform::DebuggerOutput("INIClass::Put_String - Duplicate Entry \"");
+		Platform::DebuggerOutput(entry);
+		   Platform::DebuggerOutput("\"\n");
 #endif
       }
-   	secptr->EntryIndex.Remove_Index(entryptr->Index_ID());
+	secptr->EntryIndex.Remove_Index(entryptr->Index_ID());
 	   delete entryptr;
 	}
 
@@ -1813,7 +1815,7 @@ int INIClass::Get_List_Index(char const * section, char const * entry, int const
 	}
 
 	for (int lp = 0; list[lp]; lp++) {
-		if (stricmp(entryptr->Value, list[lp]) == 0) {
+		if (Platform::CompareNoCase(entryptr->Value, list[lp]) == 0) {
 			return lp;
 		}
 		assert(lp < 1000);
@@ -1839,7 +1841,7 @@ int INIClass::Get_Int_Bitfield(char const * section, char const * entry, int def
 		for (lp = 0; list[lp]; lp++) {
 			// if this list entry matches our string token then we need
 			// to set this bit.
-			if (stricmp(token, list[lp]) == 0) {
+			if (Platform::CompareNoCase(token, list[lp]) == 0) {
 				retval |= (1 << lp);
 				break;
 			}
@@ -2354,16 +2356,14 @@ int INIClass::CRC(const char *string)
 void INIClass::DuplicateCRCError(const char *message, const char *section, const char *entry)
 {
 	char buffer[512];
-	_snprintf(buffer, sizeof(buffer), "%s - Duplicate Entry \"%s\" in section \"%s\" (%s)\n", message,
+	snprintf(buffer, sizeof(buffer), "%s - Duplicate Entry \"%s\" in section \"%s\" (%s)\n", message,
 		entry, section, Filename);
 
-	OutputDebugString(buffer);
+	Platform::DebuggerOutput(buffer);
 	assert(0);
 
 #ifdef NDEBUG
-#ifdef _WINDOWS
-	MessageBox(0, buffer, "Duplicate CRC in INI file.", MB_ICONSTOP | MB_OK);
-#endif
+	Platform::ShowDialog(buffer, "Duplicate CRC in INI file.", Platform::DialogButtons::OK, Platform::DialogIcon::Error, Platform::DialogResult::OK, false);
 #endif
 }
 

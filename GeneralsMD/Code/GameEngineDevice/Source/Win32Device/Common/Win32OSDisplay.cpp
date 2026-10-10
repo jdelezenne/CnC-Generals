@@ -26,102 +26,25 @@
 // John McDonald, December 2002
 ////////////////////////////////////////////////////////////
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include "Platform/Windows/Window.h"
 #include "Common/OSDisplay.h"
-
-#include "Common/SubsystemInterface.h"
-#include "Common/STLTypeDefs.h"
 #include "Common/AsciiString.h"
-#include "Common/SystemInfo.h"
 #include "Common/UnicodeString.h"
 #include "GameClient/GameText.h"
+#include "Platform/Dialogs.h"
+#include "Platform/UTF16.h"
 
-#ifdef _INTERNAL
-//#pragma optimize("", off)
-//#pragma MESSAGE("************************************** WARNING, optimization disabled for debugging purposes")
-#endif
-
-//-------------------------------------------------------------------------------------------------
-static void RTSFlagsToOSFlags(UnsignedInt buttonFlags, UnsignedInt otherFlags, UnsignedInt& outWindowsFlags)
-{
-	outWindowsFlags = 0;
-
-	if (BitTest(buttonFlags, OSDBT_OK)) {
-		outWindowsFlags |= MB_OK;
-	}
-	
-	if (BitTest(buttonFlags, OSDBT_CANCEL)) {
-		outWindowsFlags |= MB_OKCANCEL;
-	}
-
-	//-----------------------------------------------------------------------------------------------
-	if (BitTest(otherFlags, OSDOF_SYSTEMMODAL)) {
-		outWindowsFlags |= MB_SYSTEMMODAL;
-	}
-
-	if (BitTest(otherFlags, OSDOF_APPLICATIONMODAL)) {
-		outWindowsFlags |= MB_APPLMODAL;
-	}
-
-	if (BitTest(otherFlags, OSDOF_TASKMODAL)) {
-		outWindowsFlags |= MB_TASKMODAL;
-	}
-
-	if (BitTest(otherFlags, OSDOF_EXCLAMATIONICON)) {
-		outWindowsFlags |= MB_ICONEXCLAMATION;
-	}
-
-	if (BitTest(otherFlags, OSDOF_INFORMATIONICON)) {
-		outWindowsFlags |= MB_ICONINFORMATION;
-	}
-
-	if (BitTest(otherFlags, OSDOF_ERRORICON)) {
-		outWindowsFlags |= MB_ICONERROR;
-	}
-
-	if (BitTest(otherFlags, OSDOF_STOPICON)) {
-		outWindowsFlags |= MB_ICONSTOP;
-	}
-
-}
-
-//-------------------------------------------------------------------------------------------------
 OSDisplayButtonType OSDisplayWarningBox(AsciiString p, AsciiString m, UnsignedInt buttonFlags, UnsignedInt otherFlags)
 {
-	if (!TheGameText) {
-		return OSDBT_ERROR;
-	}
-
-	UnicodeString promptStr = TheGameText->fetch(p);
-	UnicodeString mesgStr = TheGameText->fetch(m);
-
-	UnsignedInt windowsOptionsFlags = 0;
-	RTSFlagsToOSFlags(buttonFlags, otherFlags, windowsOptionsFlags);
-	
-	// @todo Make this return more than just ok/cancel - jkmcd
-	// (we need a function to translate back the other way.)
-	Int returnResult = 0;
-	if (TheSystemIsUnicode) 
-	{
-		returnResult = ::MessageBoxW(NULL, mesgStr.str(), promptStr.str(), windowsOptionsFlags);
-	} 
-	else 
-	{
-		// However, if we're using the default version of the message box, we need to 
-		// translate the string into an AsciiString
-		AsciiString promptA, mesgA;
-		promptA.translate(promptStr);
-		mesgA.translate(mesgStr);
-		//Make sure main window is not TOP_MOST
-		::SetWindowPos(Platform::NativeGameWindow(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
-		returnResult = ::MessageBoxA(NULL, mesgA.str(), promptA.str(), windowsOptionsFlags);
-	}
-
-	if (returnResult == IDOK) {
-		return OSDBT_OK;
-	} 
-
-	return OSDBT_CANCEL;
+    if (!TheGameText) return OSDBT_ERROR;
+    UnicodeString prompt = TheGameText->fetch(p);
+    UnicodeString message = TheGameText->fetch(m);
+    const auto caption = Platform::UTF16ToUTF8(Platform::EncodeUTF16LE(prompt.str(), prompt.getLength()));
+    const auto text = Platform::UTF16ToUTF8(Platform::EncodeUTF16LE(message.str(), message.getLength()));
+    const auto buttons = BitTest(buttonFlags, OSDBT_CANCEL) ? Platform::DialogButtons::OKCancel : Platform::DialogButtons::OK;
+    auto icon = Platform::DialogIcon::None;
+    if (BitTest(otherFlags, OSDOF_EXCLAMATIONICON)) icon = Platform::DialogIcon::Warning;
+    if (BitTest(otherFlags, OSDOF_INFORMATIONICON)) icon = Platform::DialogIcon::None;
+    if (BitTest(otherFlags, OSDOF_ERRORICON) || BitTest(otherFlags, OSDOF_STOPICON)) icon = Platform::DialogIcon::Error;
+    return Platform::ShowDialog(text.c_str(), caption.c_str(), buttons, icon, Platform::DialogResult::OK, false)
+        == Platform::DialogResult::OK ? OSDBT_OK : OSDBT_CANCEL;
 }

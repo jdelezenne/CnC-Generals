@@ -14,6 +14,7 @@ void PumpInput();
 bool ReadKeyEvent(KeyEvent& event);
 bool ReadMouseEvent(MouseEvent& event);
 bool CapsLockEnabled();
+bool KeyDownOrPressed(int scancode);
 bool FrenchKeyboardLayout();
 unsigned int DoubleClickTime();
 void ResetKeyboardInput();

@@ -7,4 +7,8 @@ bool ReadInstallationString(GameTitle game, const char* section, const char* nam
     char* value, std::size_t capacity);
 bool ReadInstallationUnsigned(GameTitle game, const char* section, const char* name,
     unsigned int& value);
+bool WriteInstallationString(GameTitle game, const char* section, const char* name,
+    const char* value);
+bool WriteInstallationUnsigned(GameTitle game, const char* section, const char* name,
+    unsigned int value);
 }

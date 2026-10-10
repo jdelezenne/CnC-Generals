@@ -39,6 +39,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <stdio.h>
+#include "Platform/Paths.h"
+#include "Platform/Dialogs.h"
 #include "shdhwshader.h"
 #include "dx8wrapper.h"
 #include "rinfo.h"
@@ -48,104 +50,6 @@
 //! Execute and wait for a hidden shell command
 /*! 5/27/02 5:39p KJM Created
 */
-void ShdHWShader::Shell_Run(char* cmd)
-{
-	int result;
-
-#ifdef WIN32
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
-	memset(&pi, 0, sizeof(pi));
-	memset(&si, 0, sizeof(si));
-	si.cb = sizeof(si);
-	si.dwFlags=STARTF_USESHOWWINDOW;
-	si.wShowWindow=SW_HIDE;
-
-	static bool found=false;
-	static char work_dir[_MAX_PATH];
-
-	if (!found)
-	{
-		char* shader_path="\\shaders\\";
-
-		::GetCurrentDirectory(_MAX_PATH,work_dir);
-		strcat(work_dir,shader_path);
-	}
-
-	result=CreateProcess(0,cmd,0,0,0,0,0,work_dir,&si,&pi);
-
-	if (result) 
-	{
-		WaitForSingleObject(pi.hThread,  INFINITE);
-
-		// Close process and thread handles. 
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-
-		found=true;
-	}
-	else
-	{
-		int err=GetLastError();
-		MessageBox
-		(
-			NULL,
-			"Failed to execute preprocessor on shader\n"
-			"Ensure shaders folder is in application subdirectory\n",
-			"Shader Asset Error",
-			MB_OK
-		);
-		WWASSERT_PRINT(result,"Failed to execute preprocessor on shader (ensure shaders folder is in application subdirectory)");
-	}
-#else
-	result=system(cmd);
-#endif
-}
-
-
-//**********************************************************************************************
-//! Preprocess and assemble a HW shader from file
-/*! 5/27/02 5:39p KJM Created
-*/
-void ShdHWShader::Preprocess_And_Assemble_Shader_From_File
-(	
-	char*				file_name,	
-	LPD3DXBUFFER*	constants,	
-	LPD3DXBUFFER*	shader_code
-)
-{
-	char shell_command[_MAX_PATH];
-	char temp_path[_MAX_PATH];
-	char temp_file[_MAX_PATH];
-
-
-   GetTempPath(_MAX_PATH, temp_path);
-	GetTempFileName(temp_path,"shd",1,temp_file);
-
-	_snprintf
-	(
-		shell_command, 
-		sizeof(shell_command), 
-		"shaders\\rspp %s %s", 
-		file_name, 
-		temp_file
-	);
-
-	LPD3DXBUFFER* errors=NULL;
-
-	Shell_Run(shell_command);
-
-	HRESULT result=D3DXAssembleShaderFromFile
-	(
-		temp_file, 
-		NULL, 
-		constants, 
-		shader_code, 
-		errors
-	);
-	WWASSERT_PRINT(result==D3D_OK,"Failed to assemble shader from file");
-}
-
 // 06/06/02 KM added software vertex shader fallback check
 bool	ShdHWVertexShader::Using_Hardware=true;
 
@@ -177,52 +81,6 @@ void ShdHWVertexShader::Destroy()
 /*! 05/27/02 5:39p KJM Created
 /*! 06/06/02 KM added software vertex shader fallback check
 */
-DWORD ShdHWVertexShader::Create
-(
-	char* file_name, 
-	DWORD* vertex_shader_declaration
-)
-{
-	// Create vertex shader
-	LPD3DXBUFFER shader_code=NULL;
-
-	Preprocess_And_Assemble_Shader_From_File
-	(
-		file_name,
-		NULL,
-		&shader_code
-	);
-
-	// try hardware first
-	Using_Hardware=true;
-	HRESULT result=DX8Wrapper::_Get_D3D_Device8()->CreateVertexShader
-	(
-		(DWORD*)vertex_shader_declaration,
-		(DWORD*)shader_code->GetBufferPointer(),
-		(DWORD*)&Shader,
-		0
-	);
-	if (result!=D3D_OK)
-	{
-		// try software
-		Using_Hardware=false;
-		result=DX8Wrapper::_Get_D3D_Device8()->CreateVertexShader
-		(
-			(DWORD*)vertex_shader_declaration,
-			(DWORD*)shader_code->GetBufferPointer(),
-			(DWORD*)&Shader,
-			D3DUSAGE_SOFTWAREPROCESSING
-		);
-		WWASSERT_PRINT(result==D3D_OK,"Failed to create vertex shader");
-	}
-
-	if (shader_code) shader_code->Release();
-
-	return Shader;
-}
-
-
-//**********************************************************************************************
 //! Create Vertex Shader from a dword constant and vertex stream declaration
 /*! 07/19/02 3:39p KJM Created
 */
@@ -247,7 +105,7 @@ DWORD ShdHWVertexShader::Create
 	);
 	if (result!=D3D_OK)
 	{
-		OutputDebugString((char*)errors->GetBufferPointer());
+		Platform::DebuggerOutput((char*)errors->GetBufferPointer());
 		WWASSERT_PRINT(result==D3D_OK,"Failed to assemble shader");
 	}
 
@@ -274,7 +132,7 @@ DWORD ShdHWVertexShader::Create
 		WWASSERT_PRINT(result==D3D_OK,"Failed to create vertex shader");
 		if (result!=D3D_OK)
 		{
-			OutputDebugString((char*)shader_code_str);
+			Platform::DebuggerOutput((char*)shader_code_str);
 		}
 	}
 
@@ -308,30 +166,6 @@ void ShdHWPixelShader::Destroy()
 //! Create Pixel Shader from a file
 /*! 5/27/02 5:39p KJM Created
 */
-DWORD ShdHWPixelShader::Create(char* file_name)
-{
-	// Create pixel shader
-	LPD3DXBUFFER shader_code=NULL;
-
-	Preprocess_And_Assemble_Shader_From_File
-	(
-		file_name,
-		NULL,
-		&shader_code
-	);
-
-	HRESULT result=DX8Wrapper::_Get_D3D_Device8()->CreatePixelShader
-	(
-		(DWORD*)shader_code->GetBufferPointer(), 
-		(DWORD*)&Shader
-	);
-	WWASSERT_PRINT(result==D3D_OK,"Failed to create pixel shader");
-
-	return Shader;
-}
-
-
-//**********************************************************************************************
 //! Create Pixel Shader from a dword constant 
 /*! 07/19/02 3:39p KJM Created
 */
@@ -352,7 +186,7 @@ DWORD ShdHWPixelShader::Create(DWORD* shader_code_str)
 	);
 	if (result!=D3D_OK)
 	{
-		OutputDebugString((char*)errors->GetBufferPointer());
+		Platform::DebuggerOutput((char*)errors->GetBufferPointer());
 		WWASSERT_PRINT(result==D3D_OK,"Failed to assemble shader");
 	}
 

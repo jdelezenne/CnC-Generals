@@ -20,9 +20,14 @@
 #include "wwstring.h"
 #include "wwdebug.h"
 #include "thread.h"
-#include "mpu.h"
+#include "MPU.H"
 #pragma warning (disable : 4201)	// Nonstandard extension - nameless struct
+#include "Platform/System.h"
+#include "Platform/SystemInfo.h"
+#include "Platform/StringCompare.h"
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include "systimer.h"
 #if defined(_M_X64)
 #include <intrin.h>
@@ -131,54 +136,15 @@ const char* CPUDetectClass::Get_Processor_Manufacturer_Name()
 
 static unsigned Calculate_Processor_Speed(__int64& ticks_per_second)
 {
-	struct {
-		unsigned timer0_h;
-		unsigned timer0_l;
-		unsigned timer1_h;
-		unsigned timer1_l;
-	} Time;
-
-#if defined(_M_X64)
-    auto start_ticks = __rdtsc();
-    Time.timer0_h = static_cast<unsigned>(start_ticks);
-    Time.timer0_l = static_cast<unsigned>(start_ticks >> 32);
-#elif defined(WIN32)
-   __asm {
-      ASM_RDTSC;
-      mov Time.timer0_h, eax
-      mov Time.timer0_l, edx
-   }
-#elif defined(_UNIX)
-      __asm__("rdtsc");
-      __asm__("mov %eax, __Time.timer1_h");
-      __asm__("mov %edx, __Time.timer1_l");
-#endif
-
-	unsigned start=TIMEGETTIME();
-	unsigned elapsed;
-	while ((elapsed=TIMEGETTIME()-start)<200) {
-#if defined(_M_X64)
-      auto end_ticks = __rdtsc();
-      Time.timer1_h = static_cast<unsigned>(end_ticks);
-      Time.timer1_l = static_cast<unsigned>(end_ticks >> 32);
-#elif defined(WIN32)
-      __asm {
-         ASM_RDTSC;
-         mov Time.timer1_h, eax
-         mov Time.timer1_l, edx
-      }
-#elif defined(_UNIX)
-      __asm__ ("rdtsc");
-      __asm__("mov %eax, __Time.timer1_h");
-      __asm__("mov %edx, __Time.timer1_l");
-#endif
-	}
-
-	__int64 t=*(__int64*)&Time.timer1_h-*(__int64*)&Time.timer0_h;
-	ticks_per_second=(__int64)((1000.0/(double)elapsed)*(double)t);	// Ticks per second
-	return unsigned((double)t/(double)(elapsed*1000));
+    const auto start_ticks = Platform::ProcessorTicks();
+    unsigned start = TIMEGETTIME();
+    unsigned elapsed;
+    std::uint64_t end_ticks = start_ticks;
+    while ((elapsed = TIMEGETTIME() - start) < 200) end_ticks = Platform::ProcessorTicks();
+    const __int64 t = static_cast<__int64>(end_ticks - start_ticks);
+    ticks_per_second = (__int64)((1000.0 / (double)elapsed) * (double)t);
+    return unsigned((double)t / (double)(elapsed * 1000));
 }
-
 void CPUDetectClass::Init_Processor_Speed()
 {
 	if (!Has_RDTSC_Instruction()) {
@@ -218,15 +184,15 @@ void CPUDetectClass::Init_Processor_Manufacturer()
 
 	ProcessorManufacturer = MANUFACTURER_UNKNOWN;
 
-	if (stricmp(VendorID, "GenuineIntel") == 0) ProcessorManufacturer = MANUFACTURER_INTEL;
-	else if (stricmp(VendorID, "AuthenticAMD") == 0) ProcessorManufacturer = MANUFACTURER_AMD;
-	else if (stricmp(VendorID, "AMD ISBETTER") == 0) ProcessorManufacturer = MANUFACTURER_AMD;
-	else if (stricmp(VendorID, "UMC UMC UMC") == 0) ProcessorManufacturer = MANUFACTURER_UMC;
-	else if (stricmp(VendorID, "CyrixInstead") == 0) ProcessorManufacturer = MANUFACTURER_CYRIX;
-	else if (stricmp(VendorID, "NexGenDriven") == 0) ProcessorManufacturer = MANUFACTURER_NEXTGEN;
-	else if (stricmp(VendorID, "CentaurHauls") == 0) ProcessorManufacturer = MANUFACTURER_VIA;
-	else if (stricmp(VendorID, "RiseRiseRise") == 0) ProcessorManufacturer = MANUFACTURER_RISE;
-	else if (stricmp(VendorID, "GenuineTMx86") == 0) ProcessorManufacturer = MANUFACTURER_TRANSMETA;
+	if (Platform::CompareNoCase(VendorID, "GenuineIntel") == 0) ProcessorManufacturer = MANUFACTURER_INTEL;
+	else if (Platform::CompareNoCase(VendorID, "AuthenticAMD") == 0) ProcessorManufacturer = MANUFACTURER_AMD;
+	else if (Platform::CompareNoCase(VendorID, "AMD ISBETTER") == 0) ProcessorManufacturer = MANUFACTURER_AMD;
+	else if (Platform::CompareNoCase(VendorID, "UMC UMC UMC") == 0) ProcessorManufacturer = MANUFACTURER_UMC;
+	else if (Platform::CompareNoCase(VendorID, "CyrixInstead") == 0) ProcessorManufacturer = MANUFACTURER_CYRIX;
+	else if (Platform::CompareNoCase(VendorID, "NexGenDriven") == 0) ProcessorManufacturer = MANUFACTURER_NEXTGEN;
+	else if (Platform::CompareNoCase(VendorID, "CentaurHauls") == 0) ProcessorManufacturer = MANUFACTURER_VIA;
+	else if (Platform::CompareNoCase(VendorID, "RiseRiseRise") == 0) ProcessorManufacturer = MANUFACTURER_RISE;
+	else if (Platform::CompareNoCase(VendorID, "GenuineTMx86") == 0) ProcessorManufacturer = MANUFACTURER_TRANSMETA;
 }
 
 void CPUDetectClass::Process_Cache_Info(unsigned value)
@@ -832,56 +798,7 @@ void CPUDetectClass::Init_Processor_String()
 
 void CPUDetectClass::Init_CPUID_Instruction()
 {
-	unsigned long cpuid_available=0;
-
-   // The pushfd/popfd commands are done using emits
-   // because CodeWarrior seems to have problems with
-   // the command (huh?)
-
-#if defined(_M_X64)
-   cpuid_available = 1;
-#elif defined(WIN32)
-   __asm
-   {
-      mov cpuid_available, 0	// clear flag
-      push ebx
-      pushfd
-      pop eax
-      mov ebx, eax
-      xor eax, 0x00200000
-      push eax
-      popfd
-      pushfd
-      pop eax
-      xor eax, ebx
-      je done
-      mov cpuid_available, 1
-   done:
-      push ebx
-      popfd
-      pop ebx
-   }
-#elif defined(_UNIX)
-     __asm__(" mov $0, __cpuid_available");  // clear flag
-     __asm__(" push %ebx");
-     __asm__(" pushfd");
-     __asm__(" pop %eax");
-     __asm__(" mov %eax, %ebx");
-     __asm__(" xor 0x00200000, %eax");
-     __asm__(" push %eax");
-     __asm__(" popfd");
-     __asm__(" pushfd");
-     __asm__(" pop %eax");
-     __asm__(" xor %ebx, %eax");
-     __asm__(" je done");
-     __asm__(" mov $1, __cpuid_available");
-     goto done;  // just to shut the compiler up
-   done:
-     __asm__(" push %ebx");
-     __asm__(" popfd");
-     __asm__(" pop %ebx");
-#endif
-	HasCPUIDInstruction=!!cpuid_available;
+	HasCPUIDInstruction = Platform::HasProcessorRegisters();
 }
 
 void CPUDetectClass::Init_Processor_Features()
@@ -913,108 +830,31 @@ void CPUDetectClass::Init_Processor_Features()
 
 void CPUDetectClass::Init_Memory()
 {
-#ifdef WIN32
-
-	MEMORYSTATUS mem;
-   GlobalMemoryStatus(&mem);
-
-#if defined(_M_X64)
-	// Preserve the Win32 query's signed 32-bit ceiling before narrowing SIZE_T.
-	const auto legacyMemorySize = [](SIZE_T size) -> unsigned {
-		return size > INT_MAX ? INT_MAX : static_cast<unsigned>(size);
-	};
-	TotalPhysicalMemory     = legacyMemorySize(mem.dwTotalPhys);
-	AvailablePhysicalMemory = legacyMemorySize(mem.dwAvailPhys);
-	TotalPageMemory         = legacyMemorySize(mem.dwTotalPageFile);
-	AvailablePageMemory     = legacyMemorySize(mem.dwAvailPageFile);
-	TotalVirtualMemory      = legacyMemorySize(mem.dwTotalVirtual);
-	AvailableVirtualMemory  = legacyMemorySize(mem.dwAvailVirtual);
-#else
-   TotalPhysicalMemory     = mem.dwTotalPhys;
-   AvailablePhysicalMemory = mem.dwAvailPhys;
-   TotalPageMemory         = mem.dwTotalPageFile;
-   AvailablePageMemory     = mem.dwAvailPageFile;
-   TotalVirtualMemory      = mem.dwTotalVirtual;
-   AvailableVirtualMemory  = mem.dwAvailVirtual;
-#endif
-#elif defined(_UNIX)
-#warning FIX Init_Memory()
-#endif
+    Platform::MemoryInfo memory{};
+    if (!Platform::QueryMemoryInfo(memory)) return;
+    TotalPhysicalMemory = memory.physical;
+    AvailablePhysicalMemory = memory.availablePhysical;
+    TotalPageMemory = memory.page;
+    AvailablePageMemory = memory.availablePage;
+    TotalVirtualMemory = memory.virtualSize;
+    AvailableVirtualMemory = memory.availableVirtual;
 }
-
 void CPUDetectClass::Init_OS()
 {
-	OSVERSIONINFO os;
-#ifdef WIN32
-   os.dwOSVersionInfoSize = sizeof(os);
-	GetVersionEx(&os);
-
-   OSVersionNumberMajor = os.dwMajorVersion;
-   OSVersionNumberMinor = os.dwMinorVersion;
-   OSVersionBuildNumber = os.dwBuildNumber;
-   OSVersionPlatformId  = os.dwPlatformId;
-   OSVersionExtraInfo   = os.szCSDVersion;
-#elif defined(_UNIX)
-#warning FIX Init_OS()
-#endif
+    Platform::OSInfo os{};
+    if (!Platform::QueryOSInfo(os)) return;
+    OSVersionNumberMajor = os.major;
+    OSVersionNumberMinor = os.minor;
+    OSVersionBuildNumber = os.build;
+    OSVersionPlatformId = os.platform;
+    OSVersionExtraInfo = os.extra.c_str();
 }
-
-bool CPUDetectClass::CPUID(
-	unsigned& u_eax_,
-	unsigned& u_ebx_,
-	unsigned& u_ecx_,
-	unsigned& u_edx_,
-	unsigned cpuid_type)
+bool CPUDetectClass::CPUID(unsigned& a, unsigned& b, unsigned& c, unsigned& d, unsigned leaf)
 {
-	if (!Has_CPUID_Instruction()) return false;	// Most processors since 486 have CPUID...
-
-	unsigned u_eax;
-	unsigned u_ebx;
-	unsigned u_ecx;
-	unsigned u_edx;
-
-#if defined(_M_X64)
-   int registers[4];
-   __cpuidex(registers, static_cast<int>(cpuid_type), 0);
-   u_eax = registers[0]; u_ebx = registers[1];
-   u_ecx = registers[2]; u_edx = registers[3];
-#elif defined(WIN32)
-   __asm
-   {
-      pushad
-      mov	eax, [cpuid_type]
-      xor	ebx, ebx
-      xor	ecx, ecx
-      xor	edx, edx
-      cpuid
-      mov	[u_eax], eax
-      mov	[u_ebx], ebx
-      mov	[u_ecx], ecx
-      mov	[u_edx], edx
-      popad
-   }
-#elif defined(_UNIX)
-   __asm__("pusha");
-   __asm__("mov	__cpuid_type, %eax");
-   __asm__("xor	%ebx, %ebx");
-   __asm__("xor	%ecx, %ecx");
-   __asm__("xor	%edx, %edx");
-   __asm__("cpuid");
-   __asm__("mov	%eax, __u_eax");
-   __asm__("mov	%ebx, __u_ebx");
-   __asm__("mov	%ecx, __u_ecx");
-   __asm__("mov	%edx, __u_edx");
-   __asm__("popa");
-#endif
-
-	u_eax_=u_eax;
-	u_ebx_=u_ebx;
-	u_ecx_=u_ecx;
-	u_edx_=u_edx;
-
-	return true;
+    if (!Has_CPUID_Instruction()) return false;
+    Platform::ProcessorRegisters(a, b, c, d, leaf);
+    return true;
 }
-
 #define SYSLOG(n) work.Format n ; CPUDetectClass::ProcessorLog+=work;
 
 void CPUDetectClass::Init_Processor_Log()
@@ -1022,11 +862,7 @@ void CPUDetectClass::Init_Processor_Log()
 	StringClass work(0,true);
 
 	SYSLOG(("Operating System: "));
-	switch (OSVersionPlatformId) {
-	case VER_PLATFORM_WIN32s: SYSLOG(("Windows 3.1")); break;
-	case VER_PLATFORM_WIN32_WINDOWS: SYSLOG(("Windows 9x")); break;
-	case VER_PLATFORM_WIN32_NT: SYSLOG(("Windows NT")); break;
-	}
+	SYSLOG(("%s", Platform::OperatingSystemName(OSVersionPlatformId)));
 	SYSLOG(("\r\n"));
 
 	SYSLOG(("Operating system version %d.%d\r\n",OSVersionNumberMajor,OSVersionNumberMinor));
@@ -1034,11 +870,7 @@ void CPUDetectClass::Init_Processor_Log()
 		(OSVersionBuildNumber&0xff000000)>>24,
 		(OSVersionBuildNumber&0xff0000)>>16,
 		(OSVersionBuildNumber&0xffff)));
-#ifdef WIN32
-   SYSLOG(("OS-Info: %s\r\n", OSVersionExtraInfo));
-#elif defined(_UNIX)
-   SYSLOG(("OS-Info: %s\r\n", OSVersionExtraInfo.Peek_Buffer()));
-#endif
+SYSLOG(("OS-Info: %s\r\n", OSVersionExtraInfo.Peek_Buffer()));
 
 	SYSLOG(("Processor: %s\r\n",CPUDetectClass::Get_Processor_String()));
 	SYSLOG(("Clock speed: ~%dMHz\r\n",CPUDetectClass::Get_Processor_Speed()));
@@ -1049,11 +881,7 @@ void CPUDetectClass::Init_Processor_Log()
 	case 2: cpu_type="Dual"; break;
 	case 3: cpu_type="*Intel Reserved*"; break;
 	}
-#ifdef WIN32
-   SYSLOG(("Processor type: %s\r\n", cpu_type));
-#elif defined(_UNIX)
-   SYSLOG(("Processor type: %s\r\n", cpu_type.Peek_Buffer()));
-#endif
+SYSLOG(("Processor type: %s\r\n", cpu_type.Peek_Buffer()));
 
 	SYSLOG(("\r\n"));
 
@@ -1130,21 +958,13 @@ void CPUDetectClass::Init_Compact_Log()
 {
 	StringClass work(0,true);
 
-#ifdef WIN32
-   TIME_ZONE_INFORMATION time_zone;
-   GetTimeZoneInformation(&time_zone);
-   COMPACTLOG(("%d\t", time_zone.Bias));  // get diff between local time and UTC
-#elif defined(_UNIX)
-   time_t t = time(NULL);
-   localtime(&t);
-   COMPACTLOG(("%d\t", timezone));
-#endif
+COMPACTLOG(("%d\t", Platform::TimeZoneBiasMinutes()));
 
 	OSInfoStruct os_info;
 	Get_OS_Info(os_info,OSVersionPlatformId,OSVersionNumberMajor,OSVersionNumberMinor,OSVersionBuildNumber);
 	COMPACTLOG(("%s\t",os_info.Code));
 
-	if (!stricmp(os_info.SubCode,"UNKNOWN")) {
+	if (!Platform::CompareNoCase(os_info.SubCode,"UNKNOWN")) {
 		COMPACTLOG(("%d\t",OSVersionBuildNumber&0xffff));
 	}
 	else {
@@ -1183,6 +1003,7 @@ public:
 } _CPU_Detect_Init;
 
 
+#ifdef _WIN32
 OSInfoStruct Windows9xVersionTable[]={
 	{"WIN95",	"FINAL",		"Windows 95",								4,0,950,			4,0,950		},
 	{"WIN95",	"A",			"Windows 95a OSR1 final Update",		4,0,950,			4,0,951		},
@@ -1365,3 +1186,12 @@ void Get_OS_Info(
 		}
 	}
 }
+#else
+void Get_OS_Info(OSInfoStruct& info, unsigned, unsigned, unsigned, unsigned)
+{
+	info = {};
+	info.Code = Platform::OperatingSystemName(0);
+	info.SubCode = "UNKNOWN";
+	info.VersionString = info.Code;
+}
+#endif

@@ -164,9 +164,9 @@ void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr, char *buf, unsign
   char *bufEnd=buf+bufSize;
   *buf=0;
   #if defined(_WIN64)
-  buf+=wsprintf(buf,"%016I64x",addr);
+  buf+=sprintf(buf,"%016I64x",addr);
 #else
-  buf+=wsprintf(buf,"%08x",addr);
+  buf+=sprintf(buf,"%08x",addr);
 #endif
 
   // determine module
@@ -195,9 +195,9 @@ void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr, char *buf, unsign
   if (bufEnd-buf<32)
     return;
   #if defined(_WIN64)
-  buf+=wsprintf(buf,"+0x%I64x",addr-modBase);
+  buf+=sprintf(buf,"+0x%I64x",addr-modBase);
 #else
-  buf+=wsprintf(buf,"+0x%x",addr-modBase);
+  buf+=sprintf(buf,"+0x%x",addr-modBase);
 #endif
 
   // determine symbol
@@ -211,9 +211,9 @@ void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr, char *buf, unsign
   if ((unsigned int)(bufEnd-buf)<strlen(symPtr->Name)+16)
     return;
   #if defined(_WIN64)
-  buf+=wsprintf(buf,", %s+0x%I64x",symPtr->Name,displacement);
+  buf+=sprintf(buf,", %s+0x%I64x",symPtr->Name,displacement);
 #else
-  buf+=wsprintf(buf,", %s+0x%x",symPtr->Name,displacement);
+  buf+=sprintf(buf,", %s+0x%x",symPtr->Name,displacement);
 #endif
 
   // and line number
@@ -229,7 +229,7 @@ void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr, char *buf, unsign
 
   if ((unsigned int)(bufEnd-buf)<strlen(p)+16)
     return;
-  buf+=wsprintf(buf,", %s:%i+0x%x",p,line.LineNumber,lineDisplacement);
+  buf+=sprintf(buf,", %s:%i+0x%x",p,line.LineNumber,lineDisplacement);
 }
 
 void DebugStackwalk::Signature::GetSymbol(std::uintptr_t addr,

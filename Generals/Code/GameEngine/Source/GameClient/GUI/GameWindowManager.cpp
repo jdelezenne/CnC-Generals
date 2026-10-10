@@ -38,7 +38,7 @@
 #include "GameClient/GameWindow.h"
 #include "GameClient/Mouse.h"
 #include "GameClient/DisplayStringManager.h"
-#include "Gameclient/WindowLayout.h"
+#include "GameClient/WindowLayout.h"
 #include "GameClient/Gadget.h"
 #include "GameClient/GameWindowGlobal.h"
 #include "GameClient/GadgetListBox.h"
@@ -122,7 +122,7 @@ void GameWindowManager::processDestroyList( void )
 
 		// free the memory
 		if (doDestroy)
-			doDestroy->deleteInstance();
+			Platform::DeletePoolObject(doDestroy);
 
 	}  // end for
 
@@ -1613,7 +1613,7 @@ Int GameWindowManager::winUnsetModal( GameWindow *window )
 
 	// remove from top of list
 	next = m_modalHead->next;
-	m_modalHead->deleteInstance();
+	Platform::DeletePoolObject(m_modalHead);
 	m_modalHead = next;
 
 	return WIN_ERR_OK;

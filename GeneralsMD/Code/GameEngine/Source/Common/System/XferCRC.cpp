@@ -34,9 +34,9 @@
 
 #include "Common/XferCRC.h"
 #include "Common/XferDeepCRC.h"
-#include "Common/CRC.h"
+#include "Common/crc.h"
 #include "Common/Snapshot.h"
-#include "winsock2.h" // for htonl
+#include "Platform/ByteOrder.h"
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ void XferCRC::addCRC( UnsignedInt val )
 {
 	int hibit;
 
-	val = htonl(val);
+	val = Platform::NetworkOrder(val);
 
 	if (m_crc & 0x80000000)
 	{
@@ -163,7 +163,7 @@ void XferCRC::xferImplementation( void *data, Int dataSize )
 		{
 			val += (c[i] << (i*8));
 		}
-		val = htonl(val);
+		val = Platform::NetworkOrder(val);
 		addCRC (val);
 	}
 	
@@ -181,7 +181,7 @@ void XferCRC::skip( Int dataSize )
 UnsignedInt XferCRC::getCRC( void )
 {
 
-	return htonl(m_crc);
+	return Platform::NetworkOrder(m_crc);
 
 }  // end skip
 

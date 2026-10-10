@@ -487,7 +487,12 @@ public:
 template <class ObjectType>
 class PriorityMultiListIterator : public MultiListIterator<ObjectType>
 {
+protected:
+	using MultiListIterator<ObjectType>::CurNode;
+	using MultiListIterator<ObjectType>::List;
 public:
+	using MultiListIterator<ObjectType>::First;
+	using MultiListIterator<ObjectType>::Remove_Current_Object;
 	PriorityMultiListIterator(MultiListClass<ObjectType> *list)
 		:	OriginalHead (NULL),
 			MultiListIterator<ObjectType>(list)			{ First (); }

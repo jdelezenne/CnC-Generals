@@ -45,14 +45,15 @@
 //-----------------------------------------------------------------------------
 //         Includes                                                      
 //-----------------------------------------------------------------------------
+#include "Platform/System.h"
 #include "W3DDevice/GameClient/W3DRoadBuffer.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <assetmgr.h>
 #include <texture.h>
-#include "common/GlobalData.h"
-#include "common/RandomValue.h"
+#include "Common/GlobalData.h"
+#include "Common/RandomValue.h"
 //#include "Common/GameFileSystem.h"
 #include "Common/FileSystem.h" // for LOAD_TEST_ASSETS
 #include "GameClient/TerrainRoads.h"
@@ -62,11 +63,11 @@
 #include "W3DDevice/GameClient/W3DDynamicLight.h"
 #include "W3DDevice/GameClient/WorldHeightMap.h"
 #include "W3DDevice/GameClient/W3DShaderManager.h"
-#include "WW3D2/Camera.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/DX8Renderer.h"
-#include "WW3D2/Mesh.h"
-#include "WW3D2/MeshMdl.h"
+#include "WW3D2/camera.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/dx8renderer.h"
+#include "WW3D2/mesh.h"
+#include "WW3D2/meshmdl.h"
 
 static const Real TEE_WIDTH_ADJUSTMENT = 1.03f;
 
@@ -1406,7 +1407,7 @@ void W3DRoadBuffer::checkLinkBefore(Int ndx)
 		} else if (m_roads[checkNdx].m_pt2.loc == loc2) {
 #ifdef _DEBUG
 			if (m_roads[checkNdx].m_pt2.count!=1) {
-				::OutputDebugString("fooey.\n");
+				Platform::DebugMonitorOutput("fooey.\n");
 			}
 			DEBUG_ASSERTLOG(m_roads[checkNdx].m_pt2.count==1, ("Bad count\n"));
 #endif
@@ -1459,7 +1460,7 @@ void W3DRoadBuffer::checkLinkAfter(Int ndx)
 #ifdef _DEBUG
 			DEBUG_ASSERTLOG(m_roads[checkNdx].m_pt1.count==1, ("Wrong m_pt1.count.\n"));
 			if ( m_roads[checkNdx].m_pt1.count!=1) {
-				::OutputDebugString("Wrong m_pt1.count.\n");
+				Platform::DebugMonitorOutput("Wrong m_pt1.count.\n");
 			}
 #endif
 			flipTheRoad(&m_roads[checkNdx]);
@@ -3187,7 +3188,7 @@ void W3DRoadBuffer::loadRoads()
 	//ticks = ::GetTickCount() - ticks;
 	//char buf[256];
 	//sprintf(buf, "%d road segs, %d milisec.\n", m_numRoads, ticks);
-	//::OutputDebugString(buf);
+	//Platform::DebugMonitorOutput(buf);
 }
 
 //=============================================================================

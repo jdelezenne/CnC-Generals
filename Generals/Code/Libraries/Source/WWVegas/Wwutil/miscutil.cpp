@@ -25,14 +25,15 @@
 //
 //-----------------------------------------------------------------------------
 #include "miscutil.h" // I WANNA BE FIRST!
+#include "Platform/StringCompare.h"
 #include "Platform/Paths.h"
 
 #include <time.h>
 
-#include "rawfile.h"
+#include "RAWFILE.H"
 #include "wwdebug.h"
 #include "win.h"
-#include "mmsys.h"
+
 #include "ffactory.h"
 
 //
@@ -78,7 +79,7 @@ bool cMiscUtil::Is_String_Same(LPCSTR str1, LPCSTR str2)
    WWASSERT(str1 != NULL);
    WWASSERT(str2 != NULL);
 
-   return(::stricmp(str1, str2) == 0);
+   return(Platform::CompareNoCase(str1, str2) == 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -87,7 +88,7 @@ bool cMiscUtil::Is_String_Different(LPCSTR str1, LPCSTR str2)
    WWASSERT(str1 != NULL);
    WWASSERT(str2 != NULL);
 
-   return(::stricmp(str1, str2) != 0);
+   return(Platform::CompareNoCase(str1, str2) != 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -116,13 +117,7 @@ bool cMiscUtil::File_Exists(LPCSTR filename)
 }
 
 //-----------------------------------------------------------------------------
-bool cMiscUtil::File_Is_Read_Only(LPCSTR filename)
-{
-   WWASSERT(filename != NULL);
 
-	DWORD attributes = ::GetFileAttributes(filename);
-	return ((attributes != 0xFFFFFFFF) && (attributes & FILE_ATTRIBUTE_READONLY));
-}
 
 //-----------------------------------------------------------------------------
 bool cMiscUtil::Is_Alphabetic(char c)
@@ -160,168 +155,9 @@ void cMiscUtil::Trim_Trailing_Whitespace(char * text)
 }
 
 //-----------------------------------------------------------------------------
-void cMiscUtil::Get_File_Id_String(LPCSTR filename, StringClass & str)
-{
-	WWASSERT(filename != NULL);
-
-//	WWDEBUG_SAY(("cMiscUtil::Get_File_Id_String for %s\n", filename));
-
-   //
-   // Get size
-   //
-   RawFileClass file(filename);
-   int filesize = file.Size();
-	//WWASSERT(filesize > 0);
-	if (filesize <= 0)
-	{
-		WWDEBUG_SAY(("Error: cMiscUtil::Get_File_Id_String for %s: filesize = %d\n", 
-			filename, filesize));
-		W3D_DIE;
-	}
-   file.Close();
-
-	//
-	// Note... this timedatestamp is not present for all file types...
-	//
-	IMAGE_FILE_HEADER header = {0};
-	extern bool Get_Image_File_Header(LPCSTR filename, IMAGE_FILE_HEADER *file_header);
-	/*
-	bool success;
-	success = Get_Image_File_Header(filename, &header);
-	WWASSERT(success);
-	*/
-	Get_Image_File_Header(filename, &header);
-	int time_date_stamp = header.TimeDateStamp;
-
-	char working_filename[500];
-	strcpy(working_filename, filename);
-	::strupr(working_filename);
-
-   //
-   // Strip path off filename
-   //
-   char * p_start = &working_filename[strlen(working_filename)];
-   int num_chars = 1;
-   while (p_start > working_filename && *(p_start - 1) != '\\') {
-      p_start--;
-      num_chars++;
-   }
-   ::memmove(working_filename, p_start, num_chars);
-
-	//
-	// Put all this data into a string
-	//
-	str.Format("%s %d %d", working_filename, filesize, time_date_stamp);
-
-	//WWDEBUG_SAY(("File id string: %s\n", str));
-}
-
-//-----------------------------------------------------------------------------
 void cMiscUtil::Remove_File(LPCSTR filename)
 {
    WWASSERT(filename != NULL);
 
 	Platform::RemoveUserFile(filename);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-#define SIZE_OF_NT_SIGNATURE   sizeof(DWORD)
-#define PEFHDROFFSET(a) ((LPVOID)((BYTE *)a +  \
-    ((PIMAGE_DOS_HEADER)a)->e_lfanew + SIZE_OF_NT_SIGNATURE))
-*/
-
-/*
-int cMiscUtil::Get_Exe_Key(void)
-{
-   //
-   // Get exe name
-   //
-	char filename[500];
-   int succeeded;
-	succeeded = ::GetModuleFileName(NULL, filename, sizeof(filename));
-	::strupr(filename);
-	WWASSERT(succeeded);
-      
-   //
-   // Get size
-   //
-   RawFileClass file(filename);
-   int filesize = file.Size();
-	WWASSERT(filesize > 0);
-   file.Close();
-
-   //
-   // Strip path off filename
-   //
-   char * p_start = &filename[strlen(filename)];
-   int num_chars = 1;
-   while (*(p_start - 1) != '\\') {
-      p_start--;
-      num_chars++;
-   }
-   ::memmove(filename, p_start, num_chars);
-
-	//
-	// Pull a time/date stamp out of the exe header
-	//
-	PIMAGE_FILE_HEADER p_header = (PIMAGE_FILE_HEADER) PEFHDROFFSET(ProgramInstance);
-	WWASSERT(p_header != NULL);
-	int time_date_stamp = p_header->TimeDateStamp;
-
-	//
-	// Put all this data into a string
-	//
-	char id_string[500];
-	::sprintf(id_string, "%s %d %d", filename, filesize, time_date_stamp);
-	WWDEBUG_SAY(("File id string: %s\n", id_string));
-
-	//
-	// return the crc of that string as the key
-	//
-	return CRCEngine()(id_string, strlen(id_string));
-}
-*/
-
-//#include <stdio.h>
-//#include "verchk.h"
-
-/*
-//-----------------------------------------------------------------------------
-int cMiscUtil::Get_Exe_Key(void)
-{
-   //
-   // Get exe name
-   //
-	char filename[500];
-   int succeeded;
-	succeeded = ::GetModuleFileName(NULL, filename, sizeof(filename));
-	::strupr(filename);
-	WWASSERT(succeeded);
-      
-	StringClass string;
-	Get_File_Id_String(filename, string);
-
-	//
-	// return the crc of that string as the key
-	//
-	return CRCEngine()(string, strlen(string));
-}
-*/
-
-//#include "crc.h"

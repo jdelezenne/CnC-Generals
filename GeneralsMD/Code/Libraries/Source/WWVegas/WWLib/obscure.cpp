@@ -36,6 +36,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"always.h"
+#include "Platform/StringCompare.h"
 #include	"crc.h"
 #include	"obscure.h"
 #include	<ctype.h>
@@ -88,7 +89,7 @@ long Obfuscate(char const * string)
 	/*
 	**	Only upper case letters are significant.
 	*/
-	strupr(buffer);
+	Platform::UpperCase(buffer);
 
 	/*
 	**	Ensure that only visible ASCII characters compose the key phrase. This

@@ -38,7 +38,6 @@
 //--------------------------------------------------------------------------------- System Includes 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <atlbase.h>
 #include <windows.h>
 #endif
 
@@ -68,7 +67,7 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <shlguid.h>
-#include <snmp.h>
+
 #endif
 #include <stdarg.h>
 #include <stddef.h>

@@ -298,9 +298,9 @@ template<class T> struct Object : T {
     {
         if (!result) return E_POINTER;
         *result=nullptr;
-        bool supported=IsEqualGUID(iid,IID_IUnknown) || IsEqualGUID(iid,InterfaceId<T>());
-        if constexpr(std::is_base_of_v<IDirect3DResource8,T>) supported=supported || IsEqualGUID(iid,IID_IDirect3DResource8)!=0;
-        if constexpr(std::is_base_of_v<IDirect3DBaseTexture8,T>) supported=supported || IsEqualGUID(iid,IID_IDirect3DBaseTexture8)!=0;
+        bool supported=std::memcmp(&iid, &IID_IUnknown, sizeof(GUID)) == 0 || std::memcmp(&iid, &InterfaceId<T>(), sizeof(GUID)) == 0;
+        if constexpr(std::is_base_of_v<IDirect3DResource8,T>) supported=supported || std::memcmp(&iid, &IID_IDirect3DResource8, sizeof(GUID)) == 0;
+        if constexpr(std::is_base_of_v<IDirect3DBaseTexture8,T>) supported=supported || std::memcmp(&iid, &IID_IDirect3DBaseTexture8, sizeof(GUID)) == 0;
         if (!supported) return E_NOINTERFACE;
         *result=static_cast<T*>(this); AddRef(); return S_OK;
     }
@@ -1182,7 +1182,7 @@ SDL_GPUSampler* Device::Sampler(unsigned stage)
     info.mag_filter=key[1]==D3DTEXF_POINT?SDL_GPU_FILTER_NEAREST:SDL_GPU_FILTER_LINEAR;
     info.mipmap_mode=key[2]==D3DTEXF_LINEAR?SDL_GPU_SAMPLERMIPMAPMODE_LINEAR:SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
     info.address_mode_u=Address(key[3]);info.address_mode_v=Address(key[4]);info.address_mode_w=Address(key[5]);
-    info.enable_anisotropy=key[0]==D3DTEXF_ANISOTROPIC || key[1]==D3DTEXF_ANISOTROPIC;info.max_anisotropy=static_cast<float>(std::clamp(key[6],1ul,16ul));
+    info.enable_anisotropy=key[0]==D3DTEXF_ANISOTROPIC || key[1]==D3DTEXF_ANISOTROPIC;info.max_anisotropy=static_cast<float>(std::clamp<DWORD>(key[6],1,16));
     // Anisotropic GPU samplers require linear minification, magnification and mip filtering.
     // The LOD limits below still preserve D3DTEXF_NONE's single mip level.
     if(info.enable_anisotropy){info.min_filter=info.mag_filter=SDL_GPU_FILTER_LINEAR;info.mipmap_mode=SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;}

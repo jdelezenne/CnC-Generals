@@ -96,15 +96,6 @@ class IMEManagerInterface : public SubsystemInterface
 		virtual Int						getSelectedCandidateIndex() = 0;		///< Returns the indexed of the currently selected candidate
 		virtual Int						getCandidatePageSize() = 0;					///< Returns the page size for the candidates list
 		virtual Int						getCandidatePageStart() = 0;				///< Returns the index of the first visibel candidate
-
-
-
-		/// Checks for and service IME messages. Returns TRUE if message serviced
-		virtual Bool serviceIMEMessage(	void *windowsHandle, 
-												UnsignedInt message,
-												Int wParam,
-												Int lParam ) = 0;
-		virtual Int result( void ) = 0;							///< result return value of last serviced IME message
 };
 
 

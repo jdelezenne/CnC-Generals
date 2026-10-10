@@ -36,17 +36,17 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "Common/STLTypedefs.h"
-#include "Common/ModelState.h"
-#include "Common/Science.h"
-#include "Common/Upgrade.h"
+
+#include "Common/ScienceType.h"
+#include "Common/UpgradeMaskType.h"
 
 // FORWARD REFERENCES /////////////////////////////////////////////////////////////////////////////
 class Snapshot;
 typedef Int Color;
 enum ObjectID;
 enum DrawableID;
-enum KindOfType;
-enum ScienceType;
+#include "Common/KindOfType.h"
+
 class Matrix3D;
 
 // ------------------------------------------------------------------------------------------------

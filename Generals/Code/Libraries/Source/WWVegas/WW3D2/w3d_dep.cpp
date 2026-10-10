@@ -48,18 +48,12 @@
  *   Make_W3D_Filename -- Converts a W3D object name into a W3D filename.                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-//-----------------------------------------------------------------------------
-// srj sez: hack festival :-(
-class STLSpecialAlloc
-{
-public:
-  // this one is needed for proper simple_alloc wrapping
-  static void*  allocate(size_t __n) {  return ::operator new(__n); }
-  static void deallocate(void* __p, size_t) { ::operator delete(__p); }
-};
+
 
 
 #include "w3d_dep.h"
+#include "Platform/Paths.h"
+#include "Platform/StringCompare.h"
 #include "w3d_file.h"
 #include <assert.h>
 #include <chunkio.h>
@@ -278,7 +272,7 @@ static void Scan_Mesh_Textures (ChunkLoadClass &cload, StringList &files, const 
 					// This chunk's data is a NULL-terminated string
 					// which is the texture filename. Read it and
 					// add it to the list of files referred to.
-					char texture[_MAX_PATH];
+					char texture[Platform::LegacyPathCapacity];
 					cload.Read(texture, cload.Cur_Chunk_Length());
 					if (*texture)	// don't push empty filenames
 						files.push_back(texture);
@@ -535,7 +529,7 @@ static void Get_W3D_Name (const char *filename, char *w3d_name)
 	memset(w3d_name, 0, W3D_NAME_LEN);	// blank out the buffer
 	int num_chars = end - start;
 	strncpy(w3d_name, start, num_chars < W3D_NAME_LEN ? num_chars : W3D_NAME_LEN-1);
-	strupr(w3d_name);
+	Platform::UpperCase(w3d_name);
 }
 
 
@@ -569,7 +563,7 @@ static const char * Make_W3D_Filename (const char *w3d_name)
 	char *dot = strchr(buffer, '.');
 	if (dot)
 		*dot = 0;
-	strlwr(buffer);
+	Platform::LowerCase(buffer);
 	strcat(buffer, ".w3d");
 	return buffer;
 }

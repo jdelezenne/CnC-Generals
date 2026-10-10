@@ -30,11 +30,11 @@
 
 #include "Common/GameMemory.h"
 #include "Platform/Clock.h"
-#include "Platform/Windows/Window.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/RendObj.h"
-#include "WW3D2/HAnim.h"
-#include "WW3D2/Camera.h"
+#include "Platform/Cursor.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/rendobj.h"
+#include "WW3D2/hanim.h"
+#include "WW3D2/camera.h"
 
 #include "assetmgr.h"
 
@@ -246,7 +246,8 @@ void W3DMouse::initD3DAssets(void)
 void W3DMouse::freeD3DAssets(void)
 {
 	//free pointers to texture surfaces.
-	for (Int i=0; i<MAX_2D_CURSOR_ANIM_FRAMES; i++)
+	Int i;
+	for (i=0; i<MAX_2D_CURSOR_ANIM_FRAMES; i++)
 		REF_PTR_RELEASE(m_currentD3DSurface[i]);
 
 	//free textures.
@@ -391,7 +392,7 @@ void W3DMouse::setCursor( MouseCursor cursor )
 	//make sure Windows didn't reset our cursor
 	if (m_currentRedrawMode == RM_DX8)
 	{
-		SetCursor(NULL);	//Kill Windows Cursor
+		Platform::SetCursor(NULL);	//Kill Windows Cursor
 
 		LPDIRECT3DDEVICE8 m_pDev=DX8Wrapper::_Get_D3D_Device8();
 		Bool doImageChange=FALSE;
@@ -427,7 +428,7 @@ void W3DMouse::setCursor( MouseCursor cursor )
 	}
 	else if (m_currentRedrawMode == RM_POLYGON)
 	{
-		SetCursor(NULL);	//Kill Windows Cursor
+		Platform::SetCursor(NULL);	//Kill Windows Cursor
 		m_currentD3DCursor=NONE;
 		m_currentW3DCursor=NONE;
 		m_currentPolygonCursor = cursor;
@@ -435,7 +436,7 @@ void W3DMouse::setCursor( MouseCursor cursor )
 	}
 	else if (m_currentRedrawMode == RM_W3D)
 	{
-		SetCursor(NULL);	//Kill Windows Cursor
+		Platform::SetCursor(NULL);	//Kill Windows Cursor
 		m_currentD3DCursor=NONE;
 		m_currentPolygonCursor=NONE;
 		if (cursor != m_currentW3DCursor)
@@ -493,10 +494,8 @@ void W3DMouse::draw(void)
 
 			if (TheDisplay && !TheDisplay->getWindowed())
 			{	//if we're full-screen, need to manually move cursor image
-				POINT ptCursor;
-
-				GetCursorPos( &ptCursor );
-				ScreenToClient( Platform::NativeGameWindow(), &ptCursor );
+				ICoord2D ptCursor;
+				Platform::MousePosition(ptCursor.x, ptCursor.y);
 				m_pDev->SetCursorPosition( ptCursor.x, ptCursor.y, D3DCURSOR_IMMEDIATE_UPDATE);
 			}
 			//Check if animated cursor and new frame

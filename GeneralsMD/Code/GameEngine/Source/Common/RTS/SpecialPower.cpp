@@ -53,7 +53,7 @@ SpecialPowerStore *TheSpecialPowerStore = NULL;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Externs ////////////////////////////////////////////////////////////////////////////////////////
-const char* SpecialPowerMaskType::s_bitNameList[] = 
+template<> const char* SpecialPowerMaskType::s_bitNameList[] =
 {
 	"SPECIAL_INVALID",
 
@@ -256,7 +256,7 @@ SpecialPowerStore::~SpecialPowerStore( void )
 
 	// delete all templates
 	for( Int i = 0; i < m_specialPowerTemplates.size(); ++i )
-		m_specialPowerTemplates[ i ]->deleteInstance();
+		Platform::DeletePoolObject(m_specialPowerTemplates[ i ]);
 
 	// erase the list
 	m_specialPowerTemplates.clear();

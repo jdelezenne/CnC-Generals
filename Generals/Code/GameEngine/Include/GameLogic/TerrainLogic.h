@@ -32,6 +32,7 @@
 #ifndef __TERRAINLOGIC_H_
 #define __TERRAINLOGIC_H_
 
+#include "GameLogic/WaypointID.h"
 #include "Common/GameMemory.h"
 #include "Common/Snapshot.h"
 #include "Common/STLTypedefs.h"
@@ -52,10 +53,7 @@ class Matrix3D;
 class WaterHandle;
 class Xfer;
 
-enum WaypointID
-{
-	INVALID_WAYPOINT_ID = 0x7FFFFFFF
-};
+
 
 //-------------------------------------------------------------------------------------------------
 // Waypoint

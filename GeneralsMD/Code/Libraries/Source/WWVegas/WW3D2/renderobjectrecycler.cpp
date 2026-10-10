@@ -42,6 +42,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "renderobjectrecycler.h"
+#include "Platform/StringCompare.h"
 #include <string.h>
 #include "rendobj.h"
 #include "assetmgr.h"
@@ -85,7 +86,7 @@ RenderObjClass * RenderObjectRecyclerClass::Get_Render_Object(const char * name,
 	
 	RenderObjClass * found = NULL;
 	while (!it.Is_Done()) {
-		if (stricmp(it.Peek_Obj()->Get_Name(),name) == 0) {
+		if (Platform::CompareNoCase(it.Peek_Obj()->Get_Name(),name) == 0) {
 			found = it.Peek_Obj();
 			break;
 		}

@@ -2575,7 +2575,7 @@ void ScriptActions::doDisplayCinematicText(const AsciiString& displayText, const
 	char buf[256];
 	char *c;
 	strcpy(buf, fontType.str());
-	for( c = buf; c != '\0'; *c++ )
+	for( c = buf; c != NULL; *c++ )
 	{
 		if( *c != ' ' && *c++ != '-' ) 
 			fontName.concat(c);
@@ -2588,9 +2588,9 @@ void ScriptActions::doDisplayCinematicText(const AsciiString& displayText, const
 
 	// get font size
 	AsciiString fontSize = AsciiString::TheEmptyString;
-	for( ; *c != '\0'; *c++ )
+	for( ; *c != NULL; *c++ )
 	{
-		if( *c != '\0' && *c != ' ' )
+		if( *c != NULL && *c != ' ' )
 		{
 			fontSize.concat( *c );
 		}
@@ -4697,7 +4697,7 @@ void ScriptActions::doUnitStartSequentialScript(const AsciiString& unitName, con
 	
 	TheScriptEngine->appendSequentialScript(seqScript);
 
-	seqScript->deleteInstance();
+	Platform::DeletePoolObject(seqScript);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4794,7 +4794,7 @@ void ScriptActions::doTeamStartSequentialScript(const AsciiString& teamName, con
 	
 	TheScriptEngine->appendSequentialScript(seqScript);
 
-	seqScript->deleteInstance();
+	Platform::DeletePoolObject(seqScript);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -5316,7 +5316,7 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 			}
 		}
 	}
-	for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
+	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 	{
 		Object *obj = iter.cur();
 		if( !obj )
@@ -5829,7 +5829,7 @@ void ScriptActions::doTeamPartialUseCommandButton( Real percentage, const AsciiS
 	std::vector<Object *> objList;
 	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
 
-	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
 		Object *obj = iter.cur();
 		if (commandButton->isValidToUseOn(obj, NULL, NULL, CMD_FROM_SCRIPT)) {	
 			objList.push_back(obj);
@@ -6153,7 +6153,7 @@ void ScriptActions::doTeamFaceNamed( const AsciiString &teamName, const AsciiStr
 		if( faceObj )
 		{
 			DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
-			for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 			{
 				Object *obj = iter.cur();
 				if( obj )
@@ -6182,7 +6182,7 @@ void ScriptActions::doTeamFaceWaypoint( const AsciiString &teamName, const Ascii
 		if( way )
 		{
 			DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
-			for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
+			for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 			{
 				Object *obj = iter.cur();
 				if( obj )
@@ -6221,7 +6221,7 @@ void ScriptActions::doAffectObjectPanelFlagsTeam(const AsciiString& teamName, co
 	}
 
 	DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList();
-	for (iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
+	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
 		Object *obj = iter.cur();
 		changeObjectPanelFlagForSingleObject(obj, flagName, enable);
 	}

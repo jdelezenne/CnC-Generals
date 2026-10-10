@@ -16,176 +16,79 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// FramGrab.cpp: implementation of the FrameGrabClass class.
-//
-//////////////////////////////////////////////////////////////////////
-
 #include "framgrab.h"
-#include <stdio.h>
-#include <io.h>
-//#include <errno.h>
+#include "Platform/Directory.h"
+#include "Platform/Memory.h"
+#include "Platform/System.h"
+#include <cstdio>
+#include <cstdint>
 
-//////////////////////////////////////////////////////////////////////
-// Construction/Destruction
-//////////////////////////////////////////////////////////////////////
-
-FrameGrabClass::FrameGrabClass(const char *filename, MODE mode, int width, int height, int bitcount, float framerate)
+FrameGrabClass::FrameGrabClass(const char* filename, MODE mode, int width, int height, int bitcount, float framerate)
+    : Filename(filename), FrameRate(framerate), Mode(mode), Counter(0), Capture(NULL), Bitmap(NULL), Width(width), Height(height)
 {
-	HRESULT          hr; 
-	
-	Mode = mode;
-	Filename = filename;
-	FrameRate = framerate;
-	Counter = 0;
-
-	Stream = 0;
-	AVIFile = 0;
-
-	if(Mode != AVI) return;
-
-	AVIFileInit();          // opens AVIFile library  
-
-	// find the first free file with this prefix
-	int counter = 0;
-	int result;
-	char file[256];
-	do {
-		sprintf(file, "%s%d.AVI", filename, counter++);
-		result = _access(file, 0);
-	} while(result != -1);
-
-	// Create new AVI file using AVIFileOpen. 
-    hr = AVIFileOpen(&AVIFile, file, OF_WRITE | OF_CREATE, NULL); 
-    if (hr != 0) {
-		char buf[256];
-		sprintf(buf, "Unable to open %s\n", Filename);
-		OutputDebugString(buf);
-		CleanupAVI();
-		return;
-	}
-    
-
-    // Create a stream using AVIFileCreateStream. 
-	AVIStreamInfo.fccType = streamtypeVIDEO;
-	AVIStreamInfo.fccHandler = mmioFOURCC('M','S','V','C');
-	AVIStreamInfo.dwFlags = 0;
-	AVIStreamInfo.dwCaps = 0;
-	AVIStreamInfo.wPriority = 0;
-	AVIStreamInfo.wLanguage = 0;
-	AVIStreamInfo.dwScale = 1;
-	AVIStreamInfo.dwRate = (int)FrameRate;
-	AVIStreamInfo.dwStart = 0;
-	AVIStreamInfo.dwLength = 0;
-	AVIStreamInfo.dwInitialFrames = 0;
-	AVIStreamInfo.dwSuggestedBufferSize = 0;
-	AVIStreamInfo.dwQuality = 0;
-	AVIStreamInfo.dwSampleSize = 0;
-	SetRect(&AVIStreamInfo.rcFrame, 0, 0, width, height);  
-	AVIStreamInfo.dwEditCount = 0;
-	AVIStreamInfo.dwFormatChangeCount = 0;
-	sprintf(AVIStreamInfo.szName,"G");
-
-    hr = AVIFileCreateStream(AVIFile, &Stream, &AVIStreamInfo); 
-    if (hr != 0) {   
-		CleanupAVI();
-		return;     
-	}
-	
-    // Set format of new stream
-	BitmapInfoHeader.biWidth = width;
-	BitmapInfoHeader.biHeight = height; 
-	BitmapInfoHeader.biBitCount = (unsigned short)bitcount;
-    BitmapInfoHeader.biSizeImage = ((((UINT)BitmapInfoHeader.biBitCount * BitmapInfoHeader.biWidth + 31) & ~31) / 8) * BitmapInfoHeader.biHeight; 
-	BitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER); // size of structure
-	BitmapInfoHeader.biPlanes = 1; // must be set to 1
-	BitmapInfoHeader.biCompression = BI_RGB; // uncompressed
- 	BitmapInfoHeader.biXPelsPerMeter = 1; // not used
-	BitmapInfoHeader.biYPelsPerMeter = 1; // not used
-	BitmapInfoHeader.biClrUsed = 0; // all colors are used
-	BitmapInfoHeader.biClrImportant = 0; // all colors are important
-
-    hr = AVIStreamSetFormat(Stream, 0, &BitmapInfoHeader, sizeof(BitmapInfoHeader)); 
-    if (hr != 0) {
-		CleanupAVI();
-		return;     
-	}  
-
-    Bitmap = (long *) GlobalAllocPtr(GMEM_MOVEABLE, BitmapInfoHeader.biSizeImage); 
+    if (Mode != AVI) return;
+    int counter = 0;
+    char file[256];
+    do {
+        sprintf(file, "%s%d.AVI", filename, counter++);
+    } while (Platform::PathExists(file));
+    Capture = Platform::OpenVideoCapture(file, width, height, bitcount, static_cast<int>(framerate));
+    if (Capture) Bitmap = static_cast<long*>(Platform::AllocateSystemMemory(Platform::VideoCaptureFrameSize(Capture), false));
+    if (!Capture || !Bitmap) {
+        Platform::DebugMonitorOutput("Unable to create AVI capture\n");
+        CleanupAVI();
+    }
 }
 
 FrameGrabClass::~FrameGrabClass()
 {
-	if(Mode == AVI) {
-		CleanupAVI();
-	}
+    if (Mode == AVI) CleanupAVI();
 }
 
-void FrameGrabClass::CleanupAVI() {
-	if(Bitmap != 0) { GlobalFreePtr(Bitmap); Bitmap = 0; }
-	if(Stream != 0) { AVIStreamRelease(Stream); Stream = 0; }
-	if(AVIFile != 0) { AVIFileRelease(AVIFile); AVIFile = 0; }
-	
-	AVIFileExit();
-	Mode = RAW;
-}
-
-void FrameGrabClass::GrabAVI(void *BitmapPointer)
+void FrameGrabClass::CleanupAVI()
 {
-    // CompressDIB(&bi, lpOld, &biNew, lpNew);  
-
-    // Save the compressed data using AVIStreamWrite. 
-    HRESULT hr = AVIStreamWrite(Stream, Counter++, 1, BitmapPointer, BitmapInfoHeader.biSizeImage, AVIIF_KEYFRAME, NULL, NULL);     
-	if(hr != 0) {
-		char buf[256];
-		sprintf(buf, "avi write error %x/%d\n", hr, hr);
-		OutputDebugString(buf);
-	} 
+    Platform::FreeSystemMemory(Bitmap);
+    Bitmap = NULL;
+    Platform::CloseVideoCapture(Capture);
+    Capture = NULL;
+    Mode = RAW;
 }
 
-void FrameGrabClass::GrabRawFrame(void * /*BitmapPointer*/)
+void FrameGrabClass::GrabAVI(void* pixels)
 {
-
+    ++Counter;
+    if (!Platform::WriteVideoCapture(Capture, pixels)) Platform::DebugMonitorOutput("AVI write error\n");
 }
 
+void FrameGrabClass::GrabRawFrame(void*) {}
 
-void FrameGrabClass::ConvertGrab(void *BitmapPointer) 
+void FrameGrabClass::ConvertGrab(void* pixels)
 {
-	ConvertFrame(BitmapPointer);
-	Grab( Bitmap );
+    ConvertFrame(pixels);
+    Grab(Bitmap);
 }
 
-
-void FrameGrabClass::Grab(void *BitmapPointer) 
+void FrameGrabClass::Grab(void* pixels)
 {
-	if(Mode == AVI) 
-		GrabAVI(BitmapPointer);
-	else
-		GrabRawFrame(BitmapPointer);
+    if (Mode == AVI) GrabAVI(pixels);
+    else GrabRawFrame(pixels);
 }
 
-
-void FrameGrabClass::ConvertFrame(void *BitmapPointer) 
+void FrameGrabClass::ConvertFrame(void* pixels)
 {
-
-	int width = BitmapInfoHeader.biWidth;
-	int height = BitmapInfoHeader.biHeight;
-	long *image = (long *) BitmapPointer;
-
-	// copy the data, doing a vertical flip & byte re-ordering of the pixel longwords
-	int y = height;
-	while(y--) {
-		int x = width;
-		int yoffset = y * width;
-		int yoffset2 = (height - y) * width;
-		while(x--) {
-			long *source = &image[yoffset + x];
-			long *dest = &Bitmap[yoffset2 + x];
-			*dest = *source;
-			unsigned char *c = (unsigned char *) dest;
-			c[3] = c[0];
-			c[0] = c[2];
-			c[2] = c[3];
-			c[3] = 0;
-		}
-	}
+    // This legacy conversion operates on 32-bit pixels, including on LP64 hosts.
+    auto* image = static_cast<std::uint32_t*>(pixels);
+    auto* bitmap = reinterpret_cast<std::uint32_t*>(Bitmap);
+    int y = Height;
+    while (y--) {
+        int x = Width;
+        const int yoffset = y * Width;
+        const int yoffset2 = (Height - y) * Width;
+        while (x--) {
+            auto* destination = &bitmap[yoffset2 + x];
+            *destination = image[yoffset + x];
+            auto* c = reinterpret_cast<unsigned char*>(destination);
+            c[3] = c[0]; c[0] = c[2]; c[2] = c[3]; c[3] = 0;
+        }
+    }
 }

@@ -29,17 +29,17 @@
 class ScopedMutex
 {
 	private:
-		HANDLE m_mutex;
+		void* m_mutex;
 
 	public:
-		ScopedMutex(HANDLE mutex) : m_mutex(mutex)
+		ScopedMutex(void* mutex) : m_mutex(mutex)
 		{
-			WaitForSingleObject(m_mutex, INFINITE);
+			Platform::LockRecursiveMutex(m_mutex, -1);
 		}
 
 		~ScopedMutex()
 		{
-			ReleaseMutex(m_mutex);
+			Platform::UnlockRecursiveMutex(m_mutex);
 		}
 };
 

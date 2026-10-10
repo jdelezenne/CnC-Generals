@@ -135,7 +135,8 @@ bool ProfileCmdInterface::Execute(class Debug& dbg, const char *cmd, CommandMode
     }
     else
     {
-      for (unsigned k=0;k<numResIf;k++)
+      unsigned k;
+      for ( k=0;k<numResIf;k++)
         if (!strcmp(argv[0],resIf[k].name))
           break;
       if (k==numResIf)
@@ -203,7 +204,8 @@ bool ProfileCmdInterface::Execute(class Debug& dbg, const char *cmd, CommandMode
     // must fixup lastPatternEntry now
     if (Profile::firstPatternEntry)
     {
-      for (Profile::PatternListEntry *cur=Profile::firstPatternEntry;cur->next;cur=cur->next);
+      Profile::PatternListEntry * cur;
+      for (cur=Profile::firstPatternEntry;cur->next;cur=cur->next);
       Profile::lastPatternEntry=cur;
     }
     else

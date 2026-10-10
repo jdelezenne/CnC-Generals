@@ -13,10 +13,23 @@ Platform::WindowEventHandler EventHandler = nullptr;
 bool SplashActive = false;
 }
 SDL_Window* Platform::GetGameWindow() { return GameWindow; }
+bool Platform::GameWindowIsWindowed()
+{
+    return !GameWindow || !(SDL_GetWindowFlags(GameWindow) & SDL_WINDOW_FULLSCREEN);
+}
+void* Platform::RenderWindowHandle()
+{
+#ifdef _WIN32
+    return NativeGameWindow();
+#else
+    return GameWindow;
+#endif
+}
 void Platform::SetWindowEventHandler(WindowEventHandler handler) { EventHandler = handler; }
 void Platform::DispatchWindowEvent(WindowEvent event) { if (EventHandler) EventHandler(event); }
 bool Platform::WindowMinimized() { return GameWindow && (SDL_GetWindowFlags(GameWindow) & SDL_WINDOW_MINIMIZED); }
 bool Platform::WindowHasFocus() { return GameWindow && (SDL_GetWindowFlags(GameWindow) & SDL_WINDOW_INPUT_FOCUS); }
+void Platform::SetWindowTitle(const char* title) { if (GameWindow) SDL_SetWindowTitle(GameWindow, title); }
 
 bool Platform::CreateGameWindow(const char* title, int width, int height, bool windowed)
 {

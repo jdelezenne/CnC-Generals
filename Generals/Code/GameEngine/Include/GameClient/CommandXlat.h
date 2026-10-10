@@ -30,6 +30,7 @@
 #ifndef _H_CommandXlat
 #define _H_CommandXlat
 
+#include "GameClient/GUICommandType.h"
 #include "GameClient/ViewFilter.h"
 #include "GameClient/InGameUI.h"
 

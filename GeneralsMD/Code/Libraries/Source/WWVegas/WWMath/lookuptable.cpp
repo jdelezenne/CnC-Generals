@@ -37,8 +37,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "lookuptable.h"
+#include "Platform/StringCompare.h"
 #include "curve.h"
-#include "wwfile.h"
+#include "WWFILE.H"
 #include "ffactory.h"
 #include "chunkio.h"
 #include "persistfactory.h"
@@ -145,7 +146,7 @@ LookupTableClass * LookupTableMgrClass::Get_Table(const char * name,bool try_to_
 	// check if we already have this table loaded...
 	RefMultiListIterator<LookupTableClass> it(&Tables);
 	for (it.First(); !it.Is_Done(); it.Next()) {
-		if (stricmp(it.Peek_Obj()->Get_Name(),name) == 0) {
+		if (Platform::CompareNoCase(it.Peek_Obj()->Get_Name(),name) == 0) {
 			return it.Get_Obj(); // add a reference for the user...
 		}
 	}

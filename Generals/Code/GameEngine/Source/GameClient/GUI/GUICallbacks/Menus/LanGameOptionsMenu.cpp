@@ -174,7 +174,8 @@ static Int getFirstSelectablePlayer(const GameInfo *game)
 	if (!game->amIHost() || slot && slot->getPlayerTemplate() != PLAYERTEMPLATE_OBSERVER)
 		return game->getLocalSlotNum();
 
-	for (Int i=0; i<MAX_SLOTS; ++i)
+	Int i;
+	for (i=0; i<MAX_SLOTS; ++i)
 	{
 		slot = game->getConstSlot(i);
 		if (slot && slot->isAI())
@@ -196,7 +197,8 @@ static void playerTooltip(GameWindow *window,
 													UnsignedInt mouse)
 {
 	Int idx = -1;
-	for (Int i=0; i<MAX_SLOTS; ++i)
+	Int i;
+	for (i=0; i<MAX_SLOTS; ++i)
 	{
 		if (window && window == GadgetComboBoxGetEditBox(comboBoxPlayer[i]))
 		{
@@ -1112,7 +1114,7 @@ WindowMsgHandledType LanGameOptionsMenuSystem( GameWindow *window, UnsignedInt m
 					if( mapSelectLayout )
 						{
 							mapSelectLayout->destroyWindows();
-							mapSelectLayout->deleteInstance();
+							Platform::DeletePoolObject(mapSelectLayout);
 							mapSelectLayout = NULL;
 						}
 					TheLAN->RequestGameLeave();

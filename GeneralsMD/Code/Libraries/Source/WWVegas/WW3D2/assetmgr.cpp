@@ -78,6 +78,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "assetmgr.h"
+#include "Platform/StringCompare.h"
 #include <assert.h>
 
 #include "bittype.h"
@@ -111,8 +112,8 @@
 #include "dx8renderer.h"
 #include "metalmap.h"
 #include "w3dexclusionlist.h"
-#include <ini.h>
-#include <windows.h>
+#include <INI.H>
+
 #include <stdio.h>
 #include <d3dx8core.h>
 #include "texture.h"
@@ -564,7 +565,7 @@ void WW3DAssetManager::Free_Assets_With_Exclusion_List(const DynamicVectorClass<
 	memset(PrototypeHashTable,0,sizeof(PrototypeClass *) * PROTOTYPE_HASH_TABLE_SIZE);	
 
 	// re-add the prototypes that we saved
-	for (i=0; i<exclude_array.Count(); i++) {
+	for (int i=0; i<exclude_array.Count(); i++) {
 		Add_Prototype(exclude_array[i]);
 	}
 
@@ -808,10 +809,10 @@ RenderObjClass * WW3DAssetManager::Create_Render_Obj(const char * name)
 		AssetStatusClass::Peek_Instance()->Report_Load_On_Demand_RObj(name);
 
 		char filename [MAX_PATH];
-		char *mesh_name = ::strchr (name, '.');
+		const char *mesh_name = ::strchr (name, '.');
 		if (mesh_name != NULL) {
-			::lstrcpyn (filename, name, static_cast<int>(mesh_name - name) + 1);
-			::lstrcat (filename, ".w3d");
+			Platform::CopyString (filename, name, static_cast<int>(mesh_name - name) + 1);
+			::strcat (filename, ".w3d");
 		} else {
 			sprintf( filename, "%s.w3d", name);
 		}
@@ -989,7 +990,7 @@ HAnimClass *	WW3DAssetManager::Get_HAnim(const char * name)
 			AssetStatusClass::Peek_Instance()->Report_Load_On_Demand_HAnim(name);
 
 			char filename[ MAX_PATH ];
-			char *animname = strchr( name, '.');
+			const char *animname = strchr( name, '.');
 			if (animname != NULL) {
 				sprintf( filename, "%s.w3d", animname+1);
 			} else {
@@ -1101,7 +1102,7 @@ TextureClass * WW3DAssetManager::Get_Texture
 	}
 
 	StringClass lower_case_name(filename,true);
-	_strlwr(lower_case_name.Peek_Buffer());
+	Platform::LowerCase(lower_case_name.Peek_Buffer());
 
 	/*
 	** See if the texture has already been loaded.
@@ -1352,7 +1353,7 @@ Font3DDataClass * WW3DAssetManager::Get_Font3DData( const char *name )
 	// loop through and see if the Font3D we are looking for has already been
 	// allocated and thus we can just return it.
 	for (	SLNode<Font3DDataClass> *node = Font3DDatas.Head(); node; node = node->Next()) {
-		if (!stricmp(name, node->Data()->Name)) {
+		if (!Platform::CompareNoCase(name, node->Data()->Name)) {
 			node->Data()->Add_Ref();
 			return node->Data();
 		}
@@ -1600,7 +1601,7 @@ void WW3DAssetManager::Remove_Prototype(PrototypeClass *proto)
 			  test = test->friend_getNextHash()) {
 			
 			// Is this the prototype?
-			if (::stricmp (test->Get_Name(), pname) == 0) {
+			if (Platform::CompareNoCase(test->Get_Name(), pname) == 0) {
 				
 				// Remove this prototype from the linked list for this hash index.
 				if (prev == NULL) {
@@ -1672,7 +1673,7 @@ void WW3DAssetManager::Remove_Prototype(const char *name)
 PrototypeClass * WW3DAssetManager::Find_Prototype(const char * name)
 {
 	// Special case Null render object.  So we always have it...
-	if (stricmp(name,"NULL") == 0) {
+	if (Platform::CompareNoCase(name,"NULL") == 0) {
 		return &(_NullPrototype);
 	}
 	
@@ -1681,7 +1682,7 @@ PrototypeClass * WW3DAssetManager::Find_Prototype(const char * name)
 	PrototypeClass * test = PrototypeHashTable[hash];
 
 	while (test != NULL) {
-		if (stricmp(test->Get_Name(),name) == 0) {
+		if (Platform::CompareNoCase(test->Get_Name(),name) == 0) {
 			return test;
 		}
 		test = test->friend_getNextHash();

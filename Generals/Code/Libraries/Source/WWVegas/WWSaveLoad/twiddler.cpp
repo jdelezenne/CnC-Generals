@@ -37,7 +37,7 @@
 
 #include "twiddler.h"
 #include "Platform/Clock.h"
-#include "random.h"
+#include "RANDOM.H"
 #include "saveloadids.h"
 #include "simpledefinitionfactory.h"
 #include "persistfactory.h"

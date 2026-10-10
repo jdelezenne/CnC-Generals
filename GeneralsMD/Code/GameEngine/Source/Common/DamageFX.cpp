@@ -30,6 +30,7 @@
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
+#include "Platform/StringCompare.h"
 
 #include "Common/INI.h"
 #include "Common/ThingFactory.h"
@@ -157,7 +158,7 @@ static void parseCommonStuff(
 	}
 
 	const char* damageName = ini->getNextToken();
-	if (stricmp(damageName, "Default") == 0)
+	if (Platform::CompareNoCase(damageName, "Default") == 0)
 	{
 		damageFirst = (DamageType)0;
 		damageLast = (DamageType)(DAMAGE_NUM_TYPES - 1);

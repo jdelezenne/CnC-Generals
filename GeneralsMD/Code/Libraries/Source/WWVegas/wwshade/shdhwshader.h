@@ -67,15 +67,6 @@ public:
 
 protected:
 
-	void Shell_Run(char* cmd);
-
-	void Preprocess_And_Assemble_Shader_From_File
-	(
-		char*				file_name,
-		LPD3DXBUFFER*	constants,
-		LPD3DXBUFFER*	shader_code
-	);
-
 	DWORD Shader;
 };
 
@@ -83,12 +74,6 @@ class ShdHWVertexShader : public ShdHWShader
 {
 public:
 	virtual ~ShdHWVertexShader();
-
-	DWORD Create
-	(
-		char* file_name, 
-		DWORD* vertex_shader_declaration
-	);
 
 	DWORD Create
 	(
@@ -124,7 +109,7 @@ class ShdHWPixelShader : public ShdHWShader
 public:
 	virtual ~ShdHWPixelShader();
 
-	DWORD Create(char* file_name);
+
 	DWORD Create(DWORD* shader_code);
 
 	void Destroy();

@@ -128,7 +128,7 @@ class AudioFileCache
 		OpenFilesHash m_openFiles;
 		UnsignedInt m_currentlyUsedSize;
 		UnsignedInt m_maxSize;
-		HANDLE m_mutex;
+		void* m_mutex;
 		const char *m_mutexName;
 };
 

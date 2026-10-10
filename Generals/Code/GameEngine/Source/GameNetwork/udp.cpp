@@ -29,6 +29,9 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Sockets.h"
+#include <cerrno>
+#include <cstring>
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
 #include "Common/GameEngine.h"
@@ -49,6 +52,7 @@
 
 AsciiString GetWSAErrorString( Int error )
 {
+#ifdef _WIN32
 	switch (error)
 	{
 		CASE(WSABASEERR)
@@ -111,6 +115,9 @@ AsciiString GetWSAErrorString( Int error )
 		}
 	}
 	return AsciiString::TheEmptyString; // will not be hit, ever.
+#else
+	return AsciiString(std::strerror(error));
+#endif
 }
 
 #undef CASE
@@ -127,7 +134,7 @@ UDP::UDP()
 UDP::~UDP()
 {
 	if (fd)
-		closesocket(fd);
+		Platform::CloseSocket(fd);
 }
 
 Int UDP::Bind(const char *Host,UnsignedShort port)
@@ -171,13 +178,11 @@ Int UDP::Bind(UnsignedInt IP,UnsignedShort Port)
 
   retval=bind(fd,(struct sockaddr *)&addr,sizeof(addr));
 
-  #ifdef _WINDOWS
-  if (retval==SOCKET_ERROR)
+  if (retval==-1)
 	{
     retval=-1;
-		m_lastError = WSAGetLastError();
+		m_lastError = Platform::LastSocketError();
 	}
-  #endif
   if (retval==-1)
   {
     status=GetStatus();
@@ -186,7 +191,7 @@ Int UDP::Bind(UnsignedInt IP,UnsignedShort Port)
   }
 
   int namelen=sizeof(addr);
-  getsockname(fd, (struct sockaddr *)&addr, &namelen); 
+  Platform::SocketAddress(fd, (struct sockaddr *)&addr, namelen);
 
   myIP=ntohl(addr.sin_addr.s_addr);
   myPort=ntohs(addr.sin_port);
@@ -215,7 +220,7 @@ Int UDP::SetBlocking(Int block)
      flag=0;
    int retval;
    retval=ioctlsocket(fd,FIONBIO,&flag);
-   if (retval==SOCKET_ERROR)
+   if (retval==-1)
      return(UNKNOWN);
    else
      return(OK);
@@ -252,17 +257,15 @@ Int UDP::Write(const unsigned char *msg,UnsignedInt len,UnsignedInt IP,UnsignedS
 
   ClearStatus();
   retval=sendto(fd,(const char *)msg,len,0,(struct sockaddr *)&to,sizeof(to));
-  #ifdef _WINDOWS
-  if (retval==SOCKET_ERROR)
+  if (retval==-1)
 	{
     retval=-1;
-		m_lastError = WSAGetLastError();
+		m_lastError = Platform::LastSocketError();
 #ifdef DEBUG_LOGGING
 		static Int errCount = 0;
 #endif
-		DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Write() - WSA error is %s\n", GetWSAErrorString(WSAGetLastError()).str()));
+		DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Write() - WSA error is %s\n", GetWSAErrorString(Platform::LastSocketError()).str()));
 	}
-  #endif
   
   return(retval);
 }
@@ -274,18 +277,18 @@ Int UDP::Read(unsigned char *msg,UnsignedInt len,sockaddr_in *from)
 
   if (from!=NULL)
   {
-    retval=recvfrom(fd,(char *)msg,len,0,(struct sockaddr *)from,&alen);
+    retval=Platform::ReadDatagram(fd,msg,len,(struct sockaddr *)from,&alen);
     #ifdef _WINDOWS
     if (retval == SOCKET_ERROR)
 		{
-			if (WSAGetLastError() != WSAEWOULDBLOCK)
+			if (!Platform::SocketWouldBlock(Platform::LastSocketError()))
 			{
 				// failing because of a blocking error isn't really such a bad thing.
-				m_lastError = WSAGetLastError();
+				m_lastError = Platform::LastSocketError();
 #ifdef DEBUG_LOGGING
 				static Int errCount = 0;
 #endif
-				DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Read() - WSA error is %s\n", GetWSAErrorString(WSAGetLastError()).str()));
+				DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Read() - WSA error is %s\n", GetWSAErrorString(Platform::LastSocketError()).str()));
 				retval = -1;
 			} else {
 				retval = 0;
@@ -295,24 +298,22 @@ Int UDP::Read(unsigned char *msg,UnsignedInt len,sockaddr_in *from)
   }
   else
   {
-    retval=recvfrom(fd,(char *)msg,len,0,NULL,NULL);
-    #ifdef _WINDOWS
-    if (retval==SOCKET_ERROR)
+    retval=Platform::ReadDatagram(fd,msg,len,NULL,NULL);
+    if (retval==-1)
 		{
-			if (WSAGetLastError() != WSAEWOULDBLOCK)
+			if (!Platform::SocketWouldBlock(Platform::LastSocketError()))
 			{
 				// failing because of a blocking error isn't really such a bad thing.
-				m_lastError = WSAGetLastError();
+				m_lastError = Platform::LastSocketError();
 #ifdef DEBUG_LOGGING
 				static Int errCount = 0;
 #endif
-				DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Read() - WSA error is %s\n", GetWSAErrorString(WSAGetLastError()).str()));
+				DEBUG_ASSERTLOG(errCount++ > 100, ("UDP::Read() - WSA error is %s\n", GetWSAErrorString(Platform::LastSocketError()).str()));
 				retval = -1;
 			} else {
 				retval = 0;
 			}
 		}
-    #endif
   }
   return(retval);
 }
@@ -331,7 +332,7 @@ UDP::sockStat UDP::GetStatus(void)
 {
 	Int status = m_lastError;
  #ifdef _WINDOWS
-  //int status=WSAGetLastError();
+  //int status=Platform::LastSocketError();
   if (status==0) return(OK);
   else if (status==WSAEINTR) return(INTR);
   else if (status==WSAEINPROGRESS) return(INPROGRESS);
@@ -486,8 +487,7 @@ int UDP::GetInputBuffer(void)
 {
    int retval,arg=0,len=sizeof(int);
 
-   retval=getsockopt(fd,SOL_SOCKET,SO_RCVBUF,
-     (char *)&arg,&len);
+   retval=Platform::SocketOption(fd,SOL_SOCKET,SO_RCVBUF,&arg,len);
    return(arg);
 }
 
@@ -496,16 +496,15 @@ int UDP::GetOutputBuffer(void)
 {
    int retval,arg=0,len=sizeof(int);
 
-   retval=getsockopt(fd,SOL_SOCKET,SO_SNDBUF,
-     (char *)&arg,&len);
+   retval=Platform::SocketOption(fd,SOL_SOCKET,SO_SNDBUF,&arg,len);
    return(arg);
 }
 
 Int UDP::AllowBroadcasts(Bool status)
 {
 	int retval;
-	BOOL val = status;
-	retval = setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char *)&val, sizeof(BOOL));
+	int val = status;
+	retval = setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char *)&val, sizeof(val));
 	if (retval == 0)
 		return TRUE;
 	else

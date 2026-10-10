@@ -121,7 +121,7 @@ class Overridable : public MemoryPoolObject
 __inline Overridable::~Overridable() 
 {
 	if (m_nextOverride) 
-		m_nextOverride->deleteInstance();
+		Platform::DeletePoolObject(m_nextOverride);
 }
 
 

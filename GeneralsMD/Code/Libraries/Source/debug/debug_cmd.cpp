@@ -27,7 +27,7 @@
 // Debug command group 'debug'
 //////////////////////////////////////////////////////////////////////////////
 #include "_pch.h"
-#include <process.h>
+#include <cstdlib>
 
 bool DebugCmdInterfaceDebug::Execute(class Debug& dbg, const char *cmd, 
                                      CommandMode cmdmode, unsigned argn, 
@@ -183,7 +183,7 @@ bool DebugCmdInterfaceDebug::Execute(class Debug& dbg, const char *cmd,
                 continue;
 
               char help[256];
-              wsprintf(help,"%s(%i)",cur->fileOrGroup,cur->line);
+              sprintf(help,"%s(%i)",cur->fileOrGroup,cur->line);
               if (Debug::SimpleMatch(help,pattern))
               {
                 dbg << help << " (" << cur->hits << " hits)";
@@ -227,7 +227,8 @@ bool DebugCmdInterfaceDebug::Execute(class Debug& dbg, const char *cmd,
       // regular I/O command
 
       // find I/O class
-      for (Debug::IOFactoryListEntry *cur=dbg.firstIOFactory;cur;cur=cur->next)
+      Debug::IOFactoryListEntry * cur;
+      for (cur=dbg.firstIOFactory;cur;cur=cur->next)
         if (!strcmp(argv[0],cur->ioID))
           break;
       if (!cur)
@@ -357,7 +358,8 @@ bool DebugCmdInterfaceDebug::Execute(class Debug& dbg, const char *cmd,
       // must fixup lastPatternEntry now
       if (dbg.firstPatternEntry)
       {
-        for (Debug::PatternListEntry *cur=dbg.firstPatternEntry;cur->next;cur=cur->next);
+        Debug::PatternListEntry * cur;
+        for (cur=dbg.firstPatternEntry;cur->next;cur=cur->next);
         dbg.lastPatternEntry=cur;
       }
       else

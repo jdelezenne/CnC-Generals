@@ -28,6 +28,8 @@
 // Subsequently : John Ahlquist 2002 and a cast of thousands.
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include <cmath>
+#include "Platform/StringCompare.h"
 
 #define DEFINE_LOCOMOTORSET_NAMES					// for TheLocomotorSetNames[]
 #define DEFINE_AUTOACQUIRE_NAMES
@@ -101,7 +103,7 @@ AIUpdateModuleData::~AIUpdateModuleData()
 		{
 			TurretAIData* td = const_cast<TurretAIData*>(m_turretData[i]);
 			if (td)
-				td->deleteInstance();
+				Platform::DeletePoolObject(td);
 		}
 	}
 }
@@ -180,7 +182,7 @@ const LocomotorTemplateVector* AIUpdateModuleData::findLocomotorTemplateVector(L
 	self->m_locomotorTemplates[set].clear();
 	for (const char* locoName = ini->getNextToken(); locoName; locoName = ini->getNextTokenOrNull())
 	{
-		if (!*locoName || !stricmp(locoName, "None"))
+		if (!*locoName || !Platform::CompareNoCase(locoName, "None"))
 			continue;
 
 		NameKeyType locoKey = NAMEKEY(locoName);
@@ -638,13 +640,13 @@ AIUpdateInterface::~AIUpdateInterface( void )
 
 	if( m_stateMachine ) {
 		m_stateMachine->halt();
-		m_stateMachine->deleteInstance();
+		Platform::DeletePoolObject(m_stateMachine);
 	}
 
 	for (int i = 0; i < MAX_TURRETS; i++)
 	{
 		if (m_turretAI[i])
-			m_turretAI[i]->deleteInstance();
+			Platform::DeletePoolObject(m_turretAI[i]);
 		m_turretAI[i] = NULL;
 	}
 	m_stateMachine = NULL;
@@ -1984,7 +1986,7 @@ void AIUpdateInterface::destroyPath( void )
 {
 	// destroy previous path
 	if (m_path)
-		m_path->deleteInstance();
+		Platform::DeletePoolObject(m_path);
 
 	m_path = NULL;
 	m_waitingForPath = FALSE; // we no longer need it.
@@ -2291,7 +2293,7 @@ void AIUpdateInterface::setLocomotorGoalPositionExplicit(const Coord3D& newPos)
 	m_locomotorGoalType = POSITION_EXPLICIT;
 	m_locomotorGoalData = newPos;
 #ifdef _DEBUG
-if (_isnan(m_locomotorGoalData.x) || _isnan(m_locomotorGoalData.y) || _isnan(m_locomotorGoalData.z))
+if (std::isnan(m_locomotorGoalData.x) || std::isnan(m_locomotorGoalData.y) || std::isnan(m_locomotorGoalData.z))
 {
 	DEBUG_CRASH(("NAN in setLocomotorGoalPositionExplicit"));
 }
@@ -2304,7 +2306,7 @@ void AIUpdateInterface::setLocomotorGoalOrientation(Real angle)
 	m_locomotorGoalType = ANGLE;
 	m_locomotorGoalData.x = angle;
 #ifdef _DEBUG
-if (_isnan(m_locomotorGoalData.x) || _isnan(m_locomotorGoalData.y) || _isnan(m_locomotorGoalData.z))
+if (std::isnan(m_locomotorGoalData.x) || std::isnan(m_locomotorGoalData.y) || std::isnan(m_locomotorGoalData.z))
 {
 	DEBUG_CRASH(("NAN in setLocomotorGoalOrientation"));
 }

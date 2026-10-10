@@ -130,7 +130,8 @@ WW3DFormat D3DFormat_To_WW3DFormat(D3DFORMAT d3d_format)
 
 void Init_D3D_To_WW3_Conversion()
 {
-	for (int i=0;i<HIGHEST_SUPPORTED_D3DFORMAT;++i) {
+	int i;
+	for (i=0;i<HIGHEST_SUPPORTED_D3DFORMAT;++i) {
 		D3DFormatToWW3DFormatConversionArray[i]=WW3D_FORMAT_UNKNOWN;
 	}
 

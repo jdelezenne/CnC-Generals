@@ -39,7 +39,7 @@
 #include "GameLogic/TerrainLogic.h"
 #include "GameLogic/Module/SpawnPointProductionExitUpdate.h"
 
-#include "WWMath/Matrix3D.h"		///< @todo Replace with our own matrix library
+#include "WWMath/matrix3d.h"		///< @todo Replace with our own matrix library
 
 //-------------------------------------------------------------------------------------------------
 SpawnPointProductionExitUpdate::SpawnPointProductionExitUpdate( Thing *thing, const ModuleData* moduleData ) : UpdateModule( thing, moduleData )
@@ -71,7 +71,8 @@ void SpawnPointProductionExitUpdate::exitObjectViaDoor( Object *newObj, ExitDoor
 	Object *creationObject = getObject();
 	if (creationObject)
 	{
-		for( Int positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
+		Int positionIndex;
+		for( positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
 		{
 			if( m_spawnPointOccupier[positionIndex] == INVALID_ID )
 				break;
@@ -123,7 +124,8 @@ ExitDoorType SpawnPointProductionExitUpdate::reserveDoorForExit( const ThingTemp
 
 	revalidateOccupiers();
 
-	for( Int positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
+	Int positionIndex;
+		for( positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
 	{
 		if( m_spawnPointOccupier[positionIndex] == INVALID_ID )
 			return DOOR_1;
@@ -149,7 +151,8 @@ void SpawnPointProductionExitUpdate::initializeBonePositions()
 		return;
 
 	Matrix3D boneTransforms[MAX_SPAWN_POINTS];
-	for( Int matrixIndex = 0; matrixIndex < MAX_SPAWN_POINTS; matrixIndex++ )
+	Int matrixIndex;
+ for( matrixIndex = 0; matrixIndex < MAX_SPAWN_POINTS; matrixIndex++ )
 		boneTransforms[matrixIndex].Make_Identity();
 
 	// Get all the bones of the right name
@@ -176,7 +179,8 @@ void SpawnPointProductionExitUpdate::initializeBonePositions()
 //-------------------------------------------------------------------------------------------------
 void SpawnPointProductionExitUpdate::revalidateOccupiers()
 {
-	for( Int positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
+	Int positionIndex;
+		for( positionIndex = 0; positionIndex < m_spawnPointCount; positionIndex++ )
 	{
 		if( m_spawnPointOccupier[positionIndex] == INVALID_ID )
 			continue;

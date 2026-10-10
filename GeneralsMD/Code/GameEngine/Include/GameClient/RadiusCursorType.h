@@ -1,0 +1,60 @@
+/*
+**	Command & Conquer Generals Zero Hour(tm)
+**	Copyright 2025 Electronic Arts Inc.
+**
+**	This program is free software: you can redistribute it and/or modify
+**	it under the terms of the GNU General Public License as published by
+**	the Free Software Foundation, either version 3 of the License, or
+**	(at your option) any later version.
+**
+**	This program is distributed in the hope that it will be useful,
+**	but WITHOUT ANY WARRANTY; without even the implied warranty of
+**	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**	GNU General Public License for more details.
+**
+**	You should have received a copy of the GNU General Public License
+**	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+enum RadiusCursorType
+{
+	RADIUSCURSOR_NONE = 0,
+	RADIUSCURSOR_ATTACK_DAMAGE_AREA,
+	RADIUSCURSOR_ATTACK_SCATTER_AREA,
+	RADIUSCURSOR_ATTACK_CONTINUE_AREA,
+	RADIUSCURSOR_GUARD_AREA,
+	RADIUSCURSOR_EMERGENCY_REPAIR,
+	RADIUSCURSOR_FRIENDLY_SPECIALPOWER,
+	RADIUSCURSOR_OFFENSIVE_SPECIALPOWER,
+	RADIUSCURSOR_SUPERWEAPON_SCATTER_AREA,
+	
+	RADIUSCURSOR_PARTICLECANNON, 
+	RADIUSCURSOR_A10STRIKE,
+	RADIUSCURSOR_CARPETBOMB,
+	RADIUSCURSOR_DAISYCUTTER,
+	RADIUSCURSOR_PARADROP,
+	RADIUSCURSOR_SPYSATELLITE, 
+	RADIUSCURSOR_SPECTREGUNSHIP,
+	RADIUSCURSOR_HELIX_NAPALM_BOMB,
+
+	RADIUSCURSOR_NUCLEARMISSILE, 
+	RADIUSCURSOR_EMPPULSE,
+	RADIUSCURSOR_ARTILLERYBARRAGE,
+	RADIUSCURSOR_NAPALMSTRIKE,
+	RADIUSCURSOR_CLUSTERMINES,
+
+	RADIUSCURSOR_SCUDSTORM, 
+	RADIUSCURSOR_ANTHRAXBOMB,
+	RADIUSCURSOR_AMBUSH, 
+	RADIUSCURSOR_RADAR,
+	RADIUSCURSOR_SPYDRONE,
+	RADIUSCURSOR_FRENZY,
+	
+	RADIUSCURSOR_CLEARMINES,
+	RADIUSCURSOR_AMBULANCE,
+
+
+	RADIUSCURSOR_COUNT	// keep last
+};

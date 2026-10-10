@@ -37,6 +37,8 @@
 #include <cstdint>
 #include "wwstring.h"
 #include "win.h"
+#include "Platform/Text.h"
+#include "Platform/TextFormat.h"
 #include "wwmemlog.h"
 #include "mutex.h"
 #include <stdio.h>
@@ -238,7 +240,7 @@ StringClass::Free_String (void)
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 StringClass::Format_Args (const TCHAR *format, const va_list & arg_list )
 {
 	//
@@ -250,11 +252,7 @@ StringClass::Format_Args (const TCHAR *format, const va_list & arg_list )
 	//
 	//	Format the string
 	//
-	#ifdef _UNICODE
-		retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
-	#else
-		retval = _vsnprintf (temp_buffer, 512, format, arg_list);
-	#endif
+	retval = Platform::FormatText(temp_buffer, sizeof(temp_buffer)/sizeof(TCHAR), format, arg_list);
 	
 	//
 	//	Copy the string into our buffer
@@ -270,7 +268,7 @@ StringClass::Format_Args (const TCHAR *format, const va_list & arg_list )
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 StringClass::Format (const TCHAR *format, ...)
 {
 	va_list arg_list;
@@ -285,11 +283,7 @@ StringClass::Format (const TCHAR *format, ...)
 	//
 	//	Format the string
 	//
-	#ifdef _UNICODE
-		retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
-	#else
-		retval = _vsnprintf (temp_buffer, 512, format, arg_list);
-	#endif
+	retval = Platform::FormatText(temp_buffer, sizeof(temp_buffer)/sizeof(TCHAR), format, arg_list);
 	
 	//
 	//	Copy the string into our buffer
@@ -319,25 +313,15 @@ StringClass::Release_Resources (void)
 ///////////////////////////////////////////////////////////////////
 bool StringClass::Copy_Wide (const WCHAR *source)
 {
-	if (source != NULL) {
-
-		int  length;
-		BOOL unmapped;
-			
-		length = WideCharToMultiByte (CP_ACP, 0 , source, -1, NULL, 0, NULL, &unmapped);
-		if (length > 0) {
-
-			// Convert.
-			WideCharToMultiByte (CP_ACP, 0, source, -1, Get_Buffer (length), length, NULL, NULL);
-
-			// Update length.
-			Store_Length (length - 1);
-		}
-
-		// Were all characters successfully mapped?
-		return (!unmapped);
-	}
-
-	// Failure.
-	return (false);
+    if (source != NULL) {
+        std::string converted;
+        bool unmapped = false;
+        if (Platform::NarrowFromWide(source, converted, unmapped)) {
+            int length = static_cast<int>(converted.size()) + 1;
+            memcpy(Get_Buffer(length), converted.c_str(), length);
+            Store_Length(length - 1);
+            return !unmapped;
+        }
+    }
+    return false;
 }

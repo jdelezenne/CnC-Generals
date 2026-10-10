@@ -34,6 +34,9 @@
 
 
 #include "agg_def.h"
+#include "Platform/Paths.h"
+#include "Platform/Directory.h"
+#include "Platform/StringCompare.h"
 #include "htree.h"
 #include "w3derr.h"
 #include "chunkio.h"
@@ -43,7 +46,7 @@
 #include "texture.h"
 #include "wwstring.h"
 
-#include <windows.h>
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +122,7 @@ AggregateDefClass::~AggregateDefClass (void)
 	// Free the name buffer if necessary
 	if (m_pName != NULL) {
 		
-		// free() is used because the buffer was allocated with ::_strdup().
+		// free() is used because the buffer was allocated with Platform::DuplicateString().
 		::free (m_pName);
 		m_pName = NULL;
 	}	
@@ -256,7 +259,7 @@ AggregateDefClass::Find_Subobject
 				
 				// Is this the subobject we were looking for?
 				RenderObjClass *ptemp_obj = parent_model->Get_Sub_Object_On_Bone (subobj_index, bone_index);
-				if (::lstrcmpi (ptemp_obj->Get_Name (), mesh_path[index]) == 0) {
+				if (Platform::CompareNoCase (ptemp_obj->Get_Name (), mesh_path[index]) == 0) {
 					sub_obj = ptemp_obj;
 				} else {
 					REF_PTR_RELEASE (ptemp_obj);
@@ -350,19 +353,19 @@ AggregateDefClass::Load_Assets (const char *passet_name)
 		
 		// Determine what the current working directory is
 		char path[MAX_PATH];
-		::GetCurrentDirectory (sizeof (path), path);
+		Platform::CopyString(path, Platform::WorkingDirectory().c_str(), sizeof(path));
 
 		// Ensure the path is directory delimited
-		if (path[::lstrlen(path)-1] != '\\') {
-			::lstrcat (path, "\\");
+		if (path[::strlen(path)-1] != '\\') {
+			::strcat (path, "\\");
 		}
 
 		// Assume the filename is simply the "asset name" + the w3d extension
-		::lstrcat (path, passet_name);
-		::lstrcat (path, ".w3d");
+		::strcat (path, passet_name);
+		::strcat (path, ".w3d");
 
 		// If the file exists, then load it into the asset manager.
-		if (::GetFileAttributes (path) != 0xFFFFFFFF) {
+		if (Platform::PathExists(path)) {
 			retval = WW3DAssetManager::Get_Instance()->Load_3D_Assets (path);
 		}
 	}
@@ -387,7 +390,7 @@ AggregateDefClass::Initialize (RenderObjClass &base_model)
 	orig_model_name = (orig_model_name == NULL) ? base_model.Get_Name () : orig_model_name;
 
 	// Record information about this base model
-	::lstrcpy (m_Info.BaseModelName, orig_model_name);
+	::strcpy (m_Info.BaseModelName, orig_model_name);
 	m_Info.SubobjectCount = 0;
 	m_MiscInfo.OriginalClassID = base_model.Class_ID ();
 	m_MiscInfo.Flags = 0;	
@@ -467,8 +470,8 @@ AggregateDefClass::Build_Subobject_List
 					 (Is_Object_In_List (prototype_name, orig_node_list) == false)) {
 					
 					// Add this subobject to our list
-					::lstrcpy (subobj_info.SubobjectName, prototype_name);
-					::lstrcpy (subobj_info.BoneName, pbone_name);
+					::strcpy (subobj_info.SubobjectName, prototype_name);
+					::strcpy (subobj_info.BoneName, pbone_name);
 					Add_Subobject (subobj_info);
 					m_Info.SubobjectCount ++;
 
@@ -519,7 +522,7 @@ AggregateDefClass::Is_Object_In_List
 		
 		// Is this the render object we were looking for?
 		if (prender_obj != NULL &&
-		    ::lstrcmpi (prender_obj->Get_Name (), passet_name) == 0) {
+		    Platform::CompareNoCase (prender_obj->Get_Name (), passet_name) == 0) {
 			retval = true;
 		}
 	}	
@@ -593,7 +596,7 @@ AggregateDefClass::Read_Header (ChunkLoadClass &chunk_load)
 	if (chunk_load.Read (&header, sizeof (header)) == sizeof (header)) {
 
 		// Copy the name from the header structure
-		m_pName = ::_strdup (header.Name);
+		m_pName = Platform::DuplicateString (header.Name);
 		m_Version = header.Version;
 
 		// Success!
@@ -672,8 +675,8 @@ AggregateDefClass::Add_Subobject (const W3dAggregateSubobjectStruct &subobj_info
 {
 	// Create a new structure and copy the contents of the src
 	W3dAggregateSubobjectStruct *pnew_entry = W3DNEW W3dAggregateSubobjectStruct;
-	::lstrcpy (pnew_entry->SubobjectName, subobj_info.SubobjectName);
-	::lstrcpy (pnew_entry->BoneName, subobj_info.BoneName);
+	::strcpy (pnew_entry->SubobjectName, subobj_info.SubobjectName);
+	::strcpy (pnew_entry->BoneName, subobj_info.BoneName);
 
 	// Add this new entry to the list
 	m_SubobjectList.Add (pnew_entry);
@@ -751,7 +754,7 @@ AggregateDefClass::Save_Header (ChunkSaveClass &chunk_save)
 		// Fill the header structure
 		W3dAggregateHeaderStruct header = { 0 };
 		header.Version = W3D_CURRENT_AGGREGATE_VERSION;
-		::lstrcpyn (header.Name, m_pName, sizeof (header.Name));
+		Platform::CopyString (header.Name, m_pName, sizeof (header.Name));
 		header.Name[sizeof (header.Name) - 1] = 0;
 
 		// Write the header out to the chunk

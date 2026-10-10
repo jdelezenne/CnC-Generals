@@ -1,5 +1,5 @@
 /*
-**	Command & Conquer Generals Zero Hour(tm)
+**	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
 **
 **	This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
  *                                                                                             *
  *                 Project Name : Commando / G Library                                         *
  *                                                                                             *
- *                     $Archive:: /Commando/Code/wwlib/registry.h                             $*
+ *                     $Archive:: /Commando/Code/wwlib/Settings.h                             $*
  *                                                                                             *
  *                      $Author:: Steve_t                                                     $*
  *                                                                                             *
@@ -41,11 +41,10 @@
 #define REGISTRY_H
 
 #ifndef ALWAYS_H
-#include <cstdint>
 #include "always.h"
 #endif
 
-#include "vector.h"
+#include "Vector.H"
 #include "wwstring.h"
 #include "widestring.h"
 
@@ -102,7 +101,7 @@ public:
 	static void Set_Read_Only(bool set) {IsLocked = set;}
 
 	//
-	// Bulk registry operations. BE VERY VERY CAREFUL USING THESE
+	// Bulk settings operations. BE VERY VERY CAREFUL USING THESE
 	//
 	static void Delete_Registry_Tree(char *path);
 	static void Load_Registry(const char *filename, char *old_path, char *new_path);
@@ -111,16 +110,11 @@ public:
 
 private:
 
-	static void Delete_Registry_Values(HKEY key);
-	static void Save_Registry_Tree(char *path, INIClass *ini);
-	static void Save_Registry_Values(HKEY key, char *path, INIClass *ini);
-
-
-	std::intptr_t	Key;
+	StringClass Section;
 	bool	IsValid;
 
 	//
-	// Use this to make the registry 'read only'. Useful for running multiple copies of the app.
+	// Use this to make the settings 'read only'. Useful for running multiple copies of the app.
 	//
 	static bool IsLocked;
 };

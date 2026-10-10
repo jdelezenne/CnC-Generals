@@ -29,6 +29,7 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "Common/GameCommon.h"
+#include <cmath>
 
 const char *TheVeterancyNames[] = 
 {
@@ -50,9 +51,9 @@ const char *TheRelationshipNames[] =
 //-------------------------------------------------------------------------------------------------
 Real normalizeAngle(Real angle)
 {
-	DEBUG_ASSERTCRASH(!_isnan(angle), ("Angle is NAN in normalizeAngle!\n"));
+	DEBUG_ASSERTCRASH(!std::isnan(static_cast<double>(angle)), ("Angle is NAN in normalizeAngle!\n"));
 	
-	if( _isnan(angle) )
+	if( std::isnan(static_cast<double>(angle)) )
 		return 0;// ARGH!!!! Don't assert and then not handle it!  Error bad!  Fix error!
 
 	while (angle > PI) 

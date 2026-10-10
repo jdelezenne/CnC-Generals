@@ -28,8 +28,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include "Platform/Windows/Window.h"
+#include "Platform/Cursor.h"
+
 
 #include "Common/Debug.h"
 #include "Platform/Input.h"
@@ -37,7 +37,7 @@
 #include "Common/LocalFileSystem.h"
 #include "GameClient/GameClient.h"
 #include "Win32Device/GameClient/Win32Mouse.h"
-#include "WinMain.h"
+
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -48,7 +48,7 @@
 // EXTERN /////////////////////////////////////////////////////////////////////////////////////////
 extern Win32Mouse *TheWin32Mouse;
 
-HCURSOR cursorResources[Mouse::NUM_MOUSE_CURSORS][MAX_2D_CURSOR_DIRECTIONS];
+Platform::Cursor* cursorResources[Mouse::NUM_MOUSE_CURSORS][MAX_2D_CURSOR_DIRECTIONS];
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // PRIVATE FUNCTIONS //////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,198 +81,8 @@ UnsignedByte Win32Mouse::getMouseEvent( MouseIO *result, Bool flush )
 //-------------------------------------------------------------------------------------------------
 /** Translate a win32 mouse event to our own event info */
 //-------------------------------------------------------------------------------------------------
-void Win32Mouse::translateEvent( UnsignedInt eventIndex, MouseIO *result )
-{
-	UINT msg = m_eventBuffer[ eventIndex ].msg;
-	WPARAM wParam = m_eventBuffer[ eventIndex ].wParam;
-	LPARAM lParam = m_eventBuffer[ eventIndex ].lParam;
-	UnsignedInt frame;
-
-	//
-	// get the current input frame from the client, if we don't have
-	// a client (like in the GUI editor) we just use frame 1 so it
-	// registers with the system
-	//
-	if( TheGameClient )
-		frame = TheGameClient->getFrame();
-	else
-		frame = 1;
-
-	// set these to defaults
-	result->leftState = result->middleState = result->rightState = MBS_Up;
-	result->leftFrame = result->middleFrame = result->rightFrame = 0;
-	result->pos.x = result->pos.y = result->wheelPos = 0;
-
-	// Time is the same for all events
-	result->time = m_eventBuffer[ eventIndex ].time;
-	
-	switch( msg )
-	{
-
-		// ------------------------------------------------------------------------
-		case WM_LBUTTONDOWN:
-		{
-			
-			result->leftState = MBS_Down;
-			result->leftFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end left button down
-
-		// ------------------------------------------------------------------------
-		case WM_LBUTTONUP:
-		{
-
-			result->leftState = MBS_Up;
-			result->leftFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end left button up
-
-		// ------------------------------------------------------------------------
-		case WM_LBUTTONDBLCLK:
-		{
-
-			result->leftState = MBS_DoubleClick;
-			result->leftFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end left button double click
-
-		// ------------------------------------------------------------------------
-		case WM_MBUTTONDOWN:
-		{
-
-			result->middleState = MBS_Down;
-			result->middleFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end middle button down
-
-		// ------------------------------------------------------------------------
-		case WM_MBUTTONUP:
-		{
-
-			result->middleState = MBS_Up;
-			result->middleFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end middle button up
-
-		// ------------------------------------------------------------------------
-		case WM_MBUTTONDBLCLK:
-		{
-
-			result->middleState = MBS_DoubleClick;
-			result->middleFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end middle button double click
-
-		// ------------------------------------------------------------------------
-		case WM_RBUTTONDOWN:
-		{
-
-			result->rightState = MBS_Down;
-			result->rightFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end right button down
-
-		// ------------------------------------------------------------------------
-		case WM_RBUTTONUP:
-		{
-
-			result->rightState = MBS_Up;
-			result->rightFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end right button up
-
-		// ------------------------------------------------------------------------
-		case WM_RBUTTONDBLCLK:
-		{
-
-			result->rightState = MBS_DoubleClick;
-			result->rightFrame = frame;
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end right button double click
-
-		// ------------------------------------------------------------------------
-		case WM_MOUSEMOVE:
-		{
-
-			result->pos.x = LOWORD( lParam );
-			result->pos.y = HIWORD( lParam );
-			break;
-
-		}  // end mouse move
-
-		// ------------------------------------------------------------------------
-		case 0x020A:	// WM_MOUSEWHEEL
-		{
-			POINT p;
-
-			// translate the screen mouse position to be relative to the application window
-			p.x = LOWORD( lParam );
-			p.y = HIWORD( lParam );
-			ScreenToClient( Platform::NativeGameWindow(), &p );
-	
-			// note the short cast here to keep signed information in tact
-			result->wheelPos = (Short)HIWORD( wParam );
-			result->pos.x = p.x;
-			result->pos.y = p.y;
-			break;
-
-		}  // end mouse wheel
-
-		// ------------------------------------------------------------------------
-		default:
-		{
-
-			DEBUG_CRASH(( "translateEvent: Unknown Win32 mouse event [%d,%d,%d]\n",
-							 msg, wParam, lParam ));
-			return;
-
-		}  // end default
-
-	}  // end switch on message at event index in buffer
-
-}  // end translateEvent
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// PUBLIC FUNCTIONS ///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-//-------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------
 Win32Mouse::Win32Mouse( void )
 {
-
-	// zero our event list
-	memset( &m_eventBuffer, 0, sizeof( m_eventBuffer ) );
-
-	m_nextFreeIndex = 0;
-	m_nextGetIndex = 0;
 	m_currentWin32Cursor = NONE;
 	for (Int i=0; i<NUM_MOUSE_CURSORS; i++)
 		for (Int j=0; j<MAX_2D_CURSOR_DIRECTIONS; j++)
@@ -288,6 +98,11 @@ Win32Mouse::~Win32Mouse( void )
 
 	// remove our global reference that was for the WndProc() only
 	TheWin32Mouse = NULL;
+	for (Int i=0; i<NUM_MOUSE_CURSORS; ++i)
+		for (Int j=0; j<MAX_2D_CURSOR_DIRECTIONS; ++j) {
+			Platform::DestroyCursor(cursorResources[i][j]);
+			cursorResources[i][j] = NULL;
+		}
 
 }  // end ~Win32Mouse
 
@@ -336,13 +151,6 @@ void Win32Mouse::update( void )
 /** Add a window message event along with its WPARAM and LPARAM parameters
 	* to our input storage buffer */
 //-------------------------------------------------------------------------------------------------
-void Win32Mouse::addWin32Event( UINT, WPARAM, LPARAM, DWORD )
-{
-    // SDL owns input events; this legacy window-procedure hook stays inert.
-}
-
-extern HINSTANCE ApplicationHInstance;
-
 void Win32Mouse::setVisibility(Bool visible)
 {
 	//Extend
@@ -379,17 +187,17 @@ void Win32Mouse::initCursorResources(void)
 
 					if (TheLocalFileSystem->doesFileExist(fname.str()))
 					{
-						cursorResources[cursor][direction]=LoadCursorFromFile(fname.str());
+						cursorResources[cursor][direction]=Platform::LoadCursorFile(fname.str());
 						loaded = TRUE;
 					}
 				}
 
 				if (!loaded)
-					cursorResources[cursor][direction]=LoadCursorFromFile(resourcePath);
+					cursorResources[cursor][direction]=Platform::LoadCursorFile(resourcePath);
 				DEBUG_ASSERTCRASH(cursorResources[cursor][direction], ("MissingCursor %s\n",resourcePath));
 			}
 		}
-//		SetCursor(cursorResources[cursor][m_directionFrame]);
+//		Platform::SetCursor(cursorResources[cursor][m_directionFrame]);
 	}
 }
 
@@ -405,10 +213,10 @@ void Win32Mouse::setCursor( MouseCursor cursor )
 		return;	//stop messing with mouse cursor if we don't have focus.
 
 	if (cursor == NONE || !m_visible)
-		SetCursor( NULL );
+		Platform::SetCursor(NULL);
 	else
 	{
-		SetCursor(cursorResources[cursor][m_directionFrame]);
+		Platform::SetCursor(cursorResources[cursor][m_directionFrame]);
 	}  // end switch
 
 	// save current cursor

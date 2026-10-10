@@ -24,18 +24,23 @@
 
 
 #include <stdio.h>
+#include "Platform/StringCompare.h"
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <stdlib.h>
-#include <process.h>
+
 #include <sys/stat.h>
-#include <io.h>
+
 #include <time.h>
 #include "assert.h"
 #include "ftp.h"
-#include "winsock.h"
+#include "Platform/Sockets.h"
+#include "Platform/Paths.h"
+#include "Platform/System.h"
+#include <SDL3/SDL.h>
+#include <filesystem>
 #include <time.h>
-#include <direct.h>
+
 #include <errno.h>
 //#include "wlib/wstring.h"
 
@@ -65,7 +70,7 @@
 //static HOSTENT  gThreadHost;
 struct sockaddr_in  gThreadAddress;
 
-static int		 gThreadFlag;
+
 
 /*************************************************************************/
 /*_$                      Private Prototypes                             */
@@ -114,35 +119,7 @@ static int		 gThreadFlag;
 bool Prepare_Directories(const char *rootdir, const char *filename);
 
 //
-// This is here as a hack...
-// Some firewalls break the TCP stack so non-blocking sockets don't work right...
-//
-static bool Use_Non_Blocking_Mode(void) 
-{
-	HKEY regKey;
-	LONG regRetval;
-	DWORD bufsiz=0;
-	DWORD type=0;
-	DWORD value=0;
-
-
-	// Try and open the named key
-	regRetval=RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SOFTWARE\\Westwood\\Earth And Beyond Beta 2",0,KEY_READ,&regKey);
-	if (regRetval!=ERROR_SUCCESS)
-		return(TRUE);		// default TRUE
-
-	// Fetch the flag
-	bufsiz=sizeof(value);
-	type=REG_DWORD;
-	regRetval=RegQueryValueEx(regKey, "UseNonBlockingFTP", 0, &type, (BYTE*) &value, &bufsiz);
-
-	RegCloseKey(regKey);
-
-	if ((regRetval!=ERROR_SUCCESS) || (type != REG_DWORD))
-		return(TRUE);
-
-	return(bool(value));
-}
+// FTP sockets use non-blocking polling.
 
 
 
@@ -208,13 +185,13 @@ void Cftp::CloseSockets(void)
 
 	if( m_iDataSocket )
 	{
-		closesocket( m_iDataSocket );
+		Platform::CloseSocket( m_iDataSocket );
 		m_iDataSocket=0;
 	}
 
 	if( m_iCommandSocket )
 	{
-		closesocket( m_iCommandSocket );
+		Platform::CloseSocket( m_iCommandSocket );
 		m_iCommandSocket=0;
 	}
 
@@ -243,9 +220,9 @@ void Cftp::ZeroStuff(void)
 }
 
 
-DWORD WINAPI gethostbynameA( void * szName )
+static int SDLCALL gethostbynameA( void * szName )
 {
-	HOSTENT *he = gethostbyname( (const char *)szName );
+	hostent *he = gethostbyname( (const char *)szName );
    //////DBGMSG("Hostname copy start");
 
 	if (he)
@@ -254,7 +231,7 @@ DWORD WINAPI gethostbynameA( void * szName )
 		memcpy((char *)&(gThreadAddress.sin_addr),"",strlen("")+1);
    /////DBGMSG("Hostname copy complete");
 
-	gThreadFlag = 1;
+
 	return 0;
 }
 
@@ -262,15 +239,15 @@ DWORD WINAPI gethostbynameA( void * szName )
 int Cftp::AsyncGetHostByName(char * szName, struct sockaddr_in &address )
 {
 	static int            stat = 0;
-	static unsigned long  threadid;
+	static SDL_Thread* thread;
 
 	if( stat == 0 )
 	{
 		/* Kick off gethostname thread */
-		gThreadFlag = 0;
+
       memset(&gThreadAddress,0,sizeof(gThreadAddress));
 
-		if( CreateThread( NULL, 0, gethostbynameA, szName, 0, &threadid ) == NULL )
+		if( (thread = SDL_CreateThread(gethostbynameA, "FTP DNS", szName)) == NULL )
 		{
 			return( FTP_FAILED );
 		}
@@ -278,9 +255,11 @@ int Cftp::AsyncGetHostByName(char * szName, struct sockaddr_in &address )
 	}
 	if( stat == 1 )
 	{
-		if( gThreadFlag )
+		if( SDL_GetThreadState(thread) == SDL_THREAD_COMPLETE )
 		{
 			/* Thread finished */
+			SDL_WaitThread(thread, NULL);
+			thread = NULL;
          address = gThreadAddress;
          address.sin_family=AF_INET;
 			stat = 0;
@@ -386,8 +365,8 @@ HRESULT  Cftp::ConnectToServer(LPCSTR szServerName)
 
 		uTemp = 1;
 
-		if (Use_Non_Blocking_Mode()) {
-			if( ioctlsocket( m_iCommandSocket, FIONBIO, &uTemp ) == SOCKET_ERROR )
+		if (true) {
+			if( Platform::SetSocketNonBlocking(m_iCommandSocket, uTemp != 0) == -1 )
 			{
 				return( FTP_FAILED );
 			}
@@ -400,16 +379,16 @@ HRESULT  Cftp::ConnectToServer(LPCSTR szServerName)
 		// Start the connection process....
 		if( connect( m_iCommandSocket, (struct sockaddr *)&m_CommandSockAddr, sizeof( m_CommandSockAddr ) ) == -1 )
 		{
-			error = WSAGetLastError();
-			if( ( error == WSAEWOULDBLOCK ) || ( error == WSAEINVAL ) || ( error == WSAEALREADY ) )
+			error = Platform::LastSocketError();
+			if( Platform::SocketConnectionPending(error) )
 			{
 				return( FTP_TRYING );
 			}
 
-			if( error != WSAEISCONN )
+			if( !Platform::SocketAlreadyConnected(error) )
 			{
             ////////DBGMSG("Connect failed");
-				closesocket( m_iCommandSocket );
+				Platform::CloseSocket( m_iCommandSocket );
 				return( FTP_FAILED );
 			}
 		}
@@ -432,7 +411,7 @@ HRESULT  Cftp::ConnectToServer(LPCSTR szServerName)
 			return(FTP_TRYING);
 		if (FD_ISSET(m_iCommandSocket, &eset)) {
 			// OK, the exception flag is set, guess we couldn't connect....
-			closesocket( m_iCommandSocket );
+			Platform::CloseSocket( m_iCommandSocket );
 			return( FTP_FAILED );
 		}
 		if (FD_ISSET(m_iCommandSocket, &wset)) {
@@ -663,7 +642,6 @@ HRESULT  Cftp::FindFile( LPCSTR szRemoteFileName, int * piSize )
 	static char listline[ 256 ];
 
 	int i, iReply;
-	char ext[ 10 ];
 
 	if (m_findStart==0)
       m_findStart=time(NULL);
@@ -676,10 +654,14 @@ HRESULT  Cftp::FindFile( LPCSTR szRemoteFileName, int * piSize )
 	}
 
 	//strcpy(m_szRemoteFilePath, "/");  // start at home
-	_splitpath( szRemoteFileName, NULL, m_szRemoteFilePath+strlen(m_szRemoteFilePath), 
-		m_szRemoteFileName, ext );
-
-	strcat( m_szRemoteFileName, ext );
+	std::string remoteName = szRemoteFileName;
+    if (remoteName.size() >= 2 && remoteName[1] == ':') remoteName.erase(0, 2);
+    const auto separator = remoteName.find_last_of("/\\");
+    if (separator != std::string::npos) {
+        strcat(m_szRemoteFilePath, remoteName.substr(0, separator + 1).c_str());
+        remoteName.erase(0, separator + 1);
+    }
+    strcpy(m_szRemoteFileName, remoteName.c_str());
 
 	for( i = 0; i < (int)strlen( m_szRemoteFilePath ); i++ )
 	{
@@ -876,8 +858,8 @@ HRESULT  Cftp::SendCommand( LPCSTR pCommand, int iSize )
 	if( i > 0 )
 	{
 #ifdef _DEBUG
-		OutputDebugString( "-->" );
-		OutputDebugString( pCommand );
+		Platform::DebugMonitorOutput( "-->" );
+		Platform::DebugMonitorOutput( pCommand );
 #endif
 		return( FTP_SUCCEEDED );
 	}
@@ -930,7 +912,7 @@ HRESULT  Cftp::RecvReply( LPCSTR pReplyBuffer, int iSize, int * piRetCode )
 
 		// Did the endpoint close?
 		if (readval < 0) {
-			if ((WSAGetLastError() == WSAECONNRESET ) || ((WSAGetLastError() == WSAENOTCONN)))
+			if (Platform::SocketConnectionLost(Platform::LastSocketError()))
 				readval=0;
 			else {
 				// nothing to read right now....
@@ -956,15 +938,15 @@ HRESULT  Cftp::RecvReply( LPCSTR pReplyBuffer, int iSize, int * piRetCode )
 		// OK, we've got a line, pull it from the socket...
 		recv(m_iCommandSocket, pc, end-pc+strlen("\r\n"), 0);
 #ifdef _DEBUG
-		OutputDebugString( "<--" );
-		OutputDebugString( pc );
+		Platform::DebugMonitorOutput( "<--" );
+		Platform::DebugMonitorOutput( pc );
 #endif
 
 		// Is this an unrecognized command?  It's probably in response to our BOGUSCOMMAND, ignore it.
 		// If we got this for some other reason then this FTP server doesn't support our required command set.
 		// If this were a general purpose FTP library we probably couldn't get away with this because it's pretty lame.
 		const char *BOGUS_RESPONSE="500";
-		if (_strnicmp(pc, BOGUS_RESPONSE, strlen(BOGUS_RESPONSE))==0)
+		if (Platform::CompareNoCase(pc, BOGUS_RESPONSE, strlen(BOGUS_RESPONSE))==0)
 			continue;
 
 		// If the line starts with a non-digit then we ignore it...
@@ -1012,9 +994,9 @@ unsigned long MyIPAddress( int sockfd )
 	if( sockfd != -1 )
 	{
 		i = sizeof( sin );
-		getsockname( sockfd, (struct sockaddr *)&sin, &i );
+		Platform::SocketAddress(sockfd, (struct sockaddr *)&sin, i);
 
-		ip = sin.sin_addr.S_un.S_addr;
+		ip = sin.sin_addr.s_addr;
 	}
 	else
 	{
@@ -1109,8 +1091,8 @@ int Cftp::SendNewPort( void )
 
 		uTemp = 1;
 
-		if (Use_Non_Blocking_Mode()) {
-			if( ioctlsocket( m_iCommandSocket, FIONBIO, &uTemp ) == SOCKET_ERROR )
+		if (true) {
+			if( Platform::SetSocketNonBlocking(m_iCommandSocket, uTemp != 0) == -1 )
 			{
 				return( FTP_FAILED );
 			}
@@ -1130,7 +1112,7 @@ int Cftp::SendNewPort( void )
 
 		i = sizeof( m_DataSockAddr);
 
-		getsockname( m_iDataSocket, (struct sockaddr *)&m_DataSockAddr, &i );
+		Platform::SocketAddress(m_iDataSocket, (struct sockaddr *)&m_DataSockAddr, i);
 
 		listen( m_iDataSocket, 5 );
 
@@ -1140,8 +1122,8 @@ int Cftp::SendNewPort( void )
 		uTemp = 1;
 
 
-		if (Use_Non_Blocking_Mode()) {
-			if( ioctlsocket( m_iDataSocket, FIONBIO, &uTemp ) == SOCKET_ERROR )
+		if (true) {
+			if( Platform::SetSocketNonBlocking(m_iDataSocket, uTemp != 0) == -1 )
 			{
 				return( FTP_FAILED );
 			}
@@ -1230,7 +1212,7 @@ int Cftp::OpenDataConnection()
 
 	if( ( iNewSocket = accept( m_iDataSocket, NULL, 0 ) ) < 0 ) 
 	{
-		if( WSAGetLastError() != (WSAEWOULDBLOCK ) )
+		if( !Platform::SocketWouldBlock(Platform::LastSocketError()) )
 		{
 			return( FTP_FAILED );
 		}
@@ -1265,7 +1247,7 @@ int Cftp::OpenDataConnection()
 
 void Cftp::CloseDataConnection()
 {
-	closesocket( m_iDataSocket );
+	Platform::CloseSocket( m_iDataSocket );
 	m_iDataSocket = 0;
 }
 
@@ -1289,7 +1271,7 @@ HRESULT  Cftp::DisconnectFromServer()
 	// Make the download file read-only so it's still there the next time
 	// we're run.
 
-	closesocket( m_iCommandSocket );
+	Platform::CloseSocket( m_iCommandSocket );
 	return( FTP_SUCCEEDED );
 }
 
@@ -1405,14 +1387,14 @@ HRESULT  Cftp::GetNextFileBlock( LPCSTR szLocalFileName, int * piTotalRead )
 	{
 		if( m_iFilePos == 0 )
 		{
-			if( ( m_pfLocalFile = fopen( downloadfilename, "wb" ) ) == NULL )
+			if( ( m_pfLocalFile = Platform::OpenStream( downloadfilename, "wb" ) ) == NULL )
 			{
 				return( FTP_FAILED );
 			}
 		}
 		else
 		{
-			if( ( m_pfLocalFile = fopen( downloadfilename, "ab" ) ) == NULL )
+			if( ( m_pfLocalFile = Platform::OpenStream( downloadfilename, "ab" ) ) == NULL )
 			{
 				return( FTP_FAILED );
 			}
@@ -1492,7 +1474,7 @@ HRESULT  Cftp::GetNextFileBlock( LPCSTR szLocalFileName, int * piTotalRead )
 		{
 			m_iFilePos=0;
 			fclose(m_pfLocalFile);
-			m_pfLocalFile = fopen( downloadfilename, "wb" );
+			m_pfLocalFile = Platform::OpenStream( downloadfilename, "wb" );
 		}
 		else if( ( res != FTP_SUCCEEDED ) ||
 			( iReply != FTPREPLY_RESTARTOK ) )
@@ -1570,9 +1552,9 @@ HRESULT  Cftp::GetNextFileBlock( LPCSTR szLocalFileName, int * piTotalRead )
 
 		// look for all notices about endpoint closed...
 		if (read < 0) {
-			int wsa_err=WSAGetLastError();
+			int wsa_err=Platform::LastSocketError();
 
-			if ((wsa_err == WSAECONNRESET) || (wsa_err == WSAENOTCONN))
+			if (Platform::SocketConnectionLost(wsa_err))
 				read = 0;		// just treat it as a close....
 		}
 
@@ -1612,19 +1594,19 @@ HRESULT  Cftp::GetNextFileBlock( LPCSTR szLocalFileName, int * piTotalRead )
 
 		// Make sure the path exists for the new file
 		char curdir[256];
-		_getcwd(curdir,256);
+		snprintf(curdir, sizeof(curdir), "%s", Platform::PreferenceDirectory(Platform::CurrentGame()));
 		Prepare_Directories(curdir, m_szLocalFileName);
 		DEBUG_LOG(("CWD: %s\n", curdir));
 
-		if( rename( downloadfilename, m_szLocalFileName ) != 0 )	{
+		if( !Platform::RenameUserFile(downloadfilename, m_szLocalFileName) )	{
 			DEBUG_LOG(("First rename of %s to %s failed with errno of %d\n", downloadfilename, m_szLocalFileName, errno));
 			/* Error moving file - remove file that's already there and try again. */
-			_chmod( m_szLocalFileName, _S_IWRITE | _S_IREAD);	// make sure it's not readonly
+			std::error_code permissionError; std::filesystem::permissions(Platform::WritePath(m_szLocalFileName), std::filesystem::perms::owner_read | std::filesystem::perms::owner_write, std::filesystem::perm_options::add, permissionError);	// make sure it's not readonly
 			DEBUG_LOG(("_chmod of %s failed with errno of %d\n", m_szLocalFileName, errno));
-			remove( m_szLocalFileName );
+			Platform::RemoveUserFile(m_szLocalFileName);
 			DEBUG_LOG(("remove of %s failed with errno of %d\n", m_szLocalFileName, errno));
 
-			if( rename( downloadfilename, m_szLocalFileName ) != 0 )	{
+			if( !Platform::RenameUserFile(downloadfilename, m_szLocalFileName) )	{
 				DEBUG_LOG(("Second rename of %s to %s failed with errno of %d\n", downloadfilename, m_szLocalFileName, errno));
 				return( FTP_FAILED );
 			}
@@ -1637,7 +1619,7 @@ HRESULT  Cftp::GetNextFileBlock( LPCSTR szLocalFileName, int * piTotalRead )
 		// We will ignore the response because we don't know in which order the server will respond
 		SendCommand("BOGUSCOMMAND\r\n", strlen("BOGUSCOMMAND\r\n"));
 
-		OutputDebugString("File closed, waiting for response.\n");
+		Platform::DebugMonitorOutput("File closed, waiting for response.\n");
 
 		m_iStatus = FTPSTAT_TRANSFERREPLY;
 	}
@@ -1691,7 +1673,7 @@ HRESULT  Cftp::FileRecoveryPosition( LPCSTR szLocalFileName, LPCSTR szRegistryRo
 	char downloadfilename[256];
 	GetDownloadFilename(szLocalFileName, downloadfilename);
 
-	FILE *testfp = fopen( downloadfilename, "rb" );
+	FILE *testfp = Platform::OpenStream( downloadfilename, "rb" );
 	if( testfp == NULL )
 	{
 		m_iFilePos = 0;
@@ -1705,89 +1687,7 @@ HRESULT  Cftp::FileRecoveryPosition( LPCSTR szLocalFileName, LPCSTR szRegistryRo
 	return( m_iFilePos );
 }
 
-/*************8
-	FILE * testfp;
-	HKEY hkey;
-	unsigned char regfilename[ 256 ];
-	char regkey[ 512 ];
-	unsigned long t1, t2;
 
-	if( ( szRegistryRoot == NULL ) || ( szLocalFileName == NULL ) )
-	{
-		// Bail out
-		return( 0 );
-	}
-
-	// Concatenate the registry key together
-
-	strcpy( regkey, szRegistryRoot );
-	if( regkey[ strlen( regkey ) - 1 ] != '\\' )
-	{
-		strcat( regkey, "\\Download" );
-	}
-	else
-	{
-		strcat( regkey, "Download" );
-	}
-
-	if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, (LPCTSTR)regkey, 
-		0, KEY_ALL_ACCESS, &hkey ) != ERROR_SUCCESS )
-	{
-		// Key doesn't exist, create it
-		if( RegCreateKey( HKEY_LOCAL_MACHINE, (LPCTSTR)regkey, 
-			&hkey ) != ERROR_SUCCESS )
-		{
-			// Error, bail out
-			return( 0 );
-		}
-
-		RegSetValueEx( hkey, (LPCTSTR)"File", 0, REG_SZ, (const unsigned char *)szLocalFileName, strlen( szLocalFileName ) + 1 );
-		RegCloseKey(hkey);
-
-		return( 0 );
-	}
-
-	t2 = 256;
-
-	if( RegQueryValueEx( hkey, (LPCTSTR)"File", 0, &t1, regfilename, &t2 ) != ERROR_SUCCESS )
-	{
-		RegSetValueEx( hkey, (LPCTSTR)"File", 0, REG_SZ, (const unsigned char *)szLocalFileName, strlen( szLocalFileName ) + 1 );
-		RegCloseKey(hkey);
-		return( 0 );
-	}
-
-	if( strcmp( szLocalFileName, (const char *)regfilename ) == 0 )
-	{
-		// File previously downloaded
-		testfp = fopen( FTP_TEMPFILENAME, "rb" );
-
-		if( testfp == NULL )
-		{
-			m_iFilePos = 0;
-			RegCloseKey(hkey);
-			return 0;
-		}
-
-		fseek( testfp, 0, SEEK_END );
-
-		m_iFilePos = ftell( testfp );
-
-		fclose( testfp );
-
-		RegCloseKey(hkey);
-		return( m_iFilePos );
-	}
-
-	// Download file doesn't exist
-	RegSetValueEx( hkey, (LPCTSTR)"File", 0, REG_SZ, (const unsigned char *)szLocalFileName, strlen( szLocalFileName ) + 1 );
-	RegCloseKey(hkey);
-
-	// get rid of any temp downloads
-	_unlink(FTP_TEMPFILENAME);
-
-	return( 0 );
-}
-**************************************/
 
 
 
@@ -1796,7 +1696,7 @@ HRESULT  Cftp::FileRecoveryPosition( LPCSTR szLocalFileName, LPCSTR szRegistryRo
 //
 void Cftp::GetDownloadFilename(const char *localname, char *downloadname)
 {
-	char *name = strdup(localname);
+	char *name = Platform::DuplicateString(localname);
 	char *s = name;
 	while (*s)
 	{
@@ -1834,7 +1734,7 @@ bool Prepare_Directories(const char *rootdir, const char *filename)
 		memset(tempstr,0,256);
 		strncpy(tempstr,filename,cptr-filename);
 		sprintf(newdir,"%s\\%s",rootdir, tempstr);
-		if (!CreateDirectory(newdir, NULL))
+		if (!Platform::CreateUserDirectory(newdir))
 			return false;
 		//if ((_mkdir(newdir) == -1) && ((errno == ENOENT || errno==EACCES)))
 			//return(false);

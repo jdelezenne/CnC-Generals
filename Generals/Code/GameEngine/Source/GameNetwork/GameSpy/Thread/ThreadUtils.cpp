@@ -26,56 +26,27 @@
 // GameSpy thread utils
 // Author: Matthew D. Campbell, July 2002
 
-#include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "PreRTS.h"
+#include "Platform/UTF16.h"
+#include "Platform/Dialogs.h"
+#include <SDL3/SDL_stdinc.h>	// This must go first in EVERY cpp file int the GameEngine
 
 //-------------------------------------------------------------------------
 
-std::wstring MultiByteToWideCharSingleLine( const char *orig )
+std::wstring MultiByteToWideCharSingleLine(const char* orig)
 {
-	Int len = strlen(orig);
-	WideChar *dest = NEW WideChar[len+1];
-
-	MultiByteToWideChar(CP_UTF8, 0, orig, -1, dest, len);
-	WideChar *c = NULL;
-	do
-	{
-		c = wcschr(dest, L'\n');
-		if (c)
-		{
-			*c = L' ';
-		}
-	}
-	while ( c != NULL );
-	do
-	{
-		c = wcschr(dest, L'\r');
-		if (c)
-		{
-			*c = L' ';
-		}
-	}
-	while ( c != NULL );
-
-	dest[len] = 0;
-	std::wstring ret = dest;
-	delete dest;
-	return ret;
+    char* encoded = SDL_iconv_string("UTF-16LE", "UTF-8", orig, strlen(orig) + 1);
+    if (!encoded) return {};
+    const auto* bytes = reinterpret_cast<const unsigned char*>(encoded);
+    std::size_t count = 0;
+    while (bytes[count * 2] || bytes[count * 2 + 1]) ++count;
+    auto result = Platform::DecodeUTF16LE<WideChar>(bytes, count);
+    SDL_free(encoded);
+    for (auto& c : result) if (c == L'\n' || c == L'\r') c = L' ';
+    return result;
 }
 
-std::string WideCharStringToMultiByte( const WideChar *orig )
+std::string WideCharStringToMultiByte(const WideChar* orig)
 {
-	std::string ret;
-	Int len = WideCharToMultiByte( CP_UTF8, 0, orig, wcslen(orig), NULL, 0, NULL, NULL ) + 1;
-	if (len > 0)
-	{
-		char *dest = NEW char[len];
-		WideCharToMultiByte( CP_UTF8, 0, orig, -1, dest, len, NULL, NULL );
-		dest[len-1] = 0;
-		ret = dest;
-		delete dest;
-	}
-	return ret;
+    return Platform::UTF16ToUTF8(Platform::EncodeUTF16LE(orig, wcslen(orig)));
 }
-
-//-------------------------------------------------------------------------
-

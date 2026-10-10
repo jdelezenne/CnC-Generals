@@ -34,7 +34,20 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
+#ifdef _WIN32
 #include <windows.h>
+#endif
+#include <cstring>
+#include <cstdio>
+#include "Platform/Clock.h"
+#include "Platform/System.h"
+#include "Platform/Memory.h"
+#include "Platform/Dialogs.h"
+#include "Platform/Window.h"
+#include "Platform/Paths.h"
+#include "Platform/Files.h"
+#include "Platform/StringCompare.h"
+#include "Platform/TextFormat.h"
 
 #include "profile.h"
 #include "internal.h"

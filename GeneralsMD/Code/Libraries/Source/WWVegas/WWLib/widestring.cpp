@@ -37,6 +37,8 @@
 #pragma warning(disable : 4514)
 
 #include "widestring.h"
+#include "Platform/Text.h"
+#include "Platform/TextFormat.h"
 #include "win.h"
 #include <stdio.h>
 
@@ -243,7 +245,7 @@ WideStringClass::Free_String (void)
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 {
 	if (format == NULL) {
@@ -258,7 +260,7 @@ WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 	//
 	//	Format the string
 	//
-	int retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
+	int retval = Platform::FormatText(temp_buffer, 512, format, arg_list);
 	
 	//
 	//	Copy the string into our buffer
@@ -274,7 +276,7 @@ WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 WideStringClass::Format (const WCHAR *format, ...)
 {
 	if (format == NULL) {
@@ -292,7 +294,7 @@ WideStringClass::Format (const WCHAR *format, ...)
 	//
 	//	Format the string
 	//
-	int retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
+	int retval = Platform::FormatText(temp_buffer, 512, format, arg_list);
 	
 	//
 	//	Copy the string into our buffer
@@ -318,30 +320,19 @@ WideStringClass::Release_Resources (void)
 ///////////////////////////////////////////////////////////////////
 // Convert_From
 ///////////////////////////////////////////////////////////////////
-bool WideStringClass::Convert_From (const char *text)
+bool WideStringClass::Convert_From(const char *text)
 {
-	if (text != NULL) {
-		
-		int length;
-
-		length = MultiByteToWideChar (CP_ACP, 0, text, -1, NULL, 0);
-		if (length > 0) {
-
-			Uninitialised_Grow (length);
-			Store_Length (length - 1);
-
-			// Convert.
-			MultiByteToWideChar (CP_ACP, 0, text, -1, m_Buffer, length);
-
-			// Success.
-			return (true);
-		}
-   }
-
-	// Failure.
-	return (false);
+    if (text != NULL) {
+        std::wstring converted;
+        if (Platform::WideFromNarrow(text, converted)) {
+            Uninitialised_Grow(static_cast<int>(converted.size() + 1));
+            Store_Length(static_cast<int>(converted.size()));
+            std::memcpy(m_Buffer, converted.c_str(), (converted.size() + 1) * sizeof(WCHAR));
+            return true;
+        }
+    }
+    return false;
 }
-
 ///////////////////////////////////////////////////////////////////
 // Test if a Unicode string is within the ANSI range. (0 - 255)
 ///////////////////////////////////////////////////////////////////

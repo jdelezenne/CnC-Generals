@@ -37,31 +37,7 @@ class Player;
 
 //------------------------------------------------------------------------------------ Eva Messages
 // Keep in sync with TheEvaMessageNames AND Eva::s_shouldPlayFuncs
-enum EvaMessage
-{
-	EVA_FIRST = 0,
-	EVA_LowPower = EVA_FIRST,
-	EVA_InsufficientFunds,
-	EVA_SuperweaponDetected_ParticleCannon,
-	EVA_SuperweaponDetected_Nuke,
-	EVA_SuperweaponDetected_ScudStorm,
-	EVA_SuperweaponLaunched_ParticleCannon,
-	EVA_SuperweaponLaunched_Nuke,
-	EVA_SuperweaponLaunched_ScudStorm,
-	EVA_BuldingLost,
-	EVA_BaseUnderAttack,
-	EVA_AllyUnderAttack,
-	EVA_BeaconDetected,
-	EVA_UnitLost,
-	EVA_GeneralLevelUp,
-	EVA_VehicleStolen,
-	EVA_BuildingStolen,
-	EVA_CashStolen,
-	EVA_UpgradeComplete,
-	EVA_BuildingBeingStolen,
-
-	EVA_COUNT,
-};
+#include "GameClient/EvaMessage.h"
 
 extern const char *TheEvaMessageNames[];
 

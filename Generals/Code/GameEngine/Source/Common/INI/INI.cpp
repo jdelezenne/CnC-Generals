@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 #define DEFINE_DAMAGE_NAMES
 #define DEFINE_DEATH_NAMES
 
@@ -36,7 +37,7 @@
 #include "Common/INIException.h"
 
 #include "Common/DamageFX.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GameAudio.h"
 #include "Common/Science.h"
@@ -133,7 +134,6 @@ static const BlockParse theTypeTable[] =
 	{ "WaterSet",						INI::parseWaterSettingDefinition },
 	{ "WaterTransparency",	INI::parseWaterTransparencyDefinition},
 	{ "Weapon",							INI::parseWeaponTemplateDefinition },
-	{ "WebpageURL",					INI::parseWebpageURLDefinition },
 	{ "HeaderTemplate",			INI::parseHeaderTemplateDefinition },
 	{ "StaticGameLOD",			INI::parseStaticGameLODDefinition },
 	{ "DynamicGameLOD",			INI::parseDynamicGameLODDefinition },
@@ -316,7 +316,8 @@ static INIBlockParse findBlockParse(const char* token)
 //-------------------------------------------------------------------------------------------------
 static INIFieldParseProc findFieldParse(const FieldParse* parseTable, const char* token, int& offset, const void*& userData)
 {
-	for (const FieldParse* parse = parseTable; parse->token; ++parse)
+	const FieldParse* parse;
+	for (parse = parseTable; parse->token; ++parse)
 	{
 		if (strcmp( parse->token, token ) == 0)
 		{
@@ -642,9 +643,9 @@ void INI::parseBitInInt32( INI *ini, void *instance, void *store, const void* us
 /*static*/ Bool INI::scanBool(const char* token)
 {
 	// translate string yes/no into TRUE/FALSE
-	if( stricmp( token, "yes" ) == 0 )
+	if( Platform::CompareNoCase( token, "yes" ) == 0 )
 		return TRUE;
-	else if( stricmp( token, "no" ) == 0 )
+	else if( Platform::CompareNoCase( token, "no" ) == 0 )
 		return FALSE;
 	else
 	{
@@ -709,7 +710,7 @@ void INI::parseAsciiStringVectorAppend( INI* ini, void * /*instance*/, void *sto
 	asv->clear();
 	for (const char *token = ini->getNextTokenOrNull(); token != NULL; token = ini->getNextTokenOrNull())
 	{
-		if (stricmp(token, "None") == 0)
+		if (Platform::CompareNoCase(token, "None") == 0)
 		{
 			asv->clear();
 			return;
@@ -918,7 +919,7 @@ void INI::parseBitString32( INI* ini, void * /*instance*/, void *store, const vo
 	// loop through all tokens
 	for (const char *token = ini->getNextTokenOrNull(); token != NULL; token = ini->getNextTokenOrNull())
 	{
-		if (stricmp(token, "NONE") == 0)
+		if (Platform::CompareNoCase(token, "NONE") == 0)
 		{
 			if (foundNormal || foundAddOrSub)
 			{
@@ -1024,7 +1025,7 @@ void INI::parseRGBAColorInt( INI* ini, void * /*instance*/, void *store, const v
 		else
 		{
 			// if present, the token must match.
-			if (stricmp(token, names[i]) != 0)
+			if (Platform::CompareNoCase(token, names[i]) != 0)
 			{
 				throw INI_INVALID_DATA;				
 			}
@@ -1076,7 +1077,7 @@ void INI::parseColorInt( INI* ini, void * /*instance*/, void *store, const void*
 		else
 		{
 			// if present, the token must match.
-			if (stricmp(token, names[i]) != 0)
+			if (Platform::CompareNoCase(token, names[i]) != 0)
 			{
 				throw INI_INVALID_DATA;				
 			}
@@ -1146,11 +1147,11 @@ void INI::parseDynamicAudioEventRTS( INI *ini, void * /*instance*/, void *store,
 	DynamicAudioEventRTS** theSound = (DynamicAudioEventRTS**)store;
 	
 	// translate the string into a sound
-	if (stricmp(token, "NoSound") == 0) 
+	if (Platform::CompareNoCase(token, "NoSound") == 0)
 	{
 		if (*theSound)
 		{
-			(*theSound)->deleteInstance();
+			Platform::DeletePoolObject((*theSound));
 			*theSound = NULL;
 		}
 	}
@@ -1175,7 +1176,7 @@ void INI::parseAudioEventRTS( INI *ini, void * /*instance*/, void *store, const 
 	AudioEventRTS *theSound = (AudioEventRTS*)store;
 	
 	// translate the string into a sound
-	if (stricmp(token, "NoSound") != 0) {
+	if (Platform::CompareNoCase(token, "NoSound") != 0) {
 		theSound->setEventName(AsciiString(token));
 	}
 
@@ -1198,7 +1199,7 @@ void INI::parseThingTemplate( INI* ini, void * /*instance*/, void *store, const 
 	typedef const ThingTemplate *ConstThingTemplatePtr;
 	ConstThingTemplatePtr* theThingTemplate = (ConstThingTemplatePtr*)store;		
 
-	if (stricmp(token, "None") == 0)
+	if (Platform::CompareNoCase(token, "None") == 0)
 	{
 		*theThingTemplate = NULL;
 	}
@@ -1222,7 +1223,7 @@ void INI::parseArmorTemplate( INI* ini, void * /*instance*/, void *store, const 
 	typedef const ArmorTemplate *ConstArmorTemplatePtr;
 	ConstArmorTemplatePtr* theArmorTemplate = (ConstArmorTemplatePtr*)store;		
 
-	if (stricmp(token, "None") == 0)
+	if (Platform::CompareNoCase(token, "None") == 0)
 	{
 		*theArmorTemplate = NULL;
 	}
@@ -1247,7 +1248,7 @@ void INI::parseWeaponTemplate( INI* ini, void * /*instance*/, void *store, const
 	ConstWeaponTemplatePtr* theWeaponTemplate = (ConstWeaponTemplatePtr*)store;		
 
 	const WeaponTemplate *tt = TheWeaponStore->findWeaponTemplate(token);	// could be null!
-	DEBUG_ASSERTCRASH(tt || stricmp(token, "None") == 0, ("WeaponTemplate %s not found!\n",token));
+	DEBUG_ASSERTCRASH(tt || Platform::CompareNoCase(token, "None") == 0, ("WeaponTemplate %s not found!\n",token));
 	// assign it, even if null!
 	*theWeaponTemplate = tt;
 
@@ -1264,7 +1265,7 @@ void INI::parseFXList( INI* ini, void * /*instance*/, void *store, const void* /
 	ConstFXListPtr* theFXList = (ConstFXListPtr*)store;		
 
 	const FXList *fxl = TheFXListStore->findFXList(token);	// could be null!
-	DEBUG_ASSERTCRASH(fxl != NULL || stricmp(token, "None") == 0, ("FXList %s not found!\n",token));
+	DEBUG_ASSERTCRASH(fxl != NULL || Platform::CompareNoCase(token, "None") == 0, ("FXList %s not found!\n",token));
 	// assign it, even if null!
 	*theFXList = fxl;
 
@@ -1278,7 +1279,7 @@ void INI::parseParticleSystemTemplate( INI *ini, void * /*instance*/, void *stor
 	const char *token = ini->getNextToken();
 
 	const ParticleSystemTemplate *pSystemT = TheParticleSystemManager->findTemplate( AsciiString( token ) );
-	DEBUG_ASSERTCRASH( pSystemT || stricmp( token, "None" ) == 0, ("ParticleSystem %s not found!\n",token) );
+	DEBUG_ASSERTCRASH( pSystemT || Platform::CompareNoCase( token, "None" ) == 0, ("ParticleSystem %s not found!\n",token) );
 
 	typedef const ParticleSystemTemplate* ConstParticleSystemTemplatePtr;
 	ConstParticleSystemTemplatePtr* theParticleSystemTemplate = (ConstParticleSystemTemplatePtr*)store;		
@@ -1297,7 +1298,7 @@ void INI::parseDamageFX( INI* ini, void * /*instance*/, void *store, const void*
 	typedef const DamageFX *ConstDamageFXPtr;
 	ConstDamageFXPtr* theDamageFX = (ConstDamageFXPtr*)store;		
 
-	if (stricmp(token, "None") == 0)
+	if (Platform::CompareNoCase(token, "None") == 0)
 	{
 		*theDamageFX = NULL;
 	}
@@ -1322,7 +1323,7 @@ void INI::parseObjectCreationList( INI* ini, void * /*instance*/, void *store, c
 	ConstObjectCreationListPtr* theObjectCreationList = (ConstObjectCreationListPtr*)store;		
 
 	const ObjectCreationList *ocl = TheObjectCreationListStore->findObjectCreationList(token);	// could be null!
-	DEBUG_ASSERTCRASH(ocl || stricmp(token, "None") == 0, ("ObjectCreationList %s not found!\n",token));
+	DEBUG_ASSERTCRASH(ocl || Platform::CompareNoCase(token, "None") == 0, ("ObjectCreationList %s not found!\n",token));
 	// assign it, even if null!
 	*theObjectCreationList = ocl;
 
@@ -1342,7 +1343,7 @@ void INI::parseUpgradeTemplate( INI* ini, void * /*instance*/, void *store, cons
 	}
 
 	const UpgradeTemplate *uu = TheUpgradeCenter->findUpgrade( AsciiString( token ) );
-	DEBUG_ASSERTCRASH( uu || stricmp( token, "None" ) == 0, ("Upgrade %s not found!\n",token) );
+	DEBUG_ASSERTCRASH( uu || Platform::CompareNoCase( token, "None" ) == 0, ("Upgrade %s not found!\n",token) );
 
 	typedef const UpgradeTemplate* ConstUpgradeTemplatePtr;
 	ConstUpgradeTemplatePtr* theUpgradeTemplate = (ConstUpgradeTemplatePtr *)store;		
@@ -1363,7 +1364,7 @@ void INI::parseSpecialPowerTemplate( INI* ini, void * /*instance*/, void *store,
 	}
 
 	const SpecialPowerTemplate *sPowerT = TheSpecialPowerStore->findSpecialPowerTemplate( AsciiString( token ) );
-	DEBUG_ASSERTCRASH( sPowerT || stricmp( token, "None" ) == 0, ("Specialpower %s not found!\n",token) );
+	DEBUG_ASSERTCRASH( sPowerT || Platform::CompareNoCase( token, "None" ) == 0, ("Specialpower %s not found!\n",token) );
 
 	typedef const SpecialPowerTemplate* ConstSpecialPowerTemplatePtr;
 	ConstSpecialPowerTemplatePtr* theSpecialPowerTemplate = (ConstSpecialPowerTemplatePtr *)store;		
@@ -1492,7 +1493,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 		if( field )
 		{
 
-			if( stricmp( field, m_blockEndToken ) == 0 )
+			if( Platform::CompareNoCase( field, m_blockEndToken ) == 0 )
 			{
 				done = TRUE;
 			}
@@ -1628,7 +1629,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 	Int count = 0;
 	for(ConstCharPtrArray name = nameList; *name; name++, count++ )
 	{
-		if( stricmp( *name, token ) == 0 )
+		if( Platform::CompareNoCase( *name, token ) == 0 )
 		{
 			return count;
 		}
@@ -1652,7 +1653,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 	Bool found = false;
 	for( const LookupListRec* lookup = &lookupList[0]; lookup->name; lookup++ )
 	{
-		if( stricmp( lookup->name, token ) == 0 )
+		if( Platform::CompareNoCase( lookup->name, token ) == 0 )
 		{
 			return lookup->value;
 			found = true;
@@ -1670,7 +1671,7 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 const char* INI::getNextSubToken(const char* expected)
 {
 	const char* token = getNextToken(getSepsColon());
-	if (stricmp(token, expected) != 0)
+	if (Platform::CompareNoCase(token, expected) != 0)
 		throw INI_INVALID_DATA;
 	return getNextToken(getSepsColon());
 }
@@ -1751,12 +1752,12 @@ void INI::parseVeterancyLevelFlags(INI* ini, void* /*instance*/, void* store, co
 	VeterancyLevelFlags flags = VETERANCY_LEVEL_FLAGS_ALL;
 	for (const char* token = ini->getNextToken(); token; token = ini->getNextTokenOrNull())
 	{
-		if (stricmp(token, "ALL") == 0)
+		if (Platform::CompareNoCase(token, "ALL") == 0)
 		{
 			flags = VETERANCY_LEVEL_FLAGS_ALL;
 			continue;
 		}
-		else if (stricmp(token, "NONE") == 0)
+		else if (Platform::CompareNoCase(token, "NONE") == 0)
 		{
 			flags = VETERANCY_LEVEL_FLAGS_NONE;
 			continue;
@@ -1804,12 +1805,12 @@ void INI::parseDamageTypeFlags(INI* ini, void* /*instance*/, void* store, const 
 	DamageTypeFlags flags = DAMAGE_TYPE_FLAGS_ALL;
 	for (const char* token = ini->getNextToken(); token; token = ini->getNextTokenOrNull())
 	{
-		if (stricmp(token, "ALL") == 0)
+		if (Platform::CompareNoCase(token, "ALL") == 0)
 		{
 			flags = DAMAGE_TYPE_FLAGS_ALL;
 			continue;
 		}
-		if (stricmp(token, "NONE") == 0)
+		if (Platform::CompareNoCase(token, "NONE") == 0)
 		{
 			flags = DAMAGE_TYPE_FLAGS_NONE;
 			continue;
@@ -1838,12 +1839,12 @@ void INI::parseDeathTypeFlags(INI* ini, void* /*instance*/, void* store, const v
 	DeathTypeFlags flags = DEATH_TYPE_FLAGS_ALL;
 	for (const char* token = ini->getNextToken(); token; token = ini->getNextTokenOrNull())
 	{
-		if (stricmp(token, "ALL") == 0)
+		if (Platform::CompareNoCase(token, "ALL") == 0)
 		{
 			flags = DEATH_TYPE_FLAGS_ALL;
 			continue;
 		}
-		if (stricmp(token, "NONE") == 0)
+		if (Platform::CompareNoCase(token, "NONE") == 0)
 		{
 			flags = DEATH_TYPE_FLAGS_NONE;
 			continue;
@@ -1892,7 +1893,7 @@ Bool INI::isDeclarationOfType( AsciiString blockType, AsciiString blockName, cha
 		restoreChar = tempBuff[blockTypeLength];
 		tempBuff[blockTypeLength] = 0;
 		
-		if (stricmp(blockType.str(), tempBuff) != 0) {
+		if (Platform::CompareNoCase(blockType.str(), tempBuff) != 0) {
 			retVal = false;
 		}
 
@@ -1910,7 +1911,7 @@ Bool INI::isDeclarationOfType( AsciiString blockType, AsciiString blockName, cha
 		restoreChar = tempBuff[blockNameLength];
 		tempBuff[blockNameLength] = 0;
 		
-		if (stricmp(blockName.str(), tempBuff) != 0) {
+		if (Platform::CompareNoCase(blockName.str(), tempBuff) != 0) {
 			retVal = false;
 		}
 
@@ -1956,7 +1957,7 @@ Bool INI::isEndOfBlock( char *bufferToCheck )
 		restoreChar = tempBuff[endStringLength];
 		tempBuff[endStringLength] = 0;
 		
-		if (stricmp(endString, tempBuff) != 0) {
+		if (Platform::CompareNoCase(endString, tempBuff) != 0) {
 			retVal = false;
 		}
 

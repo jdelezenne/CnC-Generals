@@ -13,10 +13,6 @@
 #include <cstring>
 #include <new>
 #include <utility>
-#include <atlbase.h>
-#include <atlcom.h>
-#include <comutil.h>
-#include <comdef.h>
 #endif
 // These SDK macros collide with names already used by the original game.
 #undef BitTest

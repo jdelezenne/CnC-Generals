@@ -75,7 +75,7 @@ void ThingFactory::freeDatabase( void )
 	{
 		ThingTemplate* tmpl = m_firstTemplate;
 		m_firstTemplate = m_firstTemplate->friend_getNextTemplate();
-		tmpl->deleteInstance();
+		Platform::DeletePoolObject(tmpl);
 	}
 
 	m_templateHashMap.clear();

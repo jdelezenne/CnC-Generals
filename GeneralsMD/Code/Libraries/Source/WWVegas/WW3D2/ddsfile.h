@@ -55,6 +55,8 @@ struct LegacyDDCOLORKEY
 
 struct LegacyDDSCAPS2
 {
+	// Flags in the DDS file format; independent of DirectDraw.
+	enum { CubeMap = 0x00000200, Volume = 0x00200000 };
 	unsigned Caps;
 	unsigned Caps2;
 	unsigned Caps3;

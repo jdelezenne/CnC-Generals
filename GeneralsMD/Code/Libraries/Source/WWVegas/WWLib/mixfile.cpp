@@ -36,11 +36,13 @@
 
 #include "mixfile.h"
 #include "Platform/Paths.h"
+#include "Platform/Directory.h"
+#include "Platform/FileSystem.h"
 #include "wwdebug.h"
 #include "ffactory.h"
-#include "wwfile.h"
+#include "WWFILE.H"
 #include "realcrc.h"
-#include "rawfile.h"
+#include "RAWFILE.H"
 #include "win.h"
 #include "bittype.h"
 
@@ -319,11 +321,10 @@ MixFileFactoryClass::Flush_Changes (void)
 	//
 	//	Get the path of the mix file
 	//
-	char drive[_MAX_DRIVE] = { 0 };
-	char dir[_MAX_DIR] = { 0 };
-	::_splitpath (MixFilename, drive, dir, NULL, NULL);
-	StringClass path	= drive;
-	path					+= dir;
+	const std::string filename = MixFilename.Peek_Buffer();
+	const auto separator = filename.find_last_of("/\\" );
+	StringClass path = (separator != std::string::npos ? filename.substr(0, separator + 1) :
+		filename.size() >= 2 && filename[1] == ':' ? filename.substr(0, 2) : std::string()).c_str();
 
 	//
 	//	Try to find a temp filename
@@ -335,7 +336,8 @@ MixFileFactoryClass::Flush_Changes (void)
 		//
 		//	Add all the remaining files from our file set
 		//
-		for (int index = 0; index < FilenameList.Count (); index ++) {
+		int index;
+		for (index = 0; index < FilenameList.Count (); index ++) {
 			StringClass &filename = FilenameList[index];
 
 			//
@@ -398,7 +400,7 @@ MixFileFactoryClass::Get_Temp_Filename (const char *path, StringClass &full_path
 	//
 	for (int index = 0; index < 20; index ++) {
 		full_path.Format ("%s%.2d.dat", (const char *)temp_path, index + 1);
-		if (GetFileAttributes (full_path) == 0xFFFFFFFF) {
+		if (!Platform::PathExists(full_path)) {
 			retval = true;
 			break;
 		}
@@ -439,7 +441,8 @@ bool	MixFileFactoryClass::Build_Ordered_Filename_List (DynamicVectorClass<String
 	// associate offset with each name and add to list
 	DynamicVectorClass<FileOffsetStruct>	local_file_info;
 	local_file_info.Resize( name_list.Count());
-	for (int i = 0; i < name_list.Count(); ++i) {
+	int i;
+	for (i = 0; i < name_list.Count(); ++i) {
 		// Here, we have to assume that the names in the list are in CRC order, just like FileInfo is.
 		FileOffsetStruct temp;
 		temp.Filename	= name_list[i];
@@ -654,35 +657,27 @@ void	MixFileCreator::Add_File( const char * filename, FileClass *file )
 /*
 **
 */
-void	Add_Files( const char * dir, MixFileCreator & mix )
+void Add_Files(const char* dir, MixFileCreator& mix)
 {
-	BOOL bcontinue = TRUE;
-	HANDLE hfile_find;
-	WIN32_FIND_DATA find_info = {0};
-	StringClass path;
-	path.Format( "data\\makemix\\%s*.*", dir );
-	WWDEBUG_SAY(( "Adding files from %s\n", path ));
-
-	for (hfile_find = ::FindFirstFile( path, &find_info);
-		 (hfile_find != INVALID_HANDLE_VALUE) && bcontinue;
-		  bcontinue = ::FindNextFile(hfile_find, &find_info)) {
-		if ( find_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) {
-			if ( find_info.cFileName[0] != '.' ) {
-				StringClass	path;
-				path.Format( "%s%s\\", dir, find_info.cFileName );
-				Add_Files( path, mix );
-			}
-		} else {
-			StringClass name;
-			name.Format( "%s%s", dir, find_info.cFileName );
-			StringClass	source;
-			source.Format( "makemix\\%s", name );
-			mix.Add_File( source, name );
-//			WWDEBUG_SAY(( "Adding file from %s %s\n", source, name ));
-		}
-	}
+    StringClass directory;
+    directory.Format("data\\makemix\\%s", dir);
+    WWDEBUG_SAY(("Adding files from %s\n", directory.Peek_Buffer()));
+    for (const auto& entry : Platform::ReadDirectory(directory.Peek_Buffer(), "*.*")) {
+        if (entry.info.directory) {
+            if (!entry.name.empty() && entry.name.front() != '.') {
+                StringClass path;
+                path.Format("%s%s\\", dir, entry.name.c_str());
+                Add_Files(path, mix);
+            }
+        } else {
+            StringClass name;
+            name.Format("%s%s", dir, entry.name.c_str());
+            StringClass source;
+            source.Format("makemix\\%s", name.Peek_Buffer());
+            mix.Add_File(source, name);
+        }
+    }
 }
-
 void	Setup_Mix_File( void )
 {
 	_SimpleFileFactory.Set_Sub_Directory( "DATA\\" );

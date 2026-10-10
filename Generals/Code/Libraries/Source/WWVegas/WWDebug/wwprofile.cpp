@@ -56,7 +56,8 @@
 #include <intrin.h>
 #endif
 #include "wwdebug.h"
-#include <windows.h>
+#include "Platform/Clock.h"
+#include "Platform/System.h"
 
 
 
@@ -74,24 +75,7 @@
  *=============================================================================================*/
 inline void WWProfile_Get_Ticks(_int64 * ticks)
 {
-#if defined(_M_X64)
-    *ticks = __rdtsc();
-#elif defined(_UNIX)
-	*ticks = 0;
-#else 
-	__asm
-	{
-		push edx;
-		push ecx;
-		mov ecx,ticks;
-		_emit 0Fh
-		_emit 31h
-		mov [ecx],eax;
-		mov [ecx+4],edx;
-		pop ecx;
-		pop edx;
-	}
-#endif
+	*ticks = Platform::ProcessorTicks();
 }
 
 
@@ -116,7 +100,7 @@ inline float WWProfile_Get_Tick_Rate(void)
 	
 	if (_CPUFrequency == -1.0f) {
 		__int64 curr_rate = 0;
-		::QueryPerformanceFrequency ((LARGE_INTEGER *)&curr_rate);
+		curr_rate = Platform::PerformanceFrequency();
 		_CPUFrequency = (float)curr_rate;
 	} 
 	
@@ -323,11 +307,11 @@ static unsigned int				ThreadID = static_cast<unsigned int>(-1);
  *=============================================================================================*/
 void	WWProfileManager::Start_Profile( const char * name )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (Platform::CurrentThreadIdentifier() != ThreadID) {
 		return;
 	}
 
-//	int current_thread = ::GetCurrentThreadId();
+//	int current_thread = Platform::CurrentThreadIdentifier();
 	if (name != CurrentNode->Get_Name()) {
 		CurrentNode = CurrentNode->Get_Sub_Node( name );
 	} 
@@ -350,7 +334,7 @@ void	WWProfileManager::Start_Profile( const char * name )
  *=============================================================================================*/
 void	WWProfileManager::Stop_Profile( void )
 {
-	if (::GetCurrentThreadId() != ThreadID) {
+	if (Platform::CurrentThreadIdentifier() != ThreadID) {
 		return;
 	}
 
@@ -379,7 +363,7 @@ void	WWProfileManager::Stop_Profile( void )
  *=============================================================================================*/
 void	WWProfileManager::Reset( void )
 { 
-	ThreadID = ::GetCurrentThreadId();
+	ThreadID = Platform::CurrentThreadIdentifier();
 
 	Root.Reset(); 
 	FrameCounter = 0;

@@ -27,7 +27,7 @@
 
 #include "GameClient/LanguageFilter.h"
 #include "Common/FileSystem.h"
-#include "Common/File.h"
+#include "Common/file.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -58,8 +58,11 @@ void LanguageFilter::init() {
 		return;
 	}
 
-	wchar_t word[128];
-	while (readWord(file1, (UnsignedShort*)word)) {
+	UnsignedShort encodedWord[128];
+	while (readWord(file1, encodedWord)) {
+		wchar_t word[128];
+		Int unit = 0;
+		do { word[unit] = encodedWord[unit]; } while (encodedWord[unit++]);
 		Int wordLen = wcslen(word);
 		if (wordLen == 0) {
 			continue;
@@ -180,9 +183,9 @@ Bool LanguageFilter::readWord(File *file1, UnsignedShort *buf) {
 			c = WEOF;
 		}
 
-		if ((c == WEOF) || (c == L' ')) {
+		if ((c == static_cast<UnsignedShort>(WEOF)) || (c == L' ')) {
 			buf[index] = 0;
-			if (c == WEOF) {
+			if (c == static_cast<UnsignedShort>(WEOF)) {
 				retval = FALSE;
 			}
 			break;

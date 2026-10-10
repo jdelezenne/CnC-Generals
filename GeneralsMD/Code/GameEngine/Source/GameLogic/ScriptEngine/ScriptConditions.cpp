@@ -80,7 +80,7 @@ public:
 	~ObjectTypesTemp()
 	{
 		if (m_types)
-			m_types->deleteInstance();
+			Platform::DeletePoolObject(m_types);
 	}
 };
 
@@ -91,7 +91,7 @@ namespace rts
 		T sum(std::vector<T>& vecOfValues )
 	{
 		T retVal = 0;
-		std::vector<T>::iterator it;
+		typename std::vector<T>::iterator it;
 		for (it = vecOfValues.begin(); it != vecOfValues.end(); ++it) {
 			retVal += (*it);
 		}
@@ -120,7 +120,7 @@ public:
 TransportStatus::~TransportStatus() 
 { 
 	if (m_nextStatus) 
-		m_nextStatus->deleteInstance(); 
+		Platform::DeletePoolObject(m_nextStatus);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ void ScriptConditions::init( void )
 void ScriptConditions::reset( void )
 {
 
-	s_transportStatuses->deleteInstance();
+	Platform::DeletePoolObject(s_transportStatuses);
 	s_transportStatuses = NULL;
 	// Empty for now.  jba.
 }  // end reset

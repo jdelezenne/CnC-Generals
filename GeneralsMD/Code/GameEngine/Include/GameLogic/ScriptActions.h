@@ -37,7 +37,7 @@ class GameWindow;
 class	Team;
 class View;
 
-enum AudioAffect;
+#include "Common/AudioAffect.h"
 
 //-----------------------------------------------------------------------------
 // ScriptActionsInterface

@@ -45,6 +45,7 @@
 #pragma once
 #endif
 
+class TextureLoadTaskListClass;
 #include "always.h"
 #include "texture.h"
 

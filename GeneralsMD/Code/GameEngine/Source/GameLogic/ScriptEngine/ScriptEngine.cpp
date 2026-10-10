@@ -27,9 +27,12 @@
 // Author: John Ahlquist, Nov. 2001
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include <SDL3/SDL_loadso.h>
+#include "Platform/Paths.h"
+#include "Platform/IntegerText.h"
 
-#include "common/DataChunk.h"
-#include "Common/File.h"
+#include "Common/DataChunk.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
@@ -71,7 +74,7 @@ static Bool st_AppIsFast = false;
 static void _appendMessage(const AsciiString& str, Bool isTrueMessage = true, Bool shouldPause = false);
 static void _adjustVariable(const AsciiString& str, Int value, Bool shouldPause = false);
 static void _updateFrameNumber( void );
-static HMODULE st_DebugDLL;
+static SDL_SharedObject* st_DebugDLL;
 // That's it for debugger window
 
 // These are for particle editor
@@ -97,7 +100,7 @@ static void _writeOutINI( void );
 extern void _writeSingleParticleSystem( File *out, ParticleSystemTemplate *particleTemplate );
 static void _reloadTextures( void );
 
-static HMODULE st_ParticleDLL;
+static SDL_SharedObject* st_ParticleDLL;
 ParticleSystem *st_particleSystem;
 Bool st_particleSystemNeedsStopping = FALSE; ///< Set along with st_particleSystem if the particle system has infinite life
 #define ARBITRARY_BUFF_SIZE	128
@@ -115,7 +118,7 @@ Bool st_particleSystemNeedsStopping = FALSE; ///< Set along with st_particleSyst
 	typedef void (*VTProc)();
 	
 	static Bool						st_EnableVTune = false;
-	static HMODULE				st_vTuneDLL = NULL;
+	static SDL_SharedObject*				st_vTuneDLL = NULL;
 	static VTProc VTPause = NULL;
 	static VTProc VTResume = NULL;
 
@@ -486,22 +489,22 @@ m_ChooseVictimAlwaysUsesNormal(false)
 ScriptEngine::~ScriptEngine()
 {
 	if (st_DebugDLL) {
-		FARPROC proc = GetProcAddress(st_DebugDLL, "DestroyDebugDialog");
+		SDL_FunctionPointer proc = SDL_LoadFunction(st_DebugDLL, "DestroyDebugDialog");
 		if (proc) {
 			proc();
 		}
 
-		FreeLibrary(st_DebugDLL);
+		SDL_UnloadObject(st_DebugDLL);
 		st_DebugDLL = NULL;
 	}
 
 	if (st_ParticleDLL) {
-		FARPROC proc = GetProcAddress(st_ParticleDLL, "DestroyParticleSystemDialog");
+		SDL_FunctionPointer proc = SDL_LoadFunction(st_ParticleDLL, "DestroyParticleSystemDialog");
 		if (proc) {
 			proc();
 		}
 
-		FreeLibrary(st_ParticleDLL);
+		SDL_UnloadObject(st_ParticleDLL);
 		st_ParticleDLL = NULL;
 	}
 
@@ -533,26 +536,26 @@ void ScriptEngine::init( void )
 {
 	if (TheGlobalData->m_windowed)
 		if (TheGlobalData->m_scriptDebug) {
-			st_DebugDLL = LoadLibrary("DebugWindow.dll");
+			st_DebugDLL = SDL_LoadObject(Platform::ReadPath("DebugWindow.dll").c_str());
 		} else {
 			st_DebugDLL = NULL;
 		}
 		
 		if (TheGlobalData->m_particleEdit) {
-			st_ParticleDLL = LoadLibrary("ParticleEditor.dll");
+			st_ParticleDLL = SDL_LoadObject(Platform::ReadPath("ParticleEditor.dll").c_str());
 		} else {
 			st_ParticleDLL = NULL;
 		}
 
 		if (st_DebugDLL) {
-			FARPROC proc = GetProcAddress(st_DebugDLL, "CreateDebugDialog");
+			SDL_FunctionPointer proc = SDL_LoadFunction(st_DebugDLL, "CreateDebugDialog");
 			if (proc) {
 				proc();
 			}
 		}
 
 	if (st_ParticleDLL) {
-		FARPROC proc = GetProcAddress(st_ParticleDLL, "CreateParticleSystemDialog");
+		SDL_FunctionPointer proc = SDL_LoadFunction(st_ParticleDLL, "CreateParticleSystemDialog");
 		if (proc) {
 			proc();
 		}
@@ -6580,7 +6583,7 @@ void ScriptEngine::setPriorityThing( ScriptAction *pAction )
 //		debug.concat(thingTemplate->getName().str());
 //		debug.concat(" to ");
 //		char intBuffer[16];
-//		itoa(pAction->getParameter(2)->getInt(), intBuffer, 10);
+//		Platform::IntegerText(pAction->getParameter(2)->getInt(), intBuffer, 10);
 //		debug.concat(intBuffer);
 //		AppendDebugMessage(debug, false);
 		// END DEBUGGING LOGGING
@@ -6611,7 +6614,7 @@ void ScriptEngine::setPriorityThing( ScriptAction *pAction )
 //			debug.concat(thisType->getName().str());
 //			debug.concat(" to ");
 //			char intBuffer[16];
-//			itoa(pAction->getParameter(2)->getInt(), intBuffer, 10);
+//			Platform::IntegerText(pAction->getParameter(2)->getInt(), intBuffer, 10);
 //			debug.concat(intBuffer);
 //			AppendDebugMessage(debug, false);
 			// END DEBUGGING LOGGING
@@ -6706,7 +6709,7 @@ void ScriptEngine::removeObjectTypes(ObjectTypes *typesToRemove)
 	}
 
 	// delete it.
-	typesToRemove->deleteInstance();
+	Platform::DeletePoolObject(typesToRemove);
 
 	// remove it from the main array of stuff
 	m_allObjectTypeLists.erase(it);
@@ -8076,14 +8079,14 @@ ScriptEngine::VecSequentialScriptPtrIt ScriptEngine::cleanupSequentialScript(Vec
 		while (seqScript) {
 			scriptToDelete = seqScript;
 			seqScript = seqScript->m_nextScriptInSequence;
-			scriptToDelete->deleteInstance();
+			Platform::DeletePoolObject(scriptToDelete);
 			scriptToDelete = NULL;
 		}
 		(*it) = NULL;
 	} else {
 		// we want to make sure to not delete any dangling scripts.
 		(*it) = scriptToDelete->m_nextScriptInSequence;
-		scriptToDelete->deleteInstance();
+		Platform::DeletePoolObject(scriptToDelete);
 		scriptToDelete = NULL;
 	}
 
@@ -8434,7 +8437,7 @@ Bool ScriptEngine::isTimeFrozenDebug(void)
 		if (st_LastCurrentFrame != st_CurrentFrame) {
 			st_LastCurrentFrame = st_CurrentFrame;
 
-			FARPROC proc = GetProcAddress(st_DebugDLL, "CanAppContinue");
+			SDL_FunctionPointer proc = SDL_LoadFunction(st_DebugDLL, "CanAppContinue");
 			if (proc) {
 				st_CanAppCont = ((funcptr)proc)();
 
@@ -8455,8 +8458,8 @@ Bool ScriptEngine::isTimeFast(void)
 	typedef Bool (*funcptr)(void);
 
 	if (st_DebugDLL) {
-		FARPROC proc = GetProcAddress(st_DebugDLL, "CanAppContinue");
- 		proc = GetProcAddress(st_DebugDLL, "RunAppFast");
+		SDL_FunctionPointer proc = SDL_LoadFunction(st_DebugDLL, "CanAppContinue");
+		proc = SDL_LoadFunction(st_DebugDLL, "RunAppFast");
 		if (proc && ((funcptr)proc)()) {
 			st_AppIsFast = true;
 		} else {
@@ -8481,7 +8484,7 @@ void ScriptEngine::forceUnfreezeTime(void)
 	typedef void (*funcptr)(void);
 
 	if (st_DebugDLL) {
-		FARPROC proc = GetProcAddress(st_DebugDLL, "ForceAppContinue");
+		SDL_FunctionPointer proc = SDL_LoadFunction(st_DebugDLL, "ForceAppContinue");
 		if (proc) {
 			((funcptr)proc)();
 		}
@@ -8498,11 +8501,11 @@ void ScriptEngine::AppendDebugMessage(const AsciiString& strToAdd, Bool forcePau
 		return;
 	}
 
-	FARPROC proc;
+	SDL_FunctionPointer proc;
 	if (forcePause) {
-		proc = GetProcAddress(st_DebugDLL, "AppendMessageAndPause");
+		proc = SDL_LoadFunction(st_DebugDLL, "AppendMessageAndPause");
 	} else {
-		proc = GetProcAddress(st_DebugDLL, "AppendMessage");
+		proc = SDL_LoadFunction(st_DebugDLL, "AppendMessage");
 	}
 
 	if (!proc) {
@@ -9373,11 +9376,11 @@ void _appendMessage(const AsciiString& str, Bool isTrueMessage, Bool shouldPause
 		return;
 	}
 
-	FARPROC proc;
+	SDL_FunctionPointer proc;
 	if (shouldPause) {
-		proc = GetProcAddress(st_DebugDLL, "AppendMessageAndPause");
+		proc = SDL_LoadFunction(st_DebugDLL, "AppendMessageAndPause");
 	} else {
-		proc = GetProcAddress(st_DebugDLL, "AppendMessage");
+		proc = SDL_LoadFunction(st_DebugDLL, "AppendMessage");
 	}
 	if (!proc) {
 		return;
@@ -9393,11 +9396,11 @@ void _adjustVariable(const AsciiString& str, Int value, Bool shouldPause)
 		return;
 	}
 
-	FARPROC proc;
+	SDL_FunctionPointer proc;
 	if (shouldPause) {
-		proc = GetProcAddress(st_DebugDLL, "AdjustVariableAndPause");
+		proc = SDL_LoadFunction(st_DebugDLL, "AdjustVariableAndPause");
 	} else {
-		proc = GetProcAddress(st_DebugDLL, "AdjustVariable");
+		proc = SDL_LoadFunction(st_DebugDLL, "AdjustVariable");
 	}
 
 	if (!proc) {
@@ -9418,8 +9421,8 @@ void _updateFrameNumber( void )
 		return;
 	}
 
-	FARPROC proc;
-	proc = GetProcAddress(st_DebugDLL, "SetFrameNumber");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_DebugDLL, "SetFrameNumber");
 	if (!proc) {
 		return;
 	}
@@ -9435,16 +9438,16 @@ void _appendAllParticleSystems( void )
 	if (!st_ParticleDLL) {
 		return;
 	}
-	FARPROC proc;
+	SDL_FunctionPointer proc;
 
-	proc = GetProcAddress(st_ParticleDLL, "RemoveAllParticleSystems");
+	proc = SDL_LoadFunction(st_ParticleDLL, "RemoveAllParticleSystems");
 	if (proc) {
 		proc();
 	} else {
 		return;
 	}
 
-	proc = GetProcAddress(st_ParticleDLL, "AppendParticleSystem");
+	proc = SDL_LoadFunction(st_ParticleDLL, "AppendParticleSystem");
 	if (!proc) {
 		return;
 	}
@@ -9464,16 +9467,16 @@ void _appendAllThingTemplates( void )
 	if (!st_ParticleDLL) {
 		return;
 	}
-	FARPROC proc;
+	SDL_FunctionPointer proc;
 
-	proc = GetProcAddress(st_ParticleDLL, "RemoveAllThingTemplates");
+	proc = SDL_LoadFunction(st_ParticleDLL, "RemoveAllThingTemplates");
 	if (proc) {
 		proc();
 	} else {
 		return;
 	}
 
-	proc = GetProcAddress(st_ParticleDLL, "AppendThingTemplate");
+	proc = SDL_LoadFunction(st_ParticleDLL, "AppendThingTemplate");
 	if (!proc) {
 		return;
 	}
@@ -9499,13 +9502,13 @@ void _addUpdatedParticleSystem( AsciiString particleSystemName )
 		return;
 	}
 	
-	FARPROC proc, proc2;
-	proc = GetProcAddress(st_ParticleDLL, "AppendParticleSystem");
+	SDL_FunctionPointer proc, proc2;
+	proc = SDL_LoadFunction(st_ParticleDLL, "AppendParticleSystem");
 	if (!proc) {
 		return;
 	}
 
-	proc2 = GetProcAddress(st_ParticleDLL, "UpdateSystemUseParameters");
+	proc2 = SDL_LoadFunction(st_ParticleDLL, "UpdateSystemUseParameters");
 	if (!proc2) {
 		return;
 	}
@@ -9528,8 +9531,8 @@ AsciiString _getParticleSystemName( void )
 		return AsciiString::TheEmptyString;
 	}
 
-	FARPROC proc;
-	proc = GetProcAddress(st_ParticleDLL, "GetSelectedParticleSystemName");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "GetSelectedParticleSystemName");
 	if (!proc) {
 		return AsciiString::TheEmptyString;
 	}
@@ -9549,8 +9552,8 @@ void _updatePanelParameters( ParticleSystemTemplate *particleTemplate )
 		return;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "UpdateCurrentParticleSystem");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "UpdateCurrentParticleSystem");
 	if (!proc) {
 		return;
 	}
@@ -9566,8 +9569,8 @@ void _updateAsciiStringParmsToSystem( ParticleSystemTemplate *particleTemplate )
 		return;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "GetSelectedParticleAsciiStringParm");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "GetSelectedParticleAsciiStringParm");
 
 	if (!proc) {
 		return;
@@ -9601,8 +9604,8 @@ extern void _updateAsciiStringParmsFromSystem( ParticleSystemTemplate *particleT
 		return;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "UpdateParticleAsciiStringParm");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "UpdateParticleAsciiStringParm");
 
 	if (!proc) {
 		return;
@@ -10084,8 +10087,8 @@ static int _getEditorBehavior( void )
 		return 0x00;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "NextParticleEditorBehavior");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "NextParticleEditorBehavior");
 
 	if (!proc) {
 		return 0x00;
@@ -10232,8 +10235,8 @@ static int _getNewCurrentParticleCap( void )
 		return -1;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "GetNewParticleCap");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "GetNewParticleCap");
 
 	if (!proc) {
 		return -1;
@@ -10250,8 +10253,8 @@ static void _updateCurrentParticleCap( void )
 		return;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "UpdateCurrentParticleCap");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "UpdateCurrentParticleCap");
 
 	if (!proc) {
 		return;
@@ -10268,8 +10271,8 @@ static void _updateCurrentParticleCount( void )
 		return;
 	}
 
-	FARPROC proc;	
-	proc = GetProcAddress(st_ParticleDLL, "UpdateCurrentNumParticles");
+	SDL_FunctionPointer proc;
+	proc = SDL_LoadFunction(st_ParticleDLL, "UpdateCurrentNumParticles");
 
 	if (!proc) {
 		return;
@@ -10288,14 +10291,14 @@ static void _reloadTextures( void )
 static void _initVTune()
 {
 	// always try loading it, even if -vtune wasn't specified.
-	st_vTuneDLL = ::LoadLibrary("vtuneapi.dll");
+	st_vTuneDLL = ::SDL_LoadObject(Platform::ReadPath("vtuneapi.dll").c_str());
 // nope, not here...
 //DEBUG_ASSERTCRASH(st_vTuneDLL != NULL, "VTuneAPI DLL not found!"));
 	
 	if (st_vTuneDLL)
 	{
-		VTPause = (VTProc)::GetProcAddress(st_vTuneDLL, "VTPause");
-		VTResume = (VTProc)::GetProcAddress(st_vTuneDLL, "VTResume");
+		VTPause = (VTProc)::SDL_LoadFunction(st_vTuneDLL, "VTPause");
+		VTResume = (VTProc)::SDL_LoadFunction(st_vTuneDLL, "VTResume");
 		DEBUG_ASSERTCRASH(VTPause != NULL && VTResume != NULL, ("VTuneAPI procs not found!\n"));
 	}
 	else
@@ -10343,7 +10346,7 @@ static void _cleanUpVTune()
 {
 	if (st_vTuneDLL) 
 	{
-		FreeLibrary(st_vTuneDLL);
+		SDL_UnloadObject(st_vTuneDLL);
 	}
 	st_vTuneDLL = NULL;
 	VTPause = NULL;

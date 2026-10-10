@@ -68,7 +68,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/TerrainLogic.h"
 
-#include "WWMath/Matrix3D.h"
+#include "WWMath/matrix3d.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _INTERNAL
@@ -187,7 +187,7 @@ AudioManager::~AudioManager()
 	for (it = m_allAudioEventInfo.begin(); it != m_allAudioEventInfo.end(); ++it) {
 		AudioEventInfo *eventInfo = (*it).second;
 		if (eventInfo) {
-			eventInfo->deleteInstance();
+			Platform::DeletePoolObject(eventInfo);
 			eventInfo = NULL;
 		}
 	}
@@ -780,7 +780,7 @@ AudioRequest *AudioManager::allocateAudioRequest( Bool useAudioEvent )
 void AudioManager::releaseAudioRequest( AudioRequest *requestToRelease )
 {
 	if (requestToRelease) {
-		requestToRelease->deleteInstance();
+		Platform::DeletePoolObject(requestToRelease);
 	}
 }
 

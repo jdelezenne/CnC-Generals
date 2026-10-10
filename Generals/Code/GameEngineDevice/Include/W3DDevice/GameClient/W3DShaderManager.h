@@ -36,12 +36,12 @@
 #ifndef __W3DSHADERMANAGER_H_
 #define __W3DSHADERMANAGER_H_
 
-#include "WW3D2/Texture.h"
-enum FilterTypes;
-enum CustomScenePassModes;
-enum StaticGameLODLevel;
-enum ChipsetType;
-enum CpuType;
+#include "WW3D2/texture.h"
+#include "GameClient/ViewFilter.h"
+#include "W3DDevice/GameClient/W3DCustomScene.h"
+#include "Common/StaticGameLODLevel.h"
+#include "Common/HardwareTypes.h"
+
 
 class TextureClass;	///forward reference
 /** System for managing complex rendering settings which are either not handled by

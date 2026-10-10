@@ -43,16 +43,20 @@
 //			  and alpha.
 //-----------------------------------------------------------------------------
 
-#include "W3DDevice/GameClient/heightmap.h"
+#include "Platform/System.h"
+#include "W3DDevice/GameClient/HeightMap.h"
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
-#include "Platform/Windows/Window.h"
+#include "Platform/Input.h"
+#include "Platform/Cursor.h"
+#include "Platform/Dialogs.h"
+#include <SDL3/SDL_scancode.h>
 #include "W3DDevice/GameClient/W3DWaterTracks.h"
 #include "GameClient/InGameUI.h"
 #include "GameLogic/TerrainLogic.h"
-#include "common/GlobalData.h"
-#include "common/UnicodeString.h"
-#include "Common/File.h"
+#include "Common/GlobalData.h"
+#include "Common/UnicodeString.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "texture.h"
 #include "colmath.h"
@@ -60,7 +64,7 @@
 #include "rinfo.h"
 #include "camera.h"
 #include "assetmgr.h"
-#include "WW3D2/DX8Wrapper.h"
+#include "WW3D2/dx8wrapper.h"
 
 //#pragma optimize("", off)
 
@@ -80,18 +84,7 @@ WaterTracksRenderSystem *TheWaterTracksRenderSystem=NULL;	///< singleton for tra
 
 static Bool pauseWaves=FALSE;
 
-enum waveType
-{
-	WaveTypeFirst,
-	WaveTypePond=WaveTypeFirst,
-	WaveTypeOcean,
-	WaveTypeCloseOcean,	//same as above but appears much closer to beach.
-	WaveTypeCloseOceanDouble,	//same as above but waves much sloser together.
-	WaveTypeRadial,
-	WaveTypeLast = WaveTypeRadial,
-	WaveTypeStationary,
-	WaveTypeMax,
-};
+#include "W3DDevice/GameClient/WaterTrackTypes.h"
 
 struct waveInfo
 {
@@ -178,7 +171,7 @@ Int WaterTracksObj::freeWaterTracksResources(void)
 *	the specified texture.
  */
 //=============================================================================
-void WaterTracksObj::init( Real width, Real length, Vector2 &start, Vector2 &end, Char *texturename, Int waveTimeOffset)
+void WaterTracksObj::init( Real width, Real length, const Vector2 &start, const Vector2 &end, Char *texturename, Int waveTimeOffset)
 {	
 	freeWaterTracksResources();	//free old resources used by this track
 
@@ -250,7 +243,7 @@ void WaterTracksObj::init( Real width, Real length, Vector2 &start, Vector2 &end
 *	defines the maximum distance the wave will reach.
  */
 //=============================================================================
-void WaterTracksObj::init( Real width, Vector2 &start, Vector2 &end, Char *texturename)
+void WaterTracksObj::init( Real width, const Vector2 &start, const Vector2 &end, Char *texturename)
 {	
 	freeWaterTracksResources();	//free old resources used by this track
 	m_boundingSphere.Init(Vector3(0,0,0),400);
@@ -925,7 +918,7 @@ Try improving the fit to vertical surfaces like cliffs.
 	DX8Wrapper::Set_DX8_Render_State(D3DRS_ZBIAS,0);
 }
 
-WaterTracksObj *WaterTracksRenderSystem::findTrack(Vector2 &start, Vector2 &end, waveType type)
+WaterTracksObj *WaterTracksRenderSystem::findTrack(const Vector2 &start, const Vector2 &end, waveType type)
 {
 	WaterTracksObj *mod=m_usedModules;
 
@@ -1110,7 +1103,7 @@ static void TestWaterUpdate(void)
 //		track->init(1.5f,8.0f,Vector2(139.0f,66.0f),Vector2(138.8f,67.6f),"wave2.tga");
 	}
 
-	if (GetAsyncKeyState(VK_F5) & 0x8001)	//check if F5 pressed since last call
+	if (Platform::KeyDownOrPressed(SDL_SCANCODE_F5))	//check if F5 pressed since last call
 	{	
 		if (trackEditModeReset)
 		{
@@ -1146,11 +1139,14 @@ static void TestWaterUpdate(void)
 	if (trackEditMode)
 	{   //we are in wave edit mode
 
-		if (GetCursorPos(&screenPoint))	//read mouse position
+		int mouseX, mouseY;
+		Platform::MousePosition(mouseX, mouseY);
+		screenPoint.x = mouseX; screenPoint.y = mouseY;
+		if (Platform::HasGameWindow())	//read mouse position
 		{
-			ScreenToClient( Platform::NativeGameWindow(), &screenPoint);
 
-			if (GetAsyncKeyState(VK_F6) & 0x8001)
+
+			if (Platform::KeyDownOrPressed(SDL_SCANCODE_F6))
 			{
 				if (addPointReset)
 				{
@@ -1206,7 +1202,7 @@ static void TestWaterUpdate(void)
 			else
 				addPointReset=1;
 
-			if (GetAsyncKeyState(VK_DELETE) & 0x8001)
+			if (Platform::KeyDownOrPressed(SDL_SCANCODE_DELETE))
 			{	//delete last segment added
 				if (deleteTrackReset && track)
 				{	deleteTrackReset=0;
@@ -1222,7 +1218,7 @@ static void TestWaterUpdate(void)
 			else
 				deleteTrackReset=1;
 
-			if (GetAsyncKeyState(VK_INSERT) & 0x8001)
+			if (Platform::KeyDownOrPressed(SDL_SCANCODE_INSERT))
 			{	//change current wave type
 				if (changeTypeReset)
 				{	changeTypeReset=0;
@@ -1238,7 +1234,7 @@ static void TestWaterUpdate(void)
 			else
 				changeTypeReset=1;
 
-			if (GetAsyncKeyState(VK_F7) & 0x8001)
+			if (Platform::KeyDownOrPressed(SDL_SCANCODE_F7))
 			{	//save all segments added
 				if (saveTracksReset)
 				{	saveTracksReset=0;
@@ -1255,7 +1251,7 @@ static void TestWaterUpdate(void)
 			else
 				saveTracksReset=1;
 
-			if (GetAsyncKeyState(VK_F8) & 0x8001)
+			if (Platform::KeyDownOrPressed(SDL_SCANCODE_F8))
 			{	//load tracks for map
 				if (loadTracksReset)
 				{	loadTracksReset=0;
@@ -1293,7 +1289,7 @@ static void TestWaterUpdate(void)
 
 //			char buffer[64];
 //			sprintf(buffer,"\n%d,%d,%d,%d",mouseAnchor.x, mouseAnchor.y, screenPoint.x, screenPoint.y);
-//			OutputDebugString (buffer);
+//			Platform::DebugMonitorOutput (buffer);
 		}
 	}
 }

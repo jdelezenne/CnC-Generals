@@ -57,6 +57,7 @@
 //-----------------------------------------------------------------------------
 // USER INCLUDES //////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
+#include "GameClient/AnimTypes.h"
 #include "Lib/BaseType.h"
 #include "Common/SubsystemInterface.h"
 #include "Common/GameMemory.h"
@@ -80,19 +81,7 @@ class ProcessAnimateWindow;
 // TYPE DEFINES ///////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 
-enum AnimTypes
-{
-	WIN_ANIMATION_NONE = 0,
-	WIN_ANIMATION_SLIDE_RIGHT,
-	WIN_ANIMATION_SLIDE_RIGHT_FAST,
-	WIN_ANIMATION_SLIDE_LEFT,
-	WIN_ANIMATION_SLIDE_TOP,
-	WIN_ANIMATION_SLIDE_BOTTOM,
-	WIN_ANIMATION_SPIRAL,
-	WIN_ANIMATION_SLIDE_BOTTOM_TIMED,
-	WIN_ANIMATION_SLIDE_TOP_FAST,
-	WIN_ANIMATION_COUNT
-} ;
+
 
 //-----------------------------------------------------------------------------
 class AnimateWindow : public MemoryPoolObject

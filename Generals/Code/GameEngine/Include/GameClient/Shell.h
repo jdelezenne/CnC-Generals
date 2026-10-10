@@ -105,7 +105,7 @@ class AnimateWindowManager;
 class GameWindow;
 class ShellMenuSchemeManager;
 
-enum AnimTypes;
+#include "GameClient/AnimTypes.h"
 
 //-------------------------------------------------------------------------------------------------
 /** This is the interface to the shell system to load, display, and

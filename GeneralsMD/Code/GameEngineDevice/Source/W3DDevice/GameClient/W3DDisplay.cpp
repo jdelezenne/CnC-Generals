@@ -34,12 +34,15 @@
 static void drawFramerateBar(void);
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
+#include "Platform/MathIntrinsics.h"
+#include "Platform/SystemInfo.h"
+#include "Platform/System.h"
 #include <stdlib.h>
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
-#include "Platform/Windows/Window.h"
-#include <windows.h>
-#include <io.h>
+#include "Platform/Window.h"
+#include "Platform/Directory.h"
+#include "Platform/BitmapFormat.h"
 #include <time.h>
 
 // USER INCLUDES //////////////////////////////////////////////////////////////
@@ -78,30 +81,29 @@ static void drawFramerateBar(void);
 #include "W3DDevice/GameClient/W3DScene.h"
 #include "W3DDevice/GameClient/W3DTerrainTracks.h"
 #include "W3DDevice/GameClient/W3DWater.h"
-#include "W3DDevice/GameClient/W3DVideoBuffer.h"
+#include "W3DDevice/GameClient/W3DVideobuffer.h"
 #include "W3DDevice/GameClient/W3DShaderManager.h"
 #include "W3DDevice/GameClient/W3DDebugDisplay.h"
 #include "W3DDevice/GameClient/W3DProjectedShadow.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
-#include "WWMath/WWMath.h"
-#include "WWLib/Registry.h"
-#include "WW3D2/WW3D.h"
-#include "WW3D2/PredLod.h"
-#include "WW3D2/Part_Emt.h"
-#include "WW3D2/Part_Ldr.h"
-#include "WW3D2/DX8Caps.h"
-#include "WW3D2/WW3DFormat.h"
+#include "WWMath/wwmath.h"
+#include "WWLib/registry.h"
+#include "WW3D2/ww3d.h"
+#include "WW3D2/predlod.h"
+#include "WW3D2/part_emt.h"
+#include "WW3D2/part_ldr.h"
+#include "WW3D2/dx8caps.h"
+#include "WW3D2/ww3dformat.h"
 #include "WW3D2/agg_def.h"
-#include "WW3D2/Render2DSentence.h"
-#include "WW3D2/SortingRenderer.h"
-#include "WW3D2/Textureloader.h"
-#include "WW3D2/DX8WebBrowser.h"
-#include "WW3D2/Mesh.h"
-#include "WW3D2/HLOD.h"
-#include "WW3D2/Meshmatdesc.h"
-#include "WW3D2/Meshmdl.h"
+#include "WW3D2/render2dsentence.h"
+#include "WW3D2/sortingrenderer.h"
+#include "WW3D2/textureloader.h"
+#include "WW3D2/mesh.h"
+#include "WW3D2/hlod.h"
+#include "WW3D2/meshmatdesc.h"
+#include "WW3D2/meshmdl.h"
 #include "WW3D2/rddesc.h"
-#include "targa.h"
+#include "TARGA.H"
 #include "Lib/BaseType.h"
 
 #include "GameLogic/ScriptEngine.h"		// For TheScriptEngine - jkmcd
@@ -110,7 +112,7 @@ static void drawFramerateBar(void);
 #include "GameLogic/PartitionManager.h"
 #endif
 
-#include "WinMain.h"
+
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -154,7 +156,7 @@ protected:
 //=============================================================================
 StatDumpClass::StatDumpClass( const char *fname )
 {
-	char buffer[ _MAX_PATH ];
+	char buffer[ Platform::LegacyPathCapacity ];
 	GetModuleFileName( NULL, buffer, sizeof( buffer ) );
 	char *pEnd = buffer + strlen( buffer );
 	while( pEnd != buffer )
@@ -379,16 +381,12 @@ W3DAssetManager *W3DDisplay::m_assetManager = NULL;
 	// only valid when "-vtune" is used... (srj)
 inline Int64 getPerformanceCounter()
 {
-	Int64 tmp;
-	QueryPerformanceCounter((LARGE_INTEGER*)&tmp);
-	return tmp;
+	return Platform::PerformanceCounter();
 }
 
 inline Int64 getPerformanceCounterFrequency()
 {
-	Int64 tmp;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&tmp);
-	return tmp;
+	return Platform::PerformanceFrequency();
 }
 
 // W3DDisplay::W3DDisplay =====================================================
@@ -465,7 +463,6 @@ W3DDisplay::~W3DDisplay()
 	delete m_assetManager;
 	WW3D::Shutdown();
 	WWMath::Shutdown();
-	DX8WebBrowser::Shutdown();
 	delete TheW3DFileSystem;
 	TheW3DFileSystem = NULL;
 
@@ -560,12 +557,11 @@ void Reset_D3D_Device(bool active)
 		{	
 			//switch back to desired mode when user alt-tabs back into game
 			WW3D::Set_Render_Device( WW3D::Get_Render_Device(),TheDisplay->getWidth(),TheDisplay->getHeight(),TheDisplay->getBitDepth(),TheDisplay->getWindowed(),true, true);
-			OSVERSIONINFO	osvi;
-			osvi.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
-			if (GetVersionEx(&osvi))
+			Platform::OSInfo osvi{};
+			if (Platform::QueryOSInfo(osvi))
 			{	//check if we're running Win9x variant since they have buggy alt-tab that requires
 				//reloading all textures.
-				if (osvi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
+				if (osvi.platform == 1)
 				{	//only do this on Win9x boxes because it makes alt-tab very slow.
 						WW3D::_Invalidate_Textures();
 				}
@@ -733,7 +729,7 @@ void W3DDisplay::init( void )
 	{
 		SortingRendererClass::SetMinVertexBufferSize(1);
 	}
-	if (WW3D::Init( Platform::NativeGameWindow() ) != WW3D_ERROR_OK)
+	if (WW3D::Init( Platform::RenderWindowHandle() ) != WW3D_ERROR_OK)
 		throw ERROR_INVALID_D3D;	//failed to initialize.  User probably doesn't have DX 8.1
 
 	WW3D::Set_Prelit_Mode( WW3D::PRELIT_MODE_LIGHTMAP_MULTI_PASS );
@@ -827,7 +823,6 @@ void W3DDisplay::init( void )
 		m_nativeDebugDisplay->setFontWidth( 9 );
 	}
 
-	DX8WebBrowser::Initialize();
 
 	// we're now online
 	m_initialized = true;
@@ -990,7 +985,7 @@ void W3DDisplay::gatherDebugStats( void )
 #ifdef EXTENDED_STATS
 		static FILE *pListFile = NULL;
 		static Int64 lastFrameTime=0;
-		static samples = 0;
+		static Int samples = 0;
 		if (pListFile == NULL) {
 			pListFile = Platform::OpenStream("FrameRateLog.txt", "w");
 		}
@@ -1158,13 +1153,13 @@ void W3DDisplay::gatherDebugStats( void )
 				char bufferA[ 256 ];
 				sprintf( bufferA, "FPS: %.2f, %.2fms - OH %.2fms, Console %.2fms, 3D OH %.2fms, Terrain %.2fms, Obs %.2fms, CPU %.2fms\n", 
 					fps, ms, gameOverheadMS, consoleMS, threeDOverheadMS, terrainMS, objectMS, overlapMS);
-				::OutputDebugString(bufferA);
+				Platform::DebugMonitorOutput(bufferA);
 				if (pListFile) {
 					fprintf(pListFile, "\n%s", bufferA);
 				}				
 				sprintf( bufferA, "Polygons: per frame %d, per second %d\n", polyPerFrame,
 						(Int)(polyPerFrame*fps));
-				::OutputDebugString(bufferA);
+				Platform::DebugMonitorOutput(bufferA);
 				if (pListFile) {
 					fprintf(pListFile, "%s", bufferA);
 					fflush(pListFile);
@@ -1464,7 +1459,7 @@ void W3DDisplay::gatherDebugStats( void )
 
 			unibuffer.concat( L"\nModelStates: " );
 			ModelConditionFlags mcFlags = draw->getModelConditionFlags();
-			const numEntriesPerLine = 4;
+			const Int numEntriesPerLine = 4;
 			int lineCount = 0;
 
 			for( int i = 0; i < MODELCONDITION_COUNT; i++ )
@@ -1575,7 +1570,7 @@ void W3DDisplay::calculateTerrainLOD( void )
 	
 	Int64 freq64 = getPerformanceCounterFrequency();
 
-	char buf[_MAX_PATH];
+	char buf[Platform::LegacyPathCapacity];
 	float frameTime = 0;
 	float maxTimeLimit = TheGlobalData->m_terrainLODTargetTimeMS/1000.0f;
 	TerrainLOD goodLOD = TERRAIN_LOD_MIN;
@@ -1618,7 +1613,7 @@ void W3DDisplay::calculateTerrainLOD( void )
 			Int64 time64 = getPerformanceCounter();
 			timeForFrame = (float)((double)(time64-startTime64) / (double)(freq64));
 			sprintf(buf, "%.2fms ", timeForFrame*1000.0f);
-			::OutputDebugString(buf);
+			Platform::DebugMonitorOutput(buf);
 			if (i>=NUM_TO_DISCARD) {
 				frameTime += timeForFrame;
 				if (i>NUM_TO_DISCARD+1 && 
@@ -1631,7 +1626,7 @@ void W3DDisplay::calculateTerrainLOD( void )
 		frameTime /= ((i)-NUM_TO_DISCARD);
 		count++;
 		sprintf(buf, "\n LOD %d, time %.2fms\n", curLOD, frameTime*1000.0f);
-		::OutputDebugString(buf);
+		Platform::DebugMonitorOutput(buf);
 		if (frameTime<maxTimeLimit && goodLOD<curLOD) {
 			goodLOD = curLOD;
 		}
@@ -1668,7 +1663,7 @@ void W3DDisplay::draw( void )
 {
 	//USE_PERF_TIMER(W3DDisplay_draw)
 	static UnsignedInt syncTime = 0;
-	if (Platform::NativeGameWindow() && ::IsIconic(Platform::NativeGameWindow())) {
+	if (Platform::WindowMinimized()) {
 		return;
 	}
 
@@ -2918,77 +2913,9 @@ void W3DDisplay::setShroudLevel( Int x, Int y, CellShroudStatus setting )
 
 //=============================================================================
 ///Utility function to dump data into a .BMP file
-static void CreateBMPFile(LPTSTR pszFile, char *image, Int width, Int height)
-{ 
-     HANDLE hf;                 // file handle 
-    BITMAPFILEHEADER hdr;       // bitmap file-header 
-    PBITMAPINFOHEADER pbih;     // bitmap info-header 
-    LPBYTE lpBits;              // memory pointer 
-    DWORD dwTotal;              // total count of bytes 
-    DWORD cb;                   // incremental count of bytes 
-    BYTE *hp;                   // byte pointer 
-    DWORD dwTmp; 
-
-    PBITMAPINFO pbmi; 
-
-    pbmi = (PBITMAPINFO) LocalAlloc(LPTR,sizeof(BITMAPINFOHEADER));
-    pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER); 
-    pbmi->bmiHeader.biWidth = width; 
-    pbmi->bmiHeader.biHeight = height; 
-    pbmi->bmiHeader.biPlanes = 1; 
-    pbmi->bmiHeader.biBitCount = 24;
-    pbmi->bmiHeader.biCompression = BI_RGB;
-    pbmi->bmiHeader.biSizeImage = (pbmi->bmiHeader.biWidth + 7) /8 * pbmi->bmiHeader.biHeight * 24;
-    pbmi->bmiHeader.biClrImportant = 0; 
-
-
-    pbih = (PBITMAPINFOHEADER) pbmi; 
-    lpBits = (LPBYTE) image;
-
-    // Create the .BMP file. 
-    hf = CreateFile(Platform::WritePath(pszFile).c_str(),
-                   GENERIC_READ | GENERIC_WRITE, 
-                   (DWORD) 0, 
-                    NULL, 
-                   CREATE_ALWAYS, 
-                   FILE_ATTRIBUTE_NORMAL, 
-                   (HANDLE) NULL); 
-    if (hf == INVALID_HANDLE_VALUE) 
-		return;
-    hdr.bfType = 0x4d42;        // 0x42 = "B" 0x4d = "M" 
-    // Compute the size of the entire file. 
-    hdr.bfSize = (DWORD) (sizeof(BITMAPFILEHEADER) + 
-                 pbih->biSize + pbih->biClrUsed 
-                 * sizeof(RGBQUAD) + pbih->biSizeImage); 
-    hdr.bfReserved1 = 0; 
-    hdr.bfReserved2 = 0; 
-
-    // Compute the offset to the array of color indices. 
-    hdr.bfOffBits = (DWORD) sizeof(BITMAPFILEHEADER) + 
-                    pbih->biSize + pbih->biClrUsed 
-                    * sizeof (RGBQUAD); 
-
-    // Copy the BITMAPFILEHEADER into the .BMP file. 
-    if (!WriteFile(hf, (LPVOID) &hdr, sizeof(BITMAPFILEHEADER), 
-        (LPDWORD) &dwTmp,  NULL)) 
-		return;
-
-    // Copy the BITMAPINFOHEADER and RGBQUAD array into the file. 
-    if (!WriteFile(hf, (LPVOID) pbih, sizeof(BITMAPINFOHEADER) + pbih->biClrUsed * sizeof (RGBQUAD),(LPDWORD) &dwTmp, NULL)) 
-		return;
-
-    // Copy the array of color indices into the .BMP file. 
-    dwTotal = cb = pbih->biSizeImage; 
-    hp = lpBits; 
-    if (!WriteFile(hf, (LPSTR) hp, (int) cb, (LPDWORD) &dwTmp,NULL)) 
-		return;
-
-    // Close the .BMP file. 
-     if (!CloseHandle(hf))
-		 return;
-
-    // Free memory. 
-	LocalFree( (HLOCAL) pbmi);
+static void CreateBMPFile(const char* filename, char* image, Int width, Int height)
+{
+	Platform::WriteBitmap24(filename, image, width, height);
 }
 
 ///Save Screen Capture to a file
@@ -3008,7 +2935,7 @@ void W3DDisplay::takeScreenShot(void)
 #endif
 		strcpy(pathname, TheGlobalData->getPath_UserData().str());
 		strcat(pathname, leafname);
-		if (_access( Platform::ReadPath(pathname).c_str(), 0 ) == -1)
+		if (!Platform::PathExists(pathname))
 			done = true;
 	}
 
@@ -3019,16 +2946,7 @@ void W3DDisplay::takeScreenShot(void)
 	D3DSURFACE_DESC desc;
 	fb->GetDesc(&desc);
 
-	RECT bounds;
-	POINT point;
-
-	GetClientRect(Platform::NativeGameWindow(),&bounds);
-	point.x=bounds.left; point.y=bounds.top;
-	ClientToScreen(Platform::NativeGameWindow(), &point);
-	bounds.left=point.x; bounds.top=point.y; 
-	point.x=bounds.right; point.y=bounds.bottom;
-	ClientToScreen(Platform::NativeGameWindow(), &point);
-	bounds.right=point.x; bounds.bottom=point.y;
+	RECT bounds{0, 0, static_cast<int>(desc.Width), static_cast<int>(desc.Height)};
  
 	D3DLOCKED_RECT lrect;
 
@@ -3300,7 +3218,7 @@ void W3DDisplay::dumpAssetUsage(const char* mapname)
 	while (true)
 	{
 		sprintf(buf, "AssetUsage_%s_%04d.txt",leafname,idx);
-		if (_access(Platform::ReadPath(buf).c_str(), 0) != 0)
+		if (!Platform::PathExists(buf))
 			break;	// it exists, we're good
 		++idx;
 	}

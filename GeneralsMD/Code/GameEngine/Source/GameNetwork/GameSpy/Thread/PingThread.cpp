@@ -28,7 +28,7 @@
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
-#include <winsock.h>	// This one has to be here. Prevents collisions with windsock2.h
+#include "Platform/Sockets.h"	// This one has to be here. Prevents collisions with windsock2.h
 
 #include "GameNetwork/GameSpy/PingThread.h"
 #include "mutex.h"
@@ -248,14 +248,12 @@ AsciiString Pinger::getPingString( Int timeout )
 void PingThreadClass::Thread_Function()
 {
 	try {
-	_set_se_translator( DumpExceptionInfo ); // Hook that allows stack trace.
+	#ifdef _WIN32
+	_set_se_translator( DumpExceptionInfo );
+#endif
 	PingRequest req;
 
-	WSADATA wsaData;
-
-	// Fire up winsock (prob already done, but doesn't matter)
-	WORD wVersionRequested = MAKEWORD(1, 1);
-	WSAStartup( wVersionRequested, &wsaData );
+	Platform::InitializeSockets();
 
 	while ( running )
 	{
@@ -274,7 +272,7 @@ void PingThreadClass::Thread_Function()
 			}
 			else
 			{
-				HOSTENT *hostStruct;
+				hostent *hostStruct;
 				in_addr *hostNode;
 				hostStruct = gethostbyname(hostnameBuffer);
 				if (hostStruct == NULL)
@@ -285,9 +283,11 @@ void PingThreadClass::Thread_Function()
 					//   callback.
 					IP = 0xFFFFFFFF;   // flag for IP resolve failed
 				}
-				hostNode = (in_addr *) hostStruct->h_addr;
-				IP = hostNode->s_addr;
-				DEBUG_LOG(("pinging %s IP = %s\n", hostnameBuffer, inet_ntoa(*hostNode) ));
+				if (hostStruct) {
+					hostNode = (in_addr *) hostStruct->h_addr;
+					IP = hostNode->s_addr;
+					DEBUG_LOG(("pinging %s IP = %s\n", hostnameBuffer, inet_ntoa(*hostNode) ));
+				}
 			}
 
 			// do ping
@@ -322,7 +322,7 @@ void PingThreadClass::Thread_Function()
 		Switch_Thread();
 	}
 
-	WSACleanup();
+	Platform::ShutdownSockets();
 	} catch ( ... ) {
 		DEBUG_CRASH(("Exception in ping thread!"));
 	}
@@ -335,6 +335,7 @@ void PingThreadClass::Thread_Function()
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
+#ifdef _WIN32
 HANDLE WINAPI IcmpCreateFile(VOID); /* INVALID_HANDLE_VALUE on error */
 BOOL WINAPI IcmpCloseHandle(HANDLE IcmpHandle); /* FALSE on error */
 
@@ -573,3 +574,10 @@ cleanup:
 
 
 //-------------------------------------------------------------------------
+
+#else
+Int PingThreadClass::doPing(UnsignedInt IP, Int timeout)
+{
+	return Platform::PingIPv4(IP, timeout);
+}
+#endif

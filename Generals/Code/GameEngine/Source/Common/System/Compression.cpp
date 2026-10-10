@@ -48,7 +48,7 @@
 
 #include "GameClient/MapUtil.h"
 #include "Common/FileSystem.h"
-#include "Common/File.h"
+#include "Common/file.h"
 
 #include "Common/PerfTimer.h"
 enum { NUM_TIMES = 1 };

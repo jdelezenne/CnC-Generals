@@ -28,6 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/FloatingPoint.h"
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
 
@@ -119,7 +120,7 @@ FILE *g_UT_timingLog=NULL;
 FILE *g_UT_commaLog=NULL;
 // Note - this is only for gathering timing data!  DO NOT DO THIS IN REGULAR CODE!!!  JBA
 #define BRUTAL_TIMING_HACK
-#include "../../gameenginedevice/include/W3DDevice/GameClient/Module/W3DModelDraw.h"
+#include "../../GameEngineDevice/Include/W3DDevice/GameClient/Module/W3DModelDraw.h"
 #endif
 
 
@@ -187,24 +188,7 @@ static Waypoint * findNamedWaypoint(AsciiString name)
 // ------------------------------------------------------------------------------------------------
 void setFPMode( void )
 {
-  // Set floating point round mode to CHOP, which only comes
-  // into play when precision is exceeded.  This is necessary
-  // for the fast float to int routines used elsewhere in the
-  // system.
-	//
-	// Also set floating point precision to low.  It could be
-	// anything as long as it is consistent, really, but this
-	// is in the (vain?) hope of any slight speed boost.
-	//
-	_fpreset();
-
-	UnsignedInt curVal = _statusfp();
-	UnsignedInt newVal = curVal;
-	newVal = (newVal & ~_MCW_RC) | (_RC_NEAR & _MCW_RC);
-	//newVal = (newVal & ~_MCW_RC) | (_RC_CHOP & _MCW_RC);
-	newVal = (newVal & ~_MCW_PC) | (_PC_24   & _MCW_PC);
-
-	_controlfp(newVal, _MCW_PC | _MCW_RC);
+	Platform::SetGameFloatingPointMode();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -322,7 +306,7 @@ GameLogic::~GameLogic()
 	if (m_background)
 	{
 		m_background->destroyWindows();
-		m_background->deleteInstance();
+		Platform::DeletePoolObject(m_background);
 		m_background = NULL;
 	}
 
@@ -1005,7 +989,7 @@ void GameLogic::startNewGame( Bool saveGame )
 				if(m_background)
 				{
 					m_background->destroyWindows();
-					m_background->deleteInstance();
+					Platform::DeletePoolObject(m_background);
 					m_background = NULL;
 				}
 				m_loadScreen = getLoadScreen( saveGame );
@@ -1114,7 +1098,7 @@ void GameLogic::startNewGame( Bool saveGame )
 	if(m_background)
 	{
 		m_background->destroyWindows();
-		m_background->deleteInstance();
+		Platform::DeletePoolObject(m_background);
 		m_background = NULL;
 	}
 	setFPMode();
@@ -1392,7 +1376,7 @@ void GameLogic::startNewGame( Bool saveGame )
 				}
 				for (Int i=0; i<count; ++i)
 				{
-					scripts[i]->deleteInstance();
+					Platform::DeletePoolObject(scripts[i]);
 				}
 			}
 		}
@@ -1877,7 +1861,7 @@ void GameLogic::startNewGame( Bool saveGame )
 	{
 		updateLoadProgress(101); // keep greater then 100
 		testTimeOut();
-		Sleep(100);
+		Platform::Delay(100);
 	}
 
 	// if we're in a load game, don't fade yet
@@ -1891,7 +1875,7 @@ void GameLogic::startNewGame( Bool saveGame )
 			{
 				TheDisplay->draw();
 				setFPMode();
-				Sleep(33);
+				Platform::Delay(33);
 			}
 			
 		}
@@ -2079,10 +2063,10 @@ void GameLogic::loadMapINI( AsciiString mapName )
 		return;
 	}
 
-	char filename[_MAX_PATH];
-	char fullFledgeFilename[_MAX_PATH];
+	char filename[Platform::LegacyPathCapacity];
+	char fullFledgeFilename[Platform::LegacyPathCapacity];
 
-	memset(filename, 0, _MAX_PATH);
+	memset(filename, 0, Platform::LegacyPathCapacity);
 	strcpy(filename, mapName.str());
 
 	//

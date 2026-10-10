@@ -22,3 +22,6 @@ enum ScienceType
 {
 	SCIENCE_INVALID = -1
 };
+
+#include <vector>
+typedef std::vector<ScienceType> ScienceVec;

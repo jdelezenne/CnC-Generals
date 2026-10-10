@@ -26,14 +26,15 @@
 // Implementation of Data Chunk save/load system
 // Author: Michael S. Booth, October 2000
 
-#include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "PreRTS.h"
+#include "Platform/UTF16.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Paths.h"
 
 #include "stdlib.h"
 #include "string.h"
 #include "Compression.h"
 #include "Common/DataChunk.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 
 // If verbose, lots of debug logging.
@@ -332,7 +333,7 @@ void DataChunkOutput::closeDataChunk( void )
 	DEBUG_LOG(("Closing chunk %s at %d (%x)\n", m_contents.getName(c->id).str(), here, here));
 #endif
 	m_chunkStack = m_chunkStack->next;
-	c->deleteInstance();
+	Platform::DeletePoolObject(c);
 }
 
 void DataChunkOutput::writeReal( Real r ) 
@@ -364,9 +365,10 @@ void DataChunkOutput::writeAsciiString( const AsciiString& theString )
 
 void DataChunkOutput::writeUnicodeString( UnicodeString theString ) 
 { 
-	UnsignedShort len = theString.getLength();
+	const auto bytes = Platform::EncodeUTF16LE(theString.str(), theString.getLength());
+	UnsignedShort len = static_cast<UnsignedShort>(bytes.size()/2);
 	::fwrite( (const char *)&len, sizeof(UnsignedShort) , 1, m_tmp_file );
-	::fwrite( theString.str(), len*sizeof(WideChar) , 1, m_tmp_file ); 
+	::fwrite( bytes.data(), len*2 , 1, m_tmp_file );
 }
 
 void DataChunkOutput::writeNameKey( const NameKeyType key ) 
@@ -438,7 +440,7 @@ DataChunkTableOfContents::~DataChunkTableOfContents()
 	for( m=m_list; m; m=next )
 	{
 		next = m->next;
-		m->deleteInstance();
+		Platform::DeletePoolObject(m);
 	}
 }
 
@@ -602,7 +604,7 @@ DataChunkInput::~DataChunkInput()
 	UserParser *p, *next;
 	for (p=m_parserList; p; p=next) {
 		next = p->next;
-		p->deleteInstance();
+		Platform::DeletePoolObject(p);
 	}
 
 }
@@ -700,7 +702,7 @@ void DataChunkInput::clearChunkStack( void )
 	for( c=m_chunkStack; c; c=next )
 	{
 		next = c->next;
-		c->deleteInstance();
+		Platform::DeletePoolObject(c);
 	}
 
 	m_chunkStack = NULL;
@@ -773,7 +775,7 @@ void DataChunkInput::closeDataChunk( void )
 	// pop the chunk off the stack
 	InputChunk *c = m_chunkStack;
 	m_chunkStack = m_chunkStack->next;
-	c->deleteInstance();
+	Platform::DeletePoolObject(c);
 }
 
 
@@ -975,14 +977,13 @@ UnicodeString DataChunkInput::readUnicodeString(void)
 	DEBUG_ASSERTCRASH(m_chunkStack->dataLeft>=sizeof(UnsignedShort), ("Read past end of chunk."));
 	m_file->read( &len, sizeof(UnsignedShort) );
 	decrementDataLeft( sizeof(UnsignedShort) );
-	DEBUG_ASSERTCRASH(m_chunkStack->dataLeft>=len, ("Read past end of chunk."));
+	DEBUG_ASSERTCRASH(m_chunkStack->dataLeft>=len*2, ("Read past end of chunk."));
 	UnicodeString theString;
 	if (len>0) {
-		WideChar *str = theString.getBufferForRead(len);
-		m_file->read( (char*)str, len*sizeof(WideChar) );
-		decrementDataLeft( len*sizeof(WideChar) );
-		// add null delimiter to string.  Note that getBufferForRead allocates space for terminating null.
-		str[len] = '\000';
+		std::vector<unsigned char> bytes(static_cast<std::size_t>(len)*2);
+		m_file->read(bytes.data(), len*2);
+		decrementDataLeft(len*2);
+		theString.set(Platform::DecodeUTF16LE<WideChar>(bytes.data(), len).c_str());
 	}
 
 	return theString; 

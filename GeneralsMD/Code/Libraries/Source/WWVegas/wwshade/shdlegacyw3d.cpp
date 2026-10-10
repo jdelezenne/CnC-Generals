@@ -37,6 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <d3dx8math.h>
+#include "Platform/Paths.h"
 #include "dx8fvf.h"
 #include "dx8wrapper.h"
 #include "assetmgr.h"
@@ -196,8 +197,8 @@ bool ShdLegacyW3DDefClass::Save(ChunkSaveClass &csave)
 			if (!TextureNames[pass_index][stage_index].Is_Empty()) {
 
 /* (gth) need to save entire path for Max to work properly right???  
-				char fname[_MAX_PATH];
-				char extension[_MAX_PATH];
+				char fname[Platform::LegacyPathCapacity];
+				char extension[Platform::LegacyPathCapacity];
 				_splitpath(TextureNames[pass_index][stage_index].Peek_Buffer(),NULL,NULL,fname,extension);
 				strcat(fname,extension);
 */

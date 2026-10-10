@@ -300,7 +300,7 @@ DLOG( "My HResult is: " << Debug::HResult(SomeHRESULTValue) << "\n" );
   };
 
   /// \internal Performs actuals repeating of char
-  Debug& operator<<(RepeatChar &c);
+  Debug& operator<<(RepeatChar c);
 
   /**
     \brief Old printf style formatting.
@@ -738,6 +738,7 @@ DLOG( "My HResult is: " << Debug::HResult(SomeHRESULTValue) << "\n" );
     \brief Write build information into log.
   */
   void WriteBuildInfo(void);
+  static void Initialize(void);
 
 private:
   // no assignment, no copy constructor

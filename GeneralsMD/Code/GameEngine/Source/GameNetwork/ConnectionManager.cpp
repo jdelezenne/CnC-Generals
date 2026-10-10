@@ -31,7 +31,7 @@
 #include "Common/AudioEventRTS.h"
 #include "Common/CRCDebug.h"
 #include "Common/Debug.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/GameAudio.h"
 #include "Common/LocalFileSystem.h"
 #include "Common/Player.h"
@@ -46,7 +46,7 @@
 #include "GameNetwork/LANAPICallbacks.h"
 #include "GameNetwork/NAT.h"
 #include "GameNetwork/NetCommandWrapperList.h"
-#include "GameNetwork/NetworkUtil.h"
+#include "GameNetwork/networkutil.h"
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/ScriptActions.h"
 #include "GameLogic/ScriptEngine.h"
@@ -66,7 +66,7 @@
 ConnectionManager::~ConnectionManager(void)
 {
 	if (m_localUser != NULL) {
-		m_localUser->deleteInstance();
+		Platform::DeletePoolObject(m_localUser);
 		m_localUser = NULL;
 	}
 
@@ -76,16 +76,17 @@ ConnectionManager::~ConnectionManager(void)
 		m_transport = NULL;
 	}
 
-	for (Int i = 0; i < MAX_SLOTS; ++i) {
+	Int i;
+	for (i = 0; i < MAX_SLOTS; ++i) {
 		if (m_frameData[i] != NULL) {
-			m_frameData[i]->deleteInstance();
+			Platform::DeletePoolObject(m_frameData[i]);
 			m_frameData[i] = NULL;
 		}
 	}
 
 	for (i = 0; i < NUM_CONNECTIONS; ++i) {
 		if (m_connections[i] != NULL) {
-			m_connections[i]->deleteInstance();
+			Platform::DeletePoolObject(m_connections[i]);
 			m_connections[i] = NULL;
 		}
 	}
@@ -102,17 +103,17 @@ ConnectionManager::~ConnectionManager(void)
 	}
 
 	if (m_pendingCommands != NULL) {
-		m_pendingCommands->deleteInstance();
+		Platform::DeletePoolObject(m_pendingCommands);
 		m_pendingCommands = NULL;
 	}
 
 	if (m_relayedCommands != NULL) {
-		m_relayedCommands->deleteInstance();
+		Platform::DeletePoolObject(m_relayedCommands);
 		m_relayedCommands = NULL;
 	}
 
 	if (m_netCommandWrapperList != NULL) {
-		m_netCommandWrapperList->deleteInstance();
+		Platform::DeletePoolObject(m_netCommandWrapperList);
 		m_netCommandWrapperList = NULL;
 	}
 
@@ -152,7 +153,8 @@ void ConnectionManager::init()
 //	}
 //	m_transport->reset();
 
-	for (UnsignedInt i = 0; i < NUM_CONNECTIONS; ++i) {
+	UnsignedInt i;
+	for (i = 0; i < NUM_CONNECTIONS; ++i) {
 		m_connections[i] = NULL;
 	}
 
@@ -179,7 +181,7 @@ void ConnectionManager::init()
 
 	for (i = 0; i < MAX_SLOTS; ++i) {
 		if (m_frameData[i] != NULL) {
-			m_frameData[i]->deleteInstance();
+			Platform::DeletePoolObject(m_frameData[i]);
 			m_frameData[i] = NULL;
 		}
 	}
@@ -230,9 +232,10 @@ void ConnectionManager::reset()
 		m_transport = NULL;
 	}
 
-	for (Int i = 0; i < NUM_CONNECTIONS; ++i) {
+	Int i;
+	for (i = 0; i < NUM_CONNECTIONS; ++i) {
 		if (m_connections[i] != NULL) {
-			m_connections[i]->deleteInstance();
+			Platform::DeletePoolObject(m_connections[i]);
 			m_connections[i] = NULL;
 		}
 	}
@@ -240,7 +243,7 @@ void ConnectionManager::reset()
 	for (i=0; i<MAX_SLOTS; ++i)
 	{
 		if (m_frameData[i] != NULL) {
-			m_frameData[i]->deleteInstance();
+			Platform::DeletePoolObject(m_frameData[i]);
 			m_frameData[i] = NULL;
 		}
 	}
@@ -381,10 +384,10 @@ void ConnectionManager::doRelay() {
 			++numPackets;
 
 			// Delete this packet since we won't be needing it anymore.
-			packet->deleteInstance();
+			Platform::DeletePoolObject(packet);
 			packet = NULL;
 
-			cmdList->deleteInstance();
+			Platform::DeletePoolObject(cmdList);
 			cmdList = NULL;
 
 			// signal that this has been processed.
@@ -408,10 +411,10 @@ void ConnectionManager::doRelay() {
 	++numPackets;
 
 	// Delete this packet since we won't be needing it anymore.
-	packet->deleteInstance();
+	Platform::DeletePoolObject(packet);
 	packet = NULL;
 
-	cmdList->deleteInstance();
+	Platform::DeletePoolObject(cmdList);
 	cmdList = NULL;
 }
 
@@ -851,7 +854,7 @@ void ConnectionManager::processAckStage1(NetCommandMsg *msg) {
 			m_frameMetrics.processLatencyResponse(((NetFrameCommandMsg *)(ref->getCommand()))->getExecutionFrame());
 		}
 
-		ref->deleteInstance();
+		Platform::DeletePoolObject(ref);
 		ref = NULL;
 	}
 }
@@ -878,7 +881,7 @@ void ConnectionManager::processAckStage2(NetCommandMsg *msg) {
 		//DEBUG_LOG(("ConnectionManager::processAckStage2 - removing command %d from the pending commands list.\n", commandID));
 		DEBUG_ASSERTCRASH((m_localSlot == playerID), ("Found a command in the pending commands list that wasn't originated by the local player"));
 		m_pendingCommands->removeMessage(ref);
-		ref->deleteInstance();
+		Platform::DeletePoolObject(ref);
 		ref = NULL;
 	} else {
 		//DEBUG_LOG(("ConnectionManager::processAckStage2 - Couldn't find command %d from player %d in the pending commands list.\n", commandID, playerID));
@@ -896,7 +899,7 @@ void ConnectionManager::processAckStage2(NetCommandMsg *msg) {
 			m_relayedCommands->removeMessage(ref);
 			NetAckStage2CommandMsg *ackmsg = newInstance(NetAckStage2CommandMsg)(ref->getCommand());
 			sendLocalCommand(ackmsg, 1 << ackmsg->getOriginalPlayerID());
-			ref->deleteInstance();
+			Platform::DeletePoolObject(ref);
 			ref = NULL;
 
 			ackmsg->detach();
@@ -1181,7 +1184,8 @@ void ConnectionManager::update(Bool isInGame) {
 	// send any necessary keep-alive packets.
 	doKeepAlive();
 
-	for (Int i = 0; i < NUM_CONNECTIONS; ++i) {
+	Int i;
+	for (i = 0; i < NUM_CONNECTIONS; ++i) {
 		if (m_connections[i] != NULL) {
 			/*
 			if (m_connections[i]->isQueueEmpty() == FALSE) {
@@ -1194,7 +1198,7 @@ void ConnectionManager::update(Bool isInGame) {
 			if (m_connections[i]->isQuitting() && m_connections[i]->isQueueEmpty())
 			{
 				DEBUG_LOG(("ConnectionManager::update - deleting connection for slot %d\n", i));
-				m_connections[i]->deleteInstance();
+				Platform::DeletePoolObject(m_connections[i]);
 				m_connections[i] = NULL;
 			}
 		}
@@ -1202,7 +1206,7 @@ void ConnectionManager::update(Bool isInGame) {
 		if ((m_frameData[i] != NULL) && (m_frameData[i]->getIsQuitting() == TRUE)) {
 			if (m_frameData[i]->getQuitFrame() == TheGameLogic->getFrame()) {
 				DEBUG_LOG(("ConnectionManager::update - deleting frame data for slot %d on quitting frame %d\n", i, m_frameData[i]->getQuitFrame()));
-				m_frameData[i]->deleteInstance();
+				Platform::DeletePoolObject(m_frameData[i]);
 				m_frameData[i] = NULL;
 			}
 		}
@@ -1554,7 +1558,8 @@ Bool ConnectionManager::allCommandsReady(UnsignedInt frame, Bool justTesting /* 
 	Bool retval = TRUE;
 	FrameDataReturnType frameRetVal;
 //	retval = FALSE;  // ****for testing purposes only!!!!!!****
-	for (Int i = 0; (i < MAX_SLOTS) && retval; ++i) {
+	Int i;
+	for (i = 0; (i < MAX_SLOTS) && retval; ++i) {
 		if ((m_frameData[i] != NULL) && (m_frameData[i]->getIsQuitting() == FALSE)) {
 /*
 			if (!(m_frameData[i]->allCommandsReady(frame, (frame != commandsReadyDebugSpewage) && (justTesting == FALSE)))) {
@@ -1727,13 +1732,13 @@ PlayerLeaveCode ConnectionManager::disconnectPlayer(Int slot) {
 
 	if ((m_frameData[slot] != NULL) && (m_frameData[slot]->getIsQuitting() == FALSE)) {
 		DEBUG_LOG(("ConnectionManager::disconnectPlayer - deleting player %d frame data\n", slot));
-		m_frameData[slot]->deleteInstance();
+		Platform::DeletePoolObject(m_frameData[slot]);
 		m_frameData[slot] = NULL;
 	}
 
 	if (m_connections[slot] != NULL && !m_connections[slot]->isQuitting()) {
 		DEBUG_LOG(("ConnectionManager::disconnectPlayer - deleting player %d connection\n", slot));
-		m_connections[slot]->deleteInstance();
+		Platform::DeletePoolObject(m_connections[slot]);
 		m_connections[slot] = NULL;
 	}
 
@@ -2339,7 +2344,7 @@ void ConnectionManager::notifyOthersOfCurrentFrame(Int frame) {
 	NetCommandRef *ref = NEW_NETCOMMANDREF(msg);
 	ref->setRelay(1 << m_localSlot);
 	m_disconnectManager->processDisconnectCommand(ref, this);
-	ref->deleteInstance();
+	Platform::DeletePoolObject(ref);
 
 	msg->detach();
 
@@ -2362,7 +2367,7 @@ void ConnectionManager::notifyOthersOfNewFrame(UnsignedInt frame) {
 	NetCommandRef *ref = NEW_NETCOMMANDREF(msg);
 	ref->setRelay(1 << m_localSlot);
 	m_disconnectManager->processDisconnectCommand(ref, this);
-	ref->deleteInstance();
+	Platform::DeletePoolObject(ref);
 
 	msg->detach();
 }

@@ -26,6 +26,9 @@
 //
 // Debug I/O class flat (flat or split log file)
 //////////////////////////////////////////////////////////////////////////////
+#include "Platform/Sockets.h"
+#include "Platform/Directory.h"
+#include "Platform/DateTime.h"
 #include "_pch.h"
 #include "Platform/Paths.h"
 #include <stdlib.h>
@@ -42,9 +45,7 @@ DebugIOFlat::OutputStream::OutputStream(const char *filename, unsigned maxSize):
   m_buffer=(char *)DebugAllocMemory(m_bufferSize);
 
   if (!m_limitedFileSize)
-    m_fileHandle=CreateFile(Platform::WritePath(m_fileName).c_str(),GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-                            FILE_ATTRIBUTE_NORMAL|FILE_FLAG_WRITE_THROUGH,
-                            NULL);
+    m_fileHandle=Platform::OpenRawFile(Platform::WritePath(m_fileName).c_str(),Platform::FileMode::Write);
 }
 
 DebugIOFlat::OutputStream::~OutputStream()
@@ -60,7 +61,7 @@ void DebugIOFlat::OutputStream::Delete(const char *path)
 {
   Flush();
   if (!m_limitedFileSize)
-    CloseHandle(m_fileHandle);
+    Platform::CloseRawFile(m_fileHandle);
 
   if (path&&*path)
   {
@@ -92,12 +93,12 @@ void DebugIOFlat::OutputStream::Delete(const char *path)
         help[ext-fileNameOnly+pathLen+(fileNameOnly-m_fileName)]=0;
       }
       if (++run)
-        wsprintf(help+strlen(help),"(%i)%s",run,ext);
+        sprintf(help+strlen(help),"(%i)%s",run,ext);
       else
         strcat(help,ext);
-      if (CopyFile(Platform::ReadPath(m_fileName).c_str(),Platform::WritePath(help).c_str(),TRUE))
+      if (Platform::CopyUserFile(m_fileName,help,true))
         break;
-      if (GetLastError()!=ERROR_FILE_EXISTS)
+      if (!Platform::PathExists(help))
         break;
     }
   }
@@ -170,25 +171,23 @@ void DebugIOFlat::OutputStream::Flush(void)
   if (!m_limitedFileSize)
   {
     // simple flush to file
-    DWORD written;
-    WriteFile(m_fileHandle,m_buffer,m_bufferUsed,&written,NULL);
+    std::uint32_t written;
+    Platform::WriteRawFile(m_fileHandle,m_buffer,m_bufferUsed,written);
     m_bufferUsed=0;
   }
   else
   {
     // create file, write ring buffer
-    m_fileHandle=CreateFile(Platform::WritePath(m_fileName).c_str(),GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
-                            FILE_ATTRIBUTE_NORMAL|FILE_FLAG_WRITE_THROUGH,
-                            NULL);
-    DWORD written;
+    m_fileHandle=Platform::OpenRawFile(Platform::WritePath(m_fileName).c_str(),Platform::FileMode::Write);
+    std::uint32_t written;
     if (m_bufferUsed<m_bufferSize)
-      WriteFile(m_fileHandle,m_buffer,m_bufferUsed,&written,NULL);
+      Platform::WriteRawFile(m_fileHandle,m_buffer,m_bufferUsed,written);
     else
     {
-      WriteFile(m_fileHandle,m_buffer+m_nextChar,m_bufferUsed-m_nextChar,&written,NULL);
-      WriteFile(m_fileHandle,m_buffer,m_nextChar,&written,NULL);
+      Platform::WriteRawFile(m_fileHandle,m_buffer+m_nextChar,m_bufferUsed-m_nextChar,written);
+      Platform::WriteRawFile(m_fileHandle,m_buffer,m_nextChar,written);
     }
-    CloseHandle(m_fileHandle);
+    Platform::CloseRawFile(m_fileHandle);
   }
 }
 
@@ -233,32 +232,31 @@ void DebugIOFlat::ExpandMagic(const char *src, const char *splitName, char *buf)
       *dst++='-';
 
     char help[256];
-    DWORD size=sizeof(help);
+
     *help=0;
 
     switch(*src++)
     {
       case 'e':
       case 'E':
-        GetModuleFileName(NULL,help,sizeof(help));
+        Platform::CopyString(help,Platform::ExecutablePath().c_str(),sizeof(help));
         break;
       case 'm':
       case 'M':
-        GetComputerName(help,&size);
+        Platform::CopyString(help,Platform::HostName().c_str(),sizeof(help));
         break;
       case 'u':
       case 'U':
-        GetUserName(help,&size);
+        Platform::CopyString(help,Platform::UserName().c_str(),sizeof(help));
         break;
       case 't':
       case 'T':
         {
-          SYSTEMTIME systime;
-          GetLocalTime(&systime);
+          const auto systime = Platform::LocalCalendarTime();
 
-          wsprintf(help,"%04i%02i%02i-%02i%02i-%02i",
-                   systime.wYear,systime.wMonth,systime.wDay,
-                   systime.wHour,systime.wMinute,systime.wSecond);
+          sprintf(help,"%04i%02i%02i-%02i%02i-%02i",
+                   systime.year,systime.month,systime.day,
+                   systime.hour,systime.minute,systime.second);
         }
         break;
       case 'n':
@@ -307,7 +305,8 @@ DebugIOFlat::~DebugIOFlat()
 
 void DebugIOFlat::Write(StringType type, const char *src, const char *str)
 {
-  for (SplitListEntry *cur=m_firstSplit;cur;cur=cur->next)
+  SplitListEntry * cur;
+  for (cur=m_firstSplit;cur;cur=cur->next)
   {
     if (!(cur->stringTypes&(1<<type)))
       continue;
@@ -469,7 +468,8 @@ void DebugIOFlat::Execute(class Debug& dbg, const char *cmd, bool structuredCmd,
       // create our filename, search for stream with same filename
       char fn[256];
       ExpandMagic(m_baseFilename,cur->name,fn);
-      for (StreamListEntry *stream=m_firstStream;stream;stream=stream->next)
+      StreamListEntry * stream;
+      for (stream=m_firstStream;stream;stream=stream->next)
         if (!strcmp(stream->stream->GetFilename(),fn))
           break;
       if (!stream)
@@ -527,7 +527,8 @@ void DebugIOFlat::Execute(class Debug& dbg, const char *cmd, bool structuredCmd,
     // must fixup m_lastSplitPtr now
     if (m_firstSplit)
     {
-      for (SplitListEntry *cur=m_firstSplit;cur->next;cur=cur->next);
+      SplitListEntry * cur;
+      for (cur=m_firstSplit;cur->next;cur=cur->next);
       m_firstSplit=cur;
     }
     else

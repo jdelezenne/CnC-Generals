@@ -42,17 +42,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "EABrowserDispatch"=.\Libraries\Source\EABrowserDispatch\EABrowserDispatch.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
 
 Project: "GUIEdit"=.\Tools\GUIEdit\GUIEdit.dsp - Package Owner=<4>
 
@@ -113,9 +102,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name EABrowserDispatch
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -128,9 +114,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name EABrowserDispatch
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -349,9 +332,6 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name WWDownload
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name EABrowserDispatch
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name GameSpyPeer

@@ -237,7 +237,7 @@ UpgradeCenter::~UpgradeCenter( void )
 		next = m_upgradeList->friend_getNext();
 
 		// delete head of list
-		m_upgradeList->deleteInstance();
+		Platform::DeletePoolObject(m_upgradeList);
 
 		// set head to next element
 		m_upgradeList = next;

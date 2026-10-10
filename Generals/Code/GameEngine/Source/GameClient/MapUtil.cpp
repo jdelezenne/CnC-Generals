@@ -31,10 +31,10 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Paths.h"
 
-#include "Common/CRC.h"
+#include "Common/crc.h"
 #include "Common/FileSystem.h"
 #include "Common/LocalFileSystem.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/GlobalData.h"
 #include "Common/GameState.h"
 #include "Common/GameEngine.h"
@@ -94,14 +94,14 @@ static UnsignedInt calcCRC( AsciiString dirName, AsciiString fname )
 
 	// Try the official map dir
 	AsciiString asciiFile;
-	char	tempBuf[_MAX_PATH];
-	char	filenameBuf[_MAX_PATH];
+	char	tempBuf[Platform::LegacyPathCapacity];
+	char	filenameBuf[Platform::LegacyPathCapacity];
 	int length = 0;
 	strcpy(tempBuf, fname.str());
 	length = strlen( tempBuf );
 	if( length >= 4 )
 	{
-		memset( filenameBuf, '\0', _MAX_PATH);
+		memset( filenameBuf, '\0', Platform::LegacyPathCapacity);
 		strncpy( filenameBuf, tempBuf, length - 4);
 	}
 
@@ -172,7 +172,7 @@ static Bool ParseObjectDataChunk(DataChunkInput &file, DataChunkInfo *info, void
 		m_supplyPositions.push_back(loc);
 	}
 
-	pThisOne->deleteInstance();
+	Platform::DeletePoolObject(pThisOne);
 	return TRUE;
 }
 
@@ -238,8 +238,8 @@ static Bool ParseSizeOnlyInChunk(DataChunkInput &file, DataChunkInfo *info, void
 
 static Bool loadMap( AsciiString filename )
 {
-	char	tempBuf[_MAX_PATH];
-	char	filenameBuf[_MAX_PATH];
+	char	tempBuf[Platform::LegacyPathCapacity];
+	char	filenameBuf[Platform::LegacyPathCapacity];
 	AsciiString asciiFile;
 	int length = 0;
 
@@ -248,7 +248,7 @@ static Bool loadMap( AsciiString filename )
 	length = strlen( tempBuf );
 	if( length >= 4 )
 	{
-		memset( filenameBuf, '\0', _MAX_PATH);
+		memset( filenameBuf, '\0', Platform::LegacyPathCapacity);
 		strncpy( filenameBuf, tempBuf, length - 4);
 	}
 
@@ -607,7 +607,7 @@ Bool MapCache::loadUserMaps()
 				else
 				{
 					if (TheFileSystem->getFileInfo(tempfilename, &fileInfo)) {
-						char funk[_MAX_PATH];
+						char funk[Platform::LegacyPathCapacity];
 						strcpy(funk, tempfilename.str());
 						char *filenameptr = funk;
 						char *tempchar = funk;

@@ -81,7 +81,7 @@ void NameKeyGenerator::freeSockets()
 		for (Bucket *b = m_sockets[i]; b; b = next)
 		{
 			next = b->m_nextInSocket;
-			b->deleteInstance();
+			Platform::DeletePoolObject(b);
 		}
 		m_sockets[i] = NULL;
 	}

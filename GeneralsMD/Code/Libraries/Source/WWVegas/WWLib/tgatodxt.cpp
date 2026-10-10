@@ -40,7 +40,7 @@
 #include "always.h"
 #include "Platform/Paths.h"
 #include "nvdxtlib.h"
-#include "targa.h"
+#include "TARGA.H"
 #include "tgatodxt.h"
 #include "wwdebug.h"
 #include <io.h>

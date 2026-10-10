@@ -29,8 +29,11 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"
+#include "Platform/Directory.h"
+#include "Platform/DateTime.h"
+#include "Platform/UTF16.h"
 #include "Platform/Paths.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
@@ -211,72 +214,23 @@ GameState::SnapshotBlock *GameState::findBlockInfoByToken( AsciiString token, Sn
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-UnicodeString getUnicodeDateBuffer(SYSTEMTIME timeVal) 
+UnicodeString getUnicodeDateBuffer(Platform::CalendarTime timeVal)
 {
-	// setup date buffer for local region date format
-	#define DATE_BUFFER_SIZE 256
-	OSVERSIONINFO	osvi;
-	osvi.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
-	UnicodeString displayDateBuffer;
-	if (GetVersionEx(&osvi))
-	{	//check if we're running Win9x variant since they may need different characters
-		if (osvi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
-		{		
-			char dateBuffer[ DATE_BUFFER_SIZE ];
-			GetDateFormat( LOCALE_SYSTEM_DEFAULT,
-										 DATE_SHORTDATE,
-										 &timeVal,
-										 NULL,
-										 dateBuffer, sizeof(dateBuffer) );
-			displayDateBuffer.translate(dateBuffer);
-			return displayDateBuffer;
-		}	
-	}
-	wchar_t dateBuffer[ DATE_BUFFER_SIZE ];
-	GetDateFormatW( LOCALE_SYSTEM_DEFAULT,
-								 DATE_SHORTDATE,
-								 &timeVal,
-								 NULL,
-								 dateBuffer, sizeof(dateBuffer) );
-	displayDateBuffer.set(dateBuffer);
-	return displayDateBuffer;
-	//displayDateBuffer.format( L"%ls", dateBuffer );
-}															
-
-UnicodeString getUnicodeTimeBuffer(SYSTEMTIME timeVal) 
-{
-	// setup time buffer for local region time format
-	UnicodeString displayTimeBuffer;
-	OSVERSIONINFO	osvi;
-	osvi.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
-	if (GetVersionEx(&osvi))
-	{	//check if we're running Win9x variant since they may need different characters
-		if (osvi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
-		{		
-			char timeBuffer[ DATE_BUFFER_SIZE ];
-			GetTimeFormat( LOCALE_SYSTEM_DEFAULT,
-										 TIME_NOSECONDS|TIME_FORCE24HOURFORMAT|TIME_NOTIMEMARKER,
-										 &timeVal,
-										 NULL,
-										 timeBuffer, sizeof(timeBuffer) );
-			displayTimeBuffer.translate(timeBuffer);
-			return displayTimeBuffer;
-		}
-	}
-	// setup time buffer for local region time format
-	#define TIME_BUFFER_SIZE 256
-	wchar_t timeBuffer[ TIME_BUFFER_SIZE ];
-	GetTimeFormatW( LOCALE_SYSTEM_DEFAULT,
-								 TIME_NOSECONDS,
-								 &timeVal,
-								 NULL,
-								 timeBuffer,
-								 sizeof(timeBuffer) );
-	displayTimeBuffer.set(timeBuffer);
-	return displayTimeBuffer;
+    const auto bytes = Platform::FormatShortDate(timeVal);
+    const auto text = Platform::DecodeUTF16LE<WideChar>(bytes.data(), bytes.size() / 2);
+    UnicodeString result;
+    result.set(text.c_str());
+    return result;
 }
 
-
+UnicodeString getUnicodeTimeBuffer(Platform::CalendarTime timeVal)
+{
+    const auto bytes = Platform::FormatShortTime(timeVal);
+    const auto text = Platform::DecodeUTF16LE<WideChar>(bytes.data(), bytes.size() / 2);
+    UnicodeString result;
+    result.set(text.c_str());
+    return result;
+}
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 GameState::GameState( void )
@@ -462,7 +416,7 @@ AsciiString GameState::findNextSaveFilename( UnicodeString desc )
 		leaf.format("%s_%04d%s", adesc.str(), i, SAVE_GAME_EXTENSION);
 
 		AsciiString path = getFilePathInSaveDirectory(leaf);
-		if( _access( path.str(), 0 ) == -1 )
+		if( !Platform::PathExists( path.str() ) )
 			return leaf;	// note that this returns the leaf, not the full path
 	}
 #else
@@ -509,7 +463,7 @@ AsciiString GameState::findNextSaveFilename( UnicodeString desc )
 			fullPath = getFilePathInSaveDirectory(filename);
 
 			// if file does not exist we're all good
-			if( _access( fullPath.str(), 0 ) == -1 )
+			if( !Platform::PathExists( fullPath.str() ) )
 				return filename;
 
 			// test the text filename
@@ -790,7 +744,7 @@ Bool GameState::isInSaveDirectory(const AsciiString& path) const
 // ------------------------------------------------------------------------------------------------
 AsciiString GameState::getMapLeafName(const AsciiString& in) const
 {
-	char* p = strrchr(in.str(), '\\');
+	const char* p = strrchr(in.str(), '\\');
 	if (p)
 	{
 		//
@@ -1024,7 +978,7 @@ void GameState::getSaveGameInfoFromFile( AsciiString filename, SaveGameInfo *sav
 			blockSize = xferLoad.beginBlock();
 
 			// is this the block of game info data
-			if( stricmp( token.str(), GAME_STATE_BLOCK_STRING ) == 0 )
+			if( Platform::CompareNoCase( token.str(), GAME_STATE_BLOCK_STRING ) == 0 )
 			{
 				GameState tempGameState;
 
@@ -1086,7 +1040,7 @@ static void addGameToAvailableList( AsciiString filename, void *userData )
 	try {
 	// get header info from this listbox
 	SaveGameInfo saveGameInfo;
-	TheGameState->getSaveGameInfoFromFile( filename, &saveGameInfo );
+	TheGameState->getSaveGameInfoFromFile( TheGameState->getFilePathInSaveDirectory(filename), &saveGameInfo );
 
 	// allocate new info 
 	AvailableGameInfo *newInfo = new AvailableGameInfo;
@@ -1180,7 +1134,7 @@ void GameState::populateSaveGameListbox( GameWindow *listbox, SaveLoadLayoutType
 	// add all games found to the list box
 	AvailableGameInfo *info;
 	SaveGameInfo *saveGameInfo;
-	SYSTEMTIME systemTime;
+	Platform::CalendarTime systemTime;
 	UnsignedInt count = 0;
 	for( info = m_availableGames; info; info = info->next, count++ )
 	{
@@ -1189,14 +1143,14 @@ void GameState::populateSaveGameListbox( GameWindow *listbox, SaveLoadLayoutType
 		saveGameInfo = &info->saveGameInfo;
 
 		// setup a system time structure given the data we saved in the file
-		systemTime.wYear = saveGameInfo->date.year;
-		systemTime.wMonth = saveGameInfo->date.month;
-		systemTime.wDayOfWeek = saveGameInfo->date.dayOfWeek;
-		systemTime.wDay = saveGameInfo->date.day;
-		systemTime.wHour = saveGameInfo->date.hour;
-		systemTime.wMinute = saveGameInfo->date.minute;
-		systemTime.wSecond = saveGameInfo->date.second;
-		systemTime.wMilliseconds = saveGameInfo->date.milliseconds;
+		systemTime.year = saveGameInfo->date.year;
+		systemTime.month = saveGameInfo->date.month;
+		systemTime.dayOfWeek = saveGameInfo->date.dayOfWeek;
+		systemTime.day = saveGameInfo->date.day;
+		systemTime.hour = saveGameInfo->date.hour;
+		systemTime.minute = saveGameInfo->date.minute;
+		systemTime.second = saveGameInfo->date.second;
+		systemTime.milliseconds = saveGameInfo->date.milliseconds;
 
 		// setup date buffer for local region date format
 		UnicodeString displayDateBuffer = getUnicodeDateBuffer(systemTime);
@@ -1249,72 +1203,11 @@ void GameState::populateSaveGameListbox( GameWindow *listbox, SaveLoadLayoutType
 // ------------------------------------------------------------------------------------------------
 void GameState::iterateSaveFiles( IterateSaveFileCallback callback, void *userData )
 {
-
-	// sanity
-	if( callback == NULL )
-		return;
-
-	// save the current directory
-	char currentDirectory[ _MAX_PATH ];
-	GetCurrentDirectory( _MAX_PATH, currentDirectory );
-
-	// switch into the save directory
-	SetCurrentDirectory( getSaveDirectory().str() );
-
-	// iterate all items in the directory
-	WIN32_FIND_DATA item;  // search item
-	HANDLE hFile = INVALID_HANDLE_VALUE;  // handle for search resources
-	Bool done = FALSE;
-	Bool first = TRUE;
-	while( done == FALSE )
-	{
-
-		// if our first time through we need to start the search
-		if( first )
-		{
-
-			// start search
-			hFile = FindFirstFile( "*", &item );
-			if( hFile == INVALID_HANDLE_VALUE )
-				return;
-
-			// we are no longer on our first item
-			first = FALSE;
-
-		}  // end if, first
-
-		// see if this is a file, and therefore a possible save file
-		if( !(item.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
-		{
-
-			// see if there is a ".sav" at end of this filename
-			Char *c = strrchr( item.cFileName, '.' );
-			if( c && stricmp( c, ".sav" ) == 0 )
-			{
-
-				// construction asciistring filename
-				AsciiString filename;
-				filename.set( item.cFileName );
-
-				// call the callback
-				callback( filename, userData );
-
-			}  // end if, a save file
-
-		}  // end if
-
-		// on to the next file
-		if( FindNextFile( hFile, &item ) == 0 )
-			done = TRUE;
-
-	}  // end while
-
-	// close search resources
-	FindClose( hFile );
-
-	// restore the current directory
-	SetCurrentDirectory( currentDirectory );
-
+    if (callback == NULL)
+        return;
+    const auto files = Platform::ListFiles(getSaveDirectory().str(), "*.sav");
+    for (const auto& file : files)
+        callback(AsciiString(file.name.c_str()), userData);
 }  // end iterateSaveFiles
 
 // ------------------------------------------------------------------------------------------------
@@ -1585,25 +1478,24 @@ void GameState::xfer( Xfer *xfer )
 	}  // end if
 
 	// current system time
-	SYSTEMTIME systemTime;
-	GetLocalTime( &systemTime );
+	Platform::CalendarTime systemTime = Platform::LocalCalendarTime();
 
 	// date and time
-	saveGameInfo->date.year = systemTime.wYear;
+	saveGameInfo->date.year = systemTime.year;
 	xfer->xferUnsignedShort( &saveGameInfo->date.year );
-	saveGameInfo->date.month = systemTime.wMonth;
+	saveGameInfo->date.month = systemTime.month;
 	xfer->xferUnsignedShort( &saveGameInfo->date.month );
-	saveGameInfo->date.day = systemTime.wDay;
+	saveGameInfo->date.day = systemTime.day;
 	xfer->xferUnsignedShort( &saveGameInfo->date.day );
-	saveGameInfo->date.dayOfWeek = systemTime.wDayOfWeek;
+	saveGameInfo->date.dayOfWeek = systemTime.dayOfWeek;
 	xfer->xferUnsignedShort( &saveGameInfo->date.dayOfWeek );
-	saveGameInfo->date.hour = systemTime.wHour;
+	saveGameInfo->date.hour = systemTime.hour;
 	xfer->xferUnsignedShort( &saveGameInfo->date.hour );
-	saveGameInfo->date.minute = systemTime.wMinute;
+	saveGameInfo->date.minute = systemTime.minute;
 	xfer->xferUnsignedShort( &saveGameInfo->date.minute );
-	saveGameInfo->date.second = systemTime.wSecond;
+	saveGameInfo->date.second = systemTime.second;
 	xfer->xferUnsignedShort( &saveGameInfo->date.second );
-	saveGameInfo->date.milliseconds = systemTime.wMilliseconds;
+	saveGameInfo->date.milliseconds = systemTime.milliseconds;
 	xfer->xferUnsignedShort( &saveGameInfo->date.milliseconds );
 
 	// user description
@@ -1617,7 +1509,7 @@ void GameState::xfer( Xfer *xfer )
 	// if no label was found, we'll use the map name (just filename, no directory info)
 	if( exists == FALSE || saveGameInfo->mapLabel == AsciiString::TheEmptyString )
 	{
-		char string[ _MAX_PATH ];
+		char string[ 260 ];
 
 		strcpy( string, TheGlobalData->m_mapName.str() );
 		char *p = strrchr( string, '\\' );

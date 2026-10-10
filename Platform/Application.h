@@ -7,4 +7,5 @@ namespace Platform {
 enum class ApplicationInstanceResult { Acquired, AlreadyRunning, Error };
 ApplicationInstanceResult AcquireApplicationInstance(const char* identifier, void*& handle);
 void ReleaseApplicationInstance(void* handle);
+bool LaunchDetachedTool(const char* basename);
 }

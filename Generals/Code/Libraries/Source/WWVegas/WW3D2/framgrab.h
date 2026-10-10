@@ -46,25 +46,7 @@
 #include "always.h"
 #endif
 
-#if defined (_MSC_VER)
-#pragma warning (push, 3)	// (gth) system headers complain at warning level 4...
-#endif
-
-#ifndef _WINDOWS_
-#include "windows.h"
-#endif
-
-#ifndef _INC_WINDOWSX
-#include "windowsx.h"
-#endif
-
-#ifndef _INC_VFW
-#include "vfw.h"
-#endif
-
-#if defined (_MSC_VER)
-#pragma warning (pop)
-#endif
+#include "Platform/VideoCapture.h"
 
 // FramGrab.h: interface for the FrameGrabClass class.
 //
@@ -100,11 +82,9 @@ protected:
 	void GrabRawFrame(void *BitmapPointer);
 
 	// avi settings
-	PAVIFILE				AVIFile;  
-	long					*Bitmap;
-	PAVISTREAM			Stream;     
-	AVISTREAMINFO		AVIStreamInfo;
-	BITMAPINFOHEADER	BitmapInfoHeader; 
+	Platform::VideoCapture* Capture;
+	long* Bitmap;
+	int Width, Height;
 
 	// general purpose cleanup routine
 	void CleanupAVI();

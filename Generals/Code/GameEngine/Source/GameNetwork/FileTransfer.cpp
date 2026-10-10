@@ -34,7 +34,7 @@
 #include "GameClient/LoadScreen.h"
 #include "GameClient/Shell.h"
 #include "GameNetwork/FileTransfer.h"
-#include "GameNetwork/NetworkUtil.h"
+#include "GameNetwork/networkutil.h"
 
 //-------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ static Bool doFileTransfer( AsciiString filename, MapTransferLoadScreen *ls, Int
 		Bool sentFile = FALSE;
 		if (TheGameInfo->amIHost())
 		{
-			Sleep(500);
+			Platform::Delay(500);
 			fileCommandID = TheNetwork->sendFileAnnounce(filename, mask);
 		}
 		else

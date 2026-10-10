@@ -23,6 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #if defined(_DEBUG) || defined(_INTERNAL) || defined(IG_DEBUG_STACKTRACE)
 
@@ -139,9 +140,9 @@ BOOL InitSymbolInfo()
 #endif
 );
 
-	char pathname[_MAX_PATH+1];
+	char pathname[Platform::LegacyPathCapacity+1];
 	char drive[10];
-	char directory[_MAX_PATH+1];
+	char directory[Platform::LegacyPathCapacity+1];
 	HANDLE process;
 
 
@@ -150,7 +151,7 @@ BOOL InitSymbolInfo()
 	process = GetCurrentProcess();
 
 	//Get the apps name
-	::GetModuleFileName(NULL, pathname, _MAX_PATH);
+	::GetModuleFileName(NULL, pathname, Platform::LegacyPathCapacity);
 
 	// turn it into a search path
 	_splitpath(pathname, drive, directory, NULL, NULL);
@@ -162,7 +163,7 @@ BOOL InitSymbolInfo()
 	if(::SymInitialize(process, pathname, FALSE))
 	{
 		// regenerate the name of the app
-		::GetModuleFileName(NULL, pathname, _MAX_PATH);
+		::GetModuleFileName(NULL, pathname, Platform::LegacyPathCapacity);
 		if(::SymLoadModule(process, NULL, pathname, NULL, 0, 0))
 		{
 				//Load any other relevant modules (ie dlls) here

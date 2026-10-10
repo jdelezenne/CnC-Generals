@@ -29,6 +29,7 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/SystemInfo.h"
 #include "Platform/Clock.h"
 #include "GameClient/GameClient.h"
 
@@ -537,13 +538,13 @@ void GameClient::update( void )
 						TheWindowManager->update();
 						// redraw all views, update the GUI
 						TheDisplay->draw();
-						Sleep(100);
+						Platform::Delay(100);
 					}
 					setFPMode();
 
 
 					legal->destroyWindows();
-					legal->deleteInstance();
+					Platform::DeletePoolObject(legal);
 
 				}
 				TheWritableGlobalData->m_breakTheMovie = TRUE;
@@ -806,7 +807,7 @@ void GameClient::destroyDrawable( Drawable *draw )
 	removeDrawableFromLookupTable( draw );
 
 	// free storage
-	draw->deleteInstance();
+	Platform::DeletePoolObject(draw);
 
 }
 
@@ -1013,8 +1014,8 @@ void GameClient::allocateShadows(void)
 void GameClient::preloadAssets( TimeOfDay timeOfDay )
 {
 
-	MEMORYSTATUS before, after;
-	GlobalMemoryStatus(&before);
+	Platform::MemoryInfo before{}, after{};
+	Platform::QueryMemoryInfo(before);
 
 	// first, for every drawable in the map load the assets for all states we care about
 	Drawable *draw;
@@ -1050,55 +1051,56 @@ void GameClient::preloadAssets( TimeOfDay timeOfDay )
 		}  // end if
 
 	}  // end for
-	GlobalMemoryStatus(&after);
+	Platform::QueryMemoryInfo(after);
 
 	DEBUG_LOG(("Preloading memory dwAvailPageFile %d --> %d : %d\n",
-		before.dwAvailPageFile, after.dwAvailPageFile, before.dwAvailPageFile - after.dwAvailPageFile));
+		before.availablePage, after.availablePage, before.availablePage - after.availablePage));
 	DEBUG_LOG(("Preloading memory dwAvailPhys     %d --> %d : %d\n",
-		before.dwAvailPhys, after.dwAvailPhys, before.dwAvailPhys - after.dwAvailPhys));
+		before.availablePhysical, after.availablePhysical, before.availablePhysical - after.availablePhysical));
 	DEBUG_LOG(("Preloading memory dwAvailVirtual  %d --> %d : %d\n",
-		before.dwAvailVirtual, after.dwAvailVirtual, before.dwAvailVirtual - after.dwAvailVirtual));
+		before.availableVirtual, after.availableVirtual, before.availableVirtual - after.availableVirtual));
 	/*
 	DEBUG_LOG(("Preloading memory dwLength        %d --> %d : %d\n",
 		before.dwLength, after.dwLength, before.dwLength - after.dwLength));
 	DEBUG_LOG(("Preloading memory dwMemoryLoad    %d --> %d : %d\n",
 		before.dwMemoryLoad, after.dwMemoryLoad, before.dwMemoryLoad - after.dwMemoryLoad));
 	DEBUG_LOG(("Preloading memory dwTotalPageFile %d --> %d : %d\n",
-		before.dwTotalPageFile, after.dwTotalPageFile, before.dwTotalPageFile - after.dwTotalPageFile));
+		before.page, after.page, before.page - after.page));
 	DEBUG_LOG(("Preloading memory dwTotalPhys     %d --> %d : %d\n",
-		before.dwTotalPhys , after.dwTotalPhys, before.dwTotalPhys - after.dwTotalPhys));
+		before.physical , after.physical, before.physical - after.physical));
 	DEBUG_LOG(("Preloading memory dwTotalVirtual  %d --> %d : %d\n",
-		before.dwTotalVirtual , after.dwTotalVirtual, before.dwTotalVirtual - after.dwTotalVirtual));
+		before.virtualSize , after.virtualSize, before.virtualSize - after.virtualSize));
 	*/
 
-	GlobalMemoryStatus(&before);
+	Platform::QueryMemoryInfo(before);
 	extern std::vector<AsciiString>	debrisModelNamesGlobalHack;
-	for (Int i=0; i<debrisModelNamesGlobalHack.size(); ++i)
+	Int i;
+ for (i=0; i<debrisModelNamesGlobalHack.size(); ++i)
 	{
 		TheDisplay->preloadModelAssets(debrisModelNamesGlobalHack[i]);
 	}
-	GlobalMemoryStatus(&after);
+	Platform::QueryMemoryInfo(after);
 	debrisModelNamesGlobalHack.clear();
 
 	DEBUG_LOG(("Preloading memory dwAvailPageFile %d --> %d : %d\n",
-		before.dwAvailPageFile, after.dwAvailPageFile, before.dwAvailPageFile - after.dwAvailPageFile));
+		before.availablePage, after.availablePage, before.availablePage - after.availablePage));
 	DEBUG_LOG(("Preloading memory dwAvailPhys     %d --> %d : %d\n",
-		before.dwAvailPhys, after.dwAvailPhys, before.dwAvailPhys - after.dwAvailPhys));
+		before.availablePhysical, after.availablePhysical, before.availablePhysical - after.availablePhysical));
 	DEBUG_LOG(("Preloading memory dwAvailVirtual  %d --> %d : %d\n",
-		before.dwAvailVirtual, after.dwAvailVirtual, before.dwAvailVirtual - after.dwAvailVirtual));
+		before.availableVirtual, after.availableVirtual, before.availableVirtual - after.availableVirtual));
 
 	TheControlBar->preloadAssets( timeOfDay );
 
-	GlobalMemoryStatus(&before);
+	Platform::QueryMemoryInfo(before);
 	TheParticleSystemManager->preloadAssets( timeOfDay );
-	GlobalMemoryStatus(&after);
+	Platform::QueryMemoryInfo(after);
 
 	DEBUG_LOG(("Preloading memory dwAvailPageFile %d --> %d : %d\n",
-		before.dwAvailPageFile, after.dwAvailPageFile, before.dwAvailPageFile - after.dwAvailPageFile));
+		before.availablePage, after.availablePage, before.availablePage - after.availablePage));
 	DEBUG_LOG(("Preloading memory dwAvailPhys     %d --> %d : %d\n",
-		before.dwAvailPhys, after.dwAvailPhys, before.dwAvailPhys - after.dwAvailPhys));
+		before.availablePhysical, after.availablePhysical, before.availablePhysical - after.availablePhysical));
 	DEBUG_LOG(("Preloading memory dwAvailVirtual  %d --> %d : %d\n",
-		before.dwAvailVirtual, after.dwAvailVirtual, before.dwAvailVirtual - after.dwAvailVirtual));
+		before.availableVirtual, after.availableVirtual, before.availableVirtual - after.availableVirtual));
 
 	char *textureNames[] = {
 		"ptspruce01.tga",
@@ -1142,17 +1144,17 @@ void GameClient::preloadAssets( TimeOfDay timeOfDay )
 		""
 	};
 
-	GlobalMemoryStatus(&before);
+	Platform::QueryMemoryInfo(before);
 	for (i=0; *textureNames[i]; ++i)
 		TheDisplay->preloadTextureAssets(textureNames[i]);
-	GlobalMemoryStatus(&after);
+	Platform::QueryMemoryInfo(after);
 
 	DEBUG_LOG(("Preloading memory dwAvailPageFile %d --> %d : %d\n",
-		before.dwAvailPageFile, after.dwAvailPageFile, before.dwAvailPageFile - after.dwAvailPageFile));
+		before.availablePage, after.availablePage, before.availablePage - after.availablePage));
 	DEBUG_LOG(("Preloading memory dwAvailPhys     %d --> %d : %d\n",
-		before.dwAvailPhys, after.dwAvailPhys, before.dwAvailPhys - after.dwAvailPhys));
+		before.availablePhysical, after.availablePhysical, before.availablePhysical - after.availablePhysical));
 	DEBUG_LOG(("Preloading memory dwAvailVirtual  %d --> %d : %d\n",
-		before.dwAvailVirtual, after.dwAvailVirtual, before.dwAvailVirtual - after.dwAvailVirtual));
+		before.availableVirtual, after.availableVirtual, before.availableVirtual - after.availableVirtual));
 
 //	preloadTextureNamesGlobalHack2 = preloadTextureNamesGlobalHack;
 //	preloadTextureNamesGlobalHack.clear();

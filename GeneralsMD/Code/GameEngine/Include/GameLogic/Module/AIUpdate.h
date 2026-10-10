@@ -71,21 +71,7 @@ const Real FAST_AS_POSSIBLE = 999999.0f;
 // Note: these values are saved in save files, so you MUST NOT REMOVE OR CHANGE
 // existing values!
 //
-enum LocomotorSetType
-{
-	LOCOMOTORSET_INVALID = -1,
-
-	LOCOMOTORSET_NORMAL = 0,
-	LOCOMOTORSET_NORMAL_UPGRADED,
-	LOCOMOTORSET_FREEFALL,
-	LOCOMOTORSET_WANDER,
-	LOCOMOTORSET_PANIC,
-	LOCOMOTORSET_TAXIING,			// set used for normally-airborne items while taxiing on ground
-	LOCOMOTORSET_SUPERSONIC,	// set used for high-speed attacks
-	LOCOMOTORSET_SLUGGISH,		// set used for abnormally slow (but not damaged) speeds
-
-	LOCOMOTORSET_COUNT	///< keep last, please
-};
+#include "GameLogic/LocomotorSetType.h"
 
 //-------------------------------------------------------------------------------------------------
 enum GuardTargetType

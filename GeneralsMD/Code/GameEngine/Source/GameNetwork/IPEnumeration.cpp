@@ -22,7 +22,8 @@
 //																																						//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "PreRTS.h"
+#include "Platform/Sockets.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "GameNetwork/IPEnumeration.h"
 
@@ -36,7 +37,7 @@ IPEnumeration::~IPEnumeration( void )
 {
 	if (m_isWinsockInitialized)
 	{
-		WSACleanup();
+		Platform::ShutdownSockets();
 		m_isWinsockInitialized = false;
 	}
 
@@ -44,7 +45,7 @@ IPEnumeration::~IPEnumeration( void )
 	while (ip)
 	{
 		ip = ip->getNext();
-		m_IPlist->deleteInstance();
+		Platform::DeletePoolObject(m_IPlist);
 		m_IPlist = ip;
 	}
 }
@@ -56,56 +57,20 @@ EnumeratedIP * IPEnumeration::getAddresses( void )
 
 	if (!m_isWinsockInitialized)
 	{
-		WORD verReq = MAKEWORD(2, 2);
-		WSADATA wsadata;
-
-		int err = WSAStartup(verReq, &wsadata);
-		if (err != 0) {
-			return NULL;
-		}
-
-		if ((LOBYTE(wsadata.wVersion) != 2) || (HIBYTE(wsadata.wVersion) !=2)) {
-			WSACleanup();
-			return NULL;
-		}
+		if (!Platform::InitializeSockets()) return NULL;
 		m_isWinsockInitialized = true;
 	}
 
-	// get the local machine's host name
-	char hostname[256];
-	if (gethostname(hostname, sizeof(hostname)))
-	{
-		DEBUG_LOG(("Failed call to gethostname; WSAGetLastError returned %d\n", WSAGetLastError()));
-		return NULL;
-	}
-	DEBUG_LOG(("Hostname is '%s'\n", hostname));
-	
-	// get host information from the host name
-	HOSTENT* hostEnt = gethostbyname(hostname);
-	if (hostEnt == NULL)
-	{
-		DEBUG_LOG(("Failed call to gethostnyname; WSAGetLastError returned %d\n", WSAGetLastError()));
-		return NULL;
-	}
-	
-	// sanity-check the length of the IP adress
-	if (hostEnt->h_length != 4)
-	{
-		DEBUG_LOG(("gethostbyname returns oddly-sized IP addresses!\n"));
-		return NULL;
-	}
-	
-	// construct a list of addresses
-	int numAddresses = 0;
-	char *entry;
-	while ( (entry = hostEnt->h_addr_list[numAddresses++]) != 0 )
-	{
+std::vector<std::uint32_t> addresses;
+	if (!Platform::LocalIPv4Addresses(addresses)) return NULL;
+	for (const auto address : addresses) {
+		const auto* entry = reinterpret_cast<const unsigned char*>(&address);
 		EnumeratedIP *newIP = newInstance(EnumeratedIP);
 
 		AsciiString str;
 		str.format("%d.%d.%d.%d", (unsigned char)entry[0], (unsigned char)entry[1], (unsigned char)entry[2], (unsigned char)entry[3]);
 
-		UnsignedInt testIP = *((UnsignedInt *)entry);
+		UnsignedInt testIP = address;
 		UnsignedInt ip = ntohl(testIP);
 
 		/*
@@ -156,18 +121,7 @@ AsciiString IPEnumeration::getMachineName( void )
 {
 	if (!m_isWinsockInitialized)
 	{
-		WORD verReq = MAKEWORD(2, 2);
-		WSADATA wsadata;
-
-		int err = WSAStartup(verReq, &wsadata);
-		if (err != 0) {
-			return NULL;
-		}
-
-		if ((LOBYTE(wsadata.wVersion) != 2) || (HIBYTE(wsadata.wVersion) !=2)) {
-			WSACleanup();
-			return NULL;
-		}
+		if (!Platform::InitializeSockets()) return NULL;
 		m_isWinsockInitialized = true;
 	}
 

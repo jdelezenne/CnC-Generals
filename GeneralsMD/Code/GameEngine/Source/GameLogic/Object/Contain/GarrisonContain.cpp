@@ -1581,7 +1581,7 @@ void GarrisonContain::exitObjectViaDoor( Object *exitObj, ExitDoorType exitDoor 
   else // must be EVAC_BURST_FROM_CENTER. then!
   {
     // if we are not enclosed, then just walk away from where we "are."
-  	if ( isEnclosingContainerFor( exitObj ))
+	if ( isEnclosingContainerFor( exitObj ))
     {
       exitObj->setPosition( &startPosition ); // correct for non-ground-level station points
       exitObj->setPositionZ( TheTerrainLogic->getGroundHeight( startPosition.x, startPosition.y ) );
@@ -1657,7 +1657,7 @@ void GarrisonContain::onRemoving( Object *obj )
 
   if (isEnclosingContainerFor( obj ))
 	  // first remove the object from any garrison fire point if it's at one
-  	removeObjectFromGarrisonPoint( obj );
+	removeObjectFromGarrisonPoint( obj );
   else
   {
     removeObjectFromStationPoint( obj );
@@ -2013,7 +2013,8 @@ void GarrisonContain::loadStationGarrisonPoints( void )
 
 
     Coord3D tempBuffer[MAX_GARRISON_POINTS];
-  	for( int t = 0; t < MAX_GARRISON_POINTS; ++t )
+	int t;
+		for( t = 0; t < MAX_GARRISON_POINTS; ++t )
 		  tempBuffer[ t ] = *(structure->getPosition());
 
 		count = structure->getMultiLogicalBonePosition("STATION", modData->m_containMax, tempBuffer, NULL);

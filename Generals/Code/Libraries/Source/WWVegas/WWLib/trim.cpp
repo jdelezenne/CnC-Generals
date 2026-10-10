@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"always.h"
+#include <cwctype>
 #include	"trim.h"
 #include	<ctype.h>
 #include	<stddef.h>

@@ -29,6 +29,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////
+#include "Platform/AsyncDNS.h"
+#include "Platform/Descriptor.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Paths.h"
 
@@ -36,7 +38,7 @@
 
 //#include "Common/Registry.h"
 #include "Common/UserPreferences.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 #include "GameClient/GameText.h"
 #include "GameClient/MessageBox.h"
 #include "GameClient/Shell.h"
@@ -53,7 +55,7 @@
 #include "GameNetwork/GameSpy/PeerThread.h"
 
 #include "WWDownload/Registry.h"
-#include "WWDownload/URLBuilder.h"
+#include "WWDownload/urlBuilder.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -74,10 +76,8 @@ static char *MOTDBuffer = NULL;
 static char *configBuffer = NULL;
 GameWindow *onlineCancelWindow = NULL;
 
-static Bool s_asyncDNSThreadDone = TRUE;
-static Bool s_asyncDNSThreadSucceeded = FALSE;
 static Bool s_asyncDNSLookupInProgress = FALSE;
-static HANDLE s_asyncDNSThreadHandle = NULL;
+static Platform::DNSLookup* s_asyncDNSLookup = NULL;
 enum {
 	LOOKUP_INPROGRESS,
 	LOOKUP_FAILED,
@@ -154,13 +154,13 @@ static Bool hasWriteAccess()
 
 	Platform::RemoveUserFile(filename);
 
-	int handle = _open( Platform::WritePath(filename).c_str(), _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
+	int handle = Platform::OpenDescriptor(Platform::WritePath(filename).c_str(), {true, true, true, false, false, false});
 	if (handle == -1)
 	{
 		return false;
 	}
 
-	_close(handle);
+	Platform::CloseDescriptor(handle);
 	Platform::RemoveUserFile(filename);
 	
 	unsigned int val;
@@ -656,58 +656,17 @@ void CheckNumPlayersOnline( void )
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-DWORD WINAPI asyncGethostbynameThreadFunc( void * szName )
+int asyncGethostbyname(char* hostname)
 {
-	HOSTENT *he = gethostbyname( (const char *)szName );
-
-	if (he)
-	{
-		s_asyncDNSThreadSucceeded = TRUE;
-	}
-	else
-	{
-		s_asyncDNSThreadSucceeded = FALSE;
-	}
-
-	s_asyncDNSThreadDone = TRUE;
-	return 0;
+    if (!s_asyncDNSLookup) {
+        s_asyncDNSLookup = Platform::StartDNSLookup(hostname);
+        if (!s_asyncDNSLookup) return LOOKUP_FAILED;
+    }
+    const auto status = Platform::PollDNSLookup(s_asyncDNSLookup);
+    if (status == Platform::DNSLookupStatus::Pending) return LOOKUP_INPROGRESS;
+    s_asyncDNSLookupInProgress = FALSE;
+    return status == Platform::DNSLookupStatus::Succeeded ? LOOKUP_SUCCEEDED : LOOKUP_FAILED;
 }
-
-///////////////////////////////////////////////////////////////////////////////////////
-
-int asyncGethostbyname(char * szName)
-{
-	static int            stat = 0;
-	static unsigned long  threadid;
-
-	if( stat == 0 )
-	{
-		/* Kick off gethostname thread */
-		s_asyncDNSThreadDone = FALSE;
-		s_asyncDNSThreadHandle = CreateThread( NULL, 0, asyncGethostbynameThreadFunc, szName, 0, &threadid );
-
-		if( s_asyncDNSThreadHandle == NULL )
-		{
-			return( LOOKUP_FAILED );
-		}
-		stat = 1;
-	}
-	if( stat == 1 )
-	{
-		if( s_asyncDNSThreadDone )
-		{
-			/* Thread finished */
-			stat = 0;
-			s_asyncDNSLookupInProgress = FALSE;
-			s_asyncDNSThreadHandle = NULL;
-			return( (s_asyncDNSThreadSucceeded)?LOOKUP_SUCCEEDED:LOOKUP_FAILED );
-		}
-	}
-
-	return( LOOKUP_INPROGRESS );
-}
-
-///////////////////////////////////////////////////////////////////////////////////////
 
 // GameSpy's HTTP SDK has had at least 1 crash bug, so we're going to just bail and
 // never try again if they crash us.  We won't be able to get back online again (we'll
@@ -748,21 +707,11 @@ void HTTPThinkWrapper( void )
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-void StopAsyncDNSCheck( void )
+void StopAsyncDNSCheck(void)
 {
-	if (s_asyncDNSThreadHandle)
-	{
-#ifdef DEBUG_CRASHING
-		Int res =
-#endif
-			TerminateThread(s_asyncDNSThreadHandle,0);
-		DEBUG_ASSERTCRASH(res, ("Could not terminate the Async DNS Lookup thread!"));	// Thread still not killed!
-	}
-	s_asyncDNSThreadHandle = NULL;
-	s_asyncDNSLookupInProgress = FALSE;
+    Platform::CancelDNSLookup(s_asyncDNSLookup);
+    s_asyncDNSLookupInProgress = FALSE;
 }
-
-///////////////////////////////////////////////////////////////////////////////////////
 
 void StartPatchCheck( void )
 {

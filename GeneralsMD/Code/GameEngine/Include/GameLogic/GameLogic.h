@@ -32,6 +32,7 @@
 #ifndef _GAME_LOGIC_H_
 #define _GAME_LOGIC_H_
 
+#include "Common/BuildableStatus.h"
 #include "Common/GameCommon.h"	// ensure we get DUMP_PERF_STATS, or not
 #include "Common/GameType.h"
 #include "Common/Snapshot.h"

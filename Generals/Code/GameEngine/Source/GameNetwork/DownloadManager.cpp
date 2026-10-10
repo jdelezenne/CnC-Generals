@@ -26,7 +26,8 @@
 // Generals download manager code
 // Author: Matthew D. Campbell, July 2002
 
-#include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "PreRTS.h"
+#include "Platform/Sockets.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "GameClient/GameText.h"
 #include "GameNetwork/DownloadManager.h"
@@ -48,23 +49,7 @@ DownloadManager::DownloadManager()
 	m_statusString = TheGameText->fetch("FTP:StatusIdle");
 
 	// ----- Initialize Winsock -----
-	m_winsockInit = true;
-	WORD verReq = MAKEWORD(2, 2);
-	WSADATA wsadata;
-
-	int err = WSAStartup(verReq, &wsadata);
-	if (err != 0)
-	{
-		m_winsockInit = false;
-	}
-	else
-	{
-		if ((LOBYTE(wsadata.wVersion) != 2) || (HIBYTE(wsadata.wVersion) !=2))
-		{
-			WSACleanup();
-			m_winsockInit = false;
-		}
-	}
+	m_winsockInit = Platform::InitializeSockets();
 
 }
 
@@ -73,7 +58,7 @@ DownloadManager::~DownloadManager()
 	delete m_download;
 	if (m_winsockInit)
 	{
-		WSACleanup();
+		Platform::ShutdownSockets();
 		m_winsockInit = false;
 	}
 }

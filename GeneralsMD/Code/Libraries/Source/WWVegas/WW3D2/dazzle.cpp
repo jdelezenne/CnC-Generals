@@ -46,14 +46,14 @@
 #include "wwstring.h"
 #include "wwdebug.h"
 #include "assetmgr.h"
-#include "vector3i.h"
+#include "Vector3i.h"
 #include "quat.h"
-#include "ini.h"
-#include "point.h"
+#include "INI.H"
+#include "Point.h"
 #include "rinfo.h"
 #include "vertmaterial.h"
 #include "chunkio.h"
-#include "wwfile.h"
+#include "WWFILE.H"
 #include "inisup.h"
 #include "persistfactory.h"
 #include "ww3dids.h"
@@ -684,7 +684,8 @@ void DazzleRenderObjClass::Init_Type(const DazzleInitClass& i)
 	if (i.type>=type_count) {
 		unsigned new_count=i.type+1;
 		DazzleTypeClass** new_types=W3DNEWARRAY DazzleTypeClass*[new_count];
-		for (unsigned a=0;a<type_count;++a) {
+		unsigned a;
+		for (a=0;a<type_count;++a) {
 			new_types[a]=types[a];
 		}
 		for (;a<new_count;++a) {
@@ -707,7 +708,8 @@ void DazzleRenderObjClass::Init_Lensflare(const LensflareInitClass& i)
 	if (i.type>=lensflare_count) {
 		unsigned new_count=i.type+1;
 		LensflareTypeClass** new_lensflares=W3DNEWARRAY LensflareTypeClass*[new_count];
-		for (unsigned a=0;a<lensflare_count;++a) {
+		unsigned a;
+		for (a=0;a<lensflare_count;++a) {
 			new_lensflares[a]=lensflares[a];
 		}
 		for (;a<new_count;++a) {
@@ -727,7 +729,8 @@ void DazzleRenderObjClass::Deinit()
 {
 	// Deinit dazzle types
 	if (types) {
-		for (unsigned a=0;a<type_count;++a) {
+		unsigned a;
+		for (a=0;a<type_count;++a) {
 			delete types[a];
 		}
 		delete[] types;
@@ -737,7 +740,8 @@ void DazzleRenderObjClass::Deinit()
 
 	// Deinit lensflare types
 	if (lensflares) {
-		for (unsigned a=0;a<lensflare_count;++a) {
+		unsigned a;
+		for (a=0;a<lensflare_count;++a) {
 			delete lensflares[a];
 		}
 		delete[] lensflares;
@@ -1275,7 +1279,8 @@ void DazzleRenderObjClass::Set_Transform(const Matrix3D &m)
 
 unsigned DazzleRenderObjClass::Get_Type_ID(const char* name)
 {
-	for (unsigned a=0;a<type_count;++a) {
+	unsigned a;
+		for (a=0;a<type_count;++a) {
 		if (types[a] && types[a]->name==name) return a;
 	}
 	return UINT_MAX;
@@ -1322,7 +1327,8 @@ DazzleTypeClass* DazzleRenderObjClass::Get_Type_Class(unsigned id) // Return daz
 
 unsigned DazzleRenderObjClass::Get_Lensflare_ID(const char* name)
 {
-	for (unsigned a=0;a<lensflare_count;++a) {
+	unsigned a;
+		for (a=0;a<lensflare_count;++a) {
 		if (lensflares[a] && lensflares[a]->name==name) return a;
 	}
 	return UINT_MAX;

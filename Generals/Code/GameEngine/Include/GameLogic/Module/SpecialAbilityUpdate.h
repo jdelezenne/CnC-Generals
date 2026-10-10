@@ -33,6 +33,7 @@
 #define __SPECIAL_ABILITY_UPDATE_H
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/SpecialPowerType.h"
 #include "Common/AudioEventRTS.h"
 #include "Common/INI.h"
 #include "GameLogic/Module/UpdateModule.h"

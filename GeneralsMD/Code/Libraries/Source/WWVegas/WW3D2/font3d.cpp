@@ -38,6 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "font3d.h"
+#include "Platform/StringCompare.h"
 #include "assetmgr.h"
 #include "texture.h"
 #include <assert.h>
@@ -60,7 +61,7 @@ Font3DDataClass::Font3DDataClass( const char *filename )
 	Texture = NULL;
 	Load_Font_Image( filename);
 	Name = strdup( filename);
-	Name = strupr( Name);
+	Name = Platform::UpperCase( Name);
 }
 
 

@@ -369,7 +369,7 @@ void ProductionUpdate::cancelUpgrade( const UpgradeTemplate *upgrade )
 	removeFromProductionQueue( production );
 
 	// delete production instance
-	production->deleteInstance();
+	Platform::DeletePoolObject(production);
 
 	//
 	// remove the IN_PRODUCTION status of this upgrade from the player, object upgrades don't
@@ -485,7 +485,7 @@ void ProductionUpdate::cancelUnitCreate( ProductionID productionID )
 			removeFromProductionQueue( production );
 
 			// delete the production entry
-			production->deleteInstance();
+			Platform::DeletePoolObject(production);
 
 			return;
 
@@ -682,7 +682,7 @@ UpdateSleepTime ProductionUpdate::update( void )
 		removeFromProductionQueue( production );
 
 		// delete the production entry
-		production->deleteInstance();
+		Platform::DeletePoolObject(production);
 
 		return UPDATE_SLEEP_NONE;
 
@@ -874,7 +874,7 @@ UpdateSleepTime ProductionUpdate::update( void )
 					removeFromProductionQueue( production );
 					
 					// delete the production entry
-					production->deleteInstance();
+					Platform::DeletePoolObject(production);
 				}
 
 			}  // end if we found an exit interface
@@ -890,7 +890,7 @@ UpdateSleepTime ProductionUpdate::update( void )
 				removeFromProductionQueue( production );
 
 				// delete the production entry
-				production->deleteInstance();
+				Platform::DeletePoolObject(production);
 
 			}  // end else
 	
@@ -977,7 +977,7 @@ UpdateSleepTime ProductionUpdate::update( void )
 			removeFromProductionQueue( production );
 
 			// delete the production entry
-			production->deleteInstance();
+			Platform::DeletePoolObject(production);
 
 		}  // end else, production upgrade
 

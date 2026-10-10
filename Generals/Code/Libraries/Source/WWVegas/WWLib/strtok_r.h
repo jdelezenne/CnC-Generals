@@ -45,7 +45,11 @@
 #define __STRTOK_R_H__
 
 #ifndef _UNIX
+#ifdef _WIN32
 char *strtok_r(char *strptr, const char *delimiters, char **lasts);
+#else
+#include <cstring>
+#endif
 #endif
 
 #endif

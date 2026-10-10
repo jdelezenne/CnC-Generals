@@ -37,6 +37,8 @@
 #pragma warning(disable : 4514)
 
 #include "widestring.h"
+#include "Platform/Text.h"
+#include "Platform/TextFormat.h"
 #include "win.h"
 #include <stdio.h>
 
@@ -242,7 +244,7 @@ WideStringClass::Free_String (void)
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 {
 	//
@@ -253,7 +255,7 @@ WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 	//
 	//	Format the string
 	//
-	int retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
+	int retval = Platform::FormatText(temp_buffer, 512, format, arg_list);
 	
 	//
 	//	Copy the string into our buffer
@@ -269,7 +271,7 @@ WideStringClass::Format_Args (const WCHAR *format, const va_list & arg_list )
 //	Format
 //
 ///////////////////////////////////////////////////////////////////
-int _cdecl
+int __cdecl
 WideStringClass::Format (const WCHAR *format, ...)
 {
 	va_list arg_list;
@@ -283,7 +285,7 @@ WideStringClass::Format (const WCHAR *format, ...)
 	//
 	//	Format the string
 	//
-	int retval = _vsnwprintf (temp_buffer, 512, format, arg_list);
+	int retval = Platform::FormatText(temp_buffer, 512, format, arg_list);
 	
 	//
 	//	Copy the string into our buffer

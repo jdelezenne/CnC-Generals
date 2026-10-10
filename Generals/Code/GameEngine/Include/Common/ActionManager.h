@@ -44,10 +44,10 @@
 class Object;
 class Player;
 class SpecialPowerTemplate;
-enum SpecialPowerType;
-enum WeaponSlotType;
-enum CommandSourceType;
-enum CanAttackResult;
+#include "Common/SpecialPowerType.h"
+#include "Common/GameType.h"
+#include "Common/CommandSourceType.h"
+#include "GameLogic/WeaponSelectionTypes.h"
 
 enum CanEnterType
 {

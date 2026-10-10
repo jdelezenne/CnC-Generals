@@ -40,6 +40,7 @@
 #include <winnt.h>
 #include "rawfile.h"
 #include "ffactory.h"
+#include "Platform/Files.h"
 
 
 /******************************************************************************
@@ -115,18 +116,20 @@ bool GetFileCreationTime(char* filename, FILETIME* createTime)
 		createTime->dwHighDateTime = 0;
 		FileClass* file = _TheFileFactory->Get_File(filename);
 
+		bool success = false;
 		if (file && file->Open())
 			{
-			HANDLE handle = file->Get_File_Handle();
-
-			if (handle != INVALID_HANDLE_VALUE)
+			auto* raw = dynamic_cast<RawFileClass*>(file);
+			std::uint64_t lastWrite = 0;
+			if (raw && Platform::RawFileLastWriteTime(raw->Get_File_Handle(), lastWrite))
 				{
-				if (GetFileTime(handle, NULL, NULL, createTime))
-					{
-					return true;
-					}
+				createTime->dwLowDateTime = static_cast<DWORD>(lastWrite);
+				createTime->dwHighDateTime = static_cast<DWORD>(lastWrite >> 32);
+				success = true;
 				}
 			}
+		if (file) _TheFileFactory->Return_File(file);
+		return success;
 		}
 
 	return false;

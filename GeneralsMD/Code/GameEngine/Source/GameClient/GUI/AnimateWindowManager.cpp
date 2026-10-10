@@ -113,7 +113,7 @@ static void clearWinList(AnimateWindowList &winList)
 		win = *(winList.begin());
 		winList.pop_front();
 		if (win)
-			win->deleteInstance();
+			Platform::DeletePoolObject(win);
 		win = NULL;
 	}
 }

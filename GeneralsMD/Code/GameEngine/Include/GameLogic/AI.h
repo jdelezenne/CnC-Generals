@@ -31,6 +31,10 @@
 #ifndef _AI_H_
 #define _AI_H_
 
+#include "GameClient/GUICommandType.h"
+#include "GameLogic/WeaponSetType.h"
+#include "GameLogic/WeaponSelectionTypes.h"
+#include "Common/SpecialPowerType.h"
 #include "GameLogic/AttitudeType.h"
 #include "Common/Snapshot.h"
 #include "Common/SubsystemInterface.h"

@@ -127,8 +127,9 @@
 
 
 #include "hlod.h"
+#include "Platform/StringCompare.h"
 #include "assetmgr.h"
-#include "hmdldef.h"
+#include "hmdldef.H"
 #include "w3derr.h"
 #include "chunkio.h"
 #include "predlod.h"
@@ -487,11 +488,11 @@ WW3DErrorType HLodDefClass::Save_Header(ChunkSaveClass &csave)
 		header.LodCount = LodCount;
 		
 		// Copy the name to the header
-		::lstrcpyn (header.Name, Name, sizeof (header.Name));
+		Platform::CopyString (header.Name, Name, sizeof (header.Name));
 		header.Name[sizeof (header.Name) - 1] = 0;
 
 		// Copy the hierarchy tree name to the header
-		::lstrcpyn (header.HierarchyName, HierarchyTreeName, sizeof (header.HierarchyName));
+		Platform::CopyString (header.HierarchyName, HierarchyTreeName, sizeof (header.HierarchyName));
 		header.HierarchyName[sizeof (header.HierarchyName) - 1] = 0;		
 
 		// Write the header out to the chunk
@@ -658,7 +659,7 @@ bool HLodDefClass::read_header(ChunkLoadClass & cload)
 	cload.Close_Chunk();
 
 	// Copy the name into our internal variable
-	Name = ::_strdup(header.Name);
+	Name = Platform::DuplicateString(header.Name);
 	HierarchyTreeName = ::strdup(header.HierarchyName);
 	LodCount = header.LodCount;
 	Lod = W3DNEWARRAY SubObjectArrayClass[LodCount];
@@ -883,7 +884,7 @@ bool HLodDefClass::SubObjectArrayClass::Save_W3D(ChunkSaveClass &csave)
 					info.BoneIndex = BoneIndex[index];
 					
 					// Copy this model name into the structure
-					::lstrcpyn (info.Name, ModelName[index], sizeof (info.Name));
+					Platform::CopyString (info.Name, ModelName[index], sizeof (info.Name));
 					info.Name[sizeof (info.Name) - 1] = 0;
 
 					// Write the LOD sub-obj structure out to the chunk
@@ -3434,7 +3435,7 @@ void HLodClass::Update_Obj_Space_Bounding_Volumes(void)
 			//
 			//	Does the name match the designator we are looking for?
 			//
-			if (::stricmp (name, "BOUNDINGBOX") == 0) {				
+			if (Platform::CompareNoCase(name, "BOUNDINGBOX") == 0) {
 				BoundingBoxIndex = index;
 			}
 		}

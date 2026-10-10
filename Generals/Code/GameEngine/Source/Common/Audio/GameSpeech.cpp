@@ -38,6 +38,7 @@
 //----------------------------------------------------------------------------
 
 #include "wpaudio/attributes.h"
+#include "Platform/Paths.h"
 
 #include "wsys/File.h"
 #include "wsys/List.h"
@@ -1042,7 +1043,7 @@ AsciiString SpeechManager::getFilenameForPlay( Speech *speech )
 	// using a random number generator, select a random sample from all the samples
 	// that correspond to this sound name
 	Int soundToPlay = GameClientRandomValue(0, numSamples - 1);
-	char name[_MAX_PATH];
+	char name[Platform::LegacyPathCapacity];
 
 	if (soundToPlay < regularSamples) {
 		strcpy(name, speechInfo->m_dialogFiles[soundToPlay].str());
@@ -1063,7 +1064,7 @@ AsciiString SpeechManager::getFilenameForPlay( Speech *speech )
 	if ( name[0] == '$' )
 	{
 		localized = TRUE;
-		char nameTemp[_MAX_PATH];
+		char nameTemp[Platform::LegacyPathCapacity];
 		strcpy(nameTemp, name + 1);
 		strcpy(name, nameTemp);
 	}

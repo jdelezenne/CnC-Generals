@@ -31,7 +31,9 @@
 //						all parts of the engine that need images.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "Platform/Directory.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/Paths.h"
 
 #define DEFINE_IMAGE_STATUS_NAMES
 #include "Lib/BaseType.h"
@@ -216,7 +218,7 @@ ImageCollection::~ImageCollection( void )
 	{
 
 		next = image->m_next;
-		image->deleteInstance();
+		Platform::DeletePoolObject(image);
 		image = next;
 
 	}  // end while
@@ -314,15 +316,14 @@ const Image *ImageCollection::findImageByFilename( const AsciiString& filename )
 //-------------------------------------------------------------------------------------------------
 void ImageCollection::load( Int textureSize )
 {
-	char buffer[ _MAX_PATH ];
+	char buffer[ Platform::LegacyPathCapacity ];
 	INI ini;
 	// first load in the user created mapped image files if we have them.
-	WIN32_FIND_DATA findData;
 	AsciiString userDataPath;	
 	if(TheGlobalData)
 	{
 		userDataPath.format("%sINI\\MappedImages\\*.ini",TheGlobalData->getPath_UserData().str());
-		if(FindFirstFile(userDataPath.str(), &findData) !=INVALID_HANDLE_VALUE)
+		if (!Platform::ListFiles((std::string(TheGlobalData->getPath_UserData().str()) + "INI/MappedImages").c_str(), "*.ini").empty())
 		{
 			userDataPath.format("%sINI\\MappedImages",TheGlobalData->getPath_UserData().str());
 			ini.loadDirectory(userDataPath, TRUE, INI_LOAD_OVERWRITE, NULL );

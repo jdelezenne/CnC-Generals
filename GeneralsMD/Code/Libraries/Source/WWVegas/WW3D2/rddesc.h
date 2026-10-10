@@ -42,7 +42,7 @@
 #ifndef RDDESC_H
 #define RDDESC_H
 
-#include "vector.h"
+#include "Vector.H"
 #include "wwstring.h"
 #include <d3d8types.h>
 #include <d3d8caps.h>
@@ -67,9 +67,9 @@ class RenderDeviceDescClass
 
 public:
 
-	RenderDeviceDescClass(void) : DeviceName(NULL), DeviceVendor(NULL), DevicePlatform(NULL), 
-											DriverName(NULL), DriverVendor(NULL), DriverVersion(NULL),
-											HardwareName(NULL), HardwareVendor(NULL), HardwareChipset(NULL)
+	RenderDeviceDescClass(void) : DeviceName(static_cast<const char*>(NULL)), DeviceVendor(static_cast<const char*>(NULL)), DevicePlatform(static_cast<const char*>(NULL)),
+											DriverName(static_cast<const char*>(NULL)), DriverVendor(static_cast<const char*>(NULL)), DriverVersion(static_cast<const char*>(NULL)),
+											HardwareName(static_cast<const char*>(NULL)), HardwareVendor(static_cast<const char*>(NULL)), HardwareChipset(static_cast<const char*>(NULL))
 	{
 	}
 

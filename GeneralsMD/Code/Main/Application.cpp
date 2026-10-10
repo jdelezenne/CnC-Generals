@@ -44,7 +44,7 @@
 #include "Common/Debug.h"
 #include "Common/GameMemory.h"
 #include "Common/MessageStream.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 #include "GameClient/Keyboard.h"
 #include "GameClient/Mouse.h"
 #include "Win32Device/GameClient/Win32Mouse.h"
@@ -55,6 +55,7 @@
 #endif
 #include "Common/Registry.h"
 #include <rts/profile.h>
+#include <rts/debug.h>
 
 Bool ApplicationIsWindowed = false;
 Win32Mouse* TheWin32Mouse = NULL;
@@ -105,9 +106,24 @@ struct ApplicationInstanceLifetime
 // Necessary to allow memory managers and such to have useful critical sections.
 static CriticalSection critSec1, critSec2, critSec3, critSec4, critSec5;
 
+struct ApplicationCriticalSectionLifetime
+{
+    ApplicationCriticalSectionLifetime() { std::atexit(Release); }
+    ~ApplicationCriticalSectionLifetime() { Release(); }
+    static void Release()
+    {
+        TheUnicodeStringCriticalSection = NULL;
+        TheDmaCriticalSection = NULL;
+        TheMemoryPoolCriticalSection = NULL;
+        TheDebugLogCriticalSection = NULL;
+    }
+};
+
 int main(int argc, char* argv[])
 {
+    Debug::Initialize();
     ApplicationInstanceLifetime instance;
+    ApplicationCriticalSectionLifetime criticalSections;
 
 #ifdef _PROFILE
   Profile::StartRange("init");

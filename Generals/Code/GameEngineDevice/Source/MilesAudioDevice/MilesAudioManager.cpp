@@ -38,7 +38,8 @@
 /*		7/18/2002 : Initial creation                                           */
 /*---------------------------------------------------------------------------*/
 
-#include "Lib/Basetype.h"
+#include "Platform/Synchronization.h"
+#include "Lib/BaseType.h"
 #include "Platform/Paths.h"
 #include "MilesAudioDevice/MilesAudioManager.h"
 
@@ -64,7 +65,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/TerrainLogic.h"
 
-#include "Common/File.h"
+#include "Common/file.h"
 
 #ifdef _INTERNAL
 //#pragma optimize("", off)
@@ -594,7 +595,7 @@ void MilesAudioManager::pauseAudio( AudioAffect which )
 		AudioRequest *req = (*ait);
 		if( req && req->m_request == AR_Play ) 
 		{
-			req->deleteInstance();
+			Platform::DeletePoolObject(req);
 			ait = m_audioRequests.erase(ait);
 		}
 		else
@@ -992,7 +993,7 @@ void MilesAudioManager::killAudioEventImmediately( AudioHandle audioEvent )
 		AudioRequest *req = (*ait);
 		if( req && req->m_request == AR_Play && req->m_handleToInteractOn == audioEvent ) 
 		{
-			req->deleteInstance();
+			Platform::DeletePoolObject(req);
 			ait = m_audioRequests.erase(ait);
 			return;
 		}
@@ -2217,7 +2218,7 @@ void MilesAudioManager::processRequestList( void )
 		if (!req->m_requiresCheckForSample || checkForSample(req)) {
 			processRequest(req);
 		}
-		req->deleteInstance();
+		Platform::DeletePoolObject(req);
 		it = m_audioRequests.erase(it);
 	}
 }
@@ -2520,7 +2521,9 @@ Real MilesAudioManager::getFileLengthMS( AsciiString strToLoad ) const
 	}
 
 	long retVal;
-	AIL_stream_ms_position(stream, &retVal, NULL);
+	S32 milliseconds;
+	AIL_stream_ms_position(stream, &milliseconds, NULL);
+	retVal = milliseconds;
 	// Now close the stream
 	AIL_close_stream(stream);
 
@@ -3006,7 +3009,7 @@ U32 AILCALLBACK streamingFileRead(AIL_FILE_HANDLE file_handle, void *buffer, U32
 //-------------------------------------------------------------------------------------------------
 AudioFileCache::AudioFileCache() : m_maxSize(0), m_currentlyUsedSize(0), m_mutexName("AudioFileCacheMutex")
 {
-	m_mutex = CreateMutex(NULL, FALSE, m_mutexName);
+	m_mutex = Platform::CreateRecursiveMutex(m_mutexName);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -3028,7 +3031,7 @@ AudioFileCache::~AudioFileCache()
 		}
 	}
 
-	CloseHandle(m_mutex);
+	Platform::DestroyRecursiveMutex(m_mutex);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -3085,7 +3088,7 @@ void *AudioFileCache::openFile( AudioEventRTS *eventToOpenFrom )
 		}
 	}
 	
-	if (soundInfo.format == WAVE_FORMAT_IMA_ADPCM) {
+	if (soundInfo.format == AIL_WAVE_FORMAT_IMA_ADPCM) {
 		void *decompressFileBuffer;
 		U32 newFileSize;
 		AIL_decompress_ADPCM(&soundInfo, &decompressFileBuffer, &newFileSize);
@@ -3095,7 +3098,7 @@ void *AudioFileCache::openFile( AudioEventRTS *eventToOpenFrom )
 		openedAudioFile.m_file = decompressFileBuffer;
 		openedAudioFile.m_soundInfo = soundInfo;
 		openedAudioFile.m_openCount = 1;
-	} else if (soundInfo.format == WAVE_FORMAT_PCM) {
+	} else if (soundInfo.format == AIL_WAVE_FORMAT_PCM) {
 		openedAudioFile.m_compressed = FALSE;
 		openedAudioFile.m_file = buffer;
 		openedAudioFile.m_soundInfo = soundInfo;

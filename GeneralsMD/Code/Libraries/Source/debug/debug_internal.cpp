@@ -26,6 +26,8 @@
 //
 // Implementation of internal code
 //////////////////////////////////////////////////////////////////////////////
+#include <algorithm>
+#include "Platform/Memory.h"
 #include "_pch.h"
 
 void DebugInternalAssert(const char *file, int line, const char *expr)
@@ -33,54 +35,31 @@ void DebugInternalAssert(const char *file, int line, const char *expr)
   // dangerous as well but since this function is used in this
   // module only we know how long stuff can get
   char buf[512];
-  wsprintf(buf,"File %s, line %i:\n%s",file,line,expr);
-  MessageBox(NULL,buf,"Internal assert failed",
-                        MB_OK|MB_ICONSTOP|MB_TASKMODAL|MB_SETFOREGROUND);
+  sprintf(buf,"File %s, line %i:\n%s",file,line,expr);
+  Platform::ShowDialog(buf,"Internal assert failed",Platform::DialogButtons::OK,Platform::DialogIcon::Error,Platform::DialogResult::OK,true);
   
   // stop right now!
-  TerminateProcess(GetCurrentProcess(),666);
+  std::_Exit(666);
 }
 
 void *DebugAllocMemory(unsigned numBytes)
 {
-  HGLOBAL h=GlobalAlloc(GMEM_FIXED,numBytes);
-  if (!h)
-    DCRASH_RELEASE("Debug mem alloc failed");
-  return (void *)h;
+  void* memory = Platform::AllocateSystemMemory(numBytes, false);
+  if (!memory) DCRASH_RELEASE("Diagnostic memory allocation failed");
+  return memory;
 }
 
 void *DebugReAllocMemory(void *oldPtr, unsigned newSize)
 {
-  // Windows doesn't like ReAlloc with NULL handle/ptr...
-  if (!oldPtr)
-    return newSize?DebugAllocMemory(newSize):0;
-
-  // Shrinking to 0 size is basically freeing memory
-  if (!newSize)
-  {
-    GlobalFree((HGLOBAL)oldPtr);
-    return 0;
-  }
-
-  // now try GlobalReAlloc first
-  HGLOBAL h=GlobalReAlloc((HGLOBAL)oldPtr,newSize,0);
-  if (!h)
-  {
-    // this failed (Windows doesn't like ReAlloc'ing larger
-    // fixed memory blocks) - go with Alloc/Free instead
-    h=GlobalAlloc(GMEM_FIXED,newSize);
-    if (!h)
-      DCRASH_RELEASE("Debug mem realloc failed");
-    unsigned oldSize=GlobalSize((HGLOBAL)oldPtr);
-    memcpy((void *)h,oldPtr,oldSize<newSize?oldSize:newSize);
-    GlobalFree((HGLOBAL)oldPtr);
-  }
-
-  return (void *)h;
+  if (!newSize) { Platform::FreeSystemMemory(oldPtr); return NULL; }
+  void* memory = DebugAllocMemory(newSize);
+  if (oldPtr) memcpy(memory, oldPtr, std::min<std::size_t>(Platform::SystemMemorySize(oldPtr), newSize));
+  Platform::FreeSystemMemory(oldPtr);
+  return memory;
 }
 
 void DebugFreeMemory(void *ptr)
 {
   if (ptr)
-    GlobalFree((HGLOBAL)ptr);
+    Platform::FreeSystemMemory(ptr);
 }

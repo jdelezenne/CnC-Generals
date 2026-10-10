@@ -40,7 +40,7 @@
 #include "Common/SubsystemInterface.h"
 #include "GameClient/ClientRandomValue.h"
 
-#include "WWMath/Matrix3D.h"		///< @todo Replace with our own matrix library
+#include "WWMath/matrix3d.h"		///< @todo Replace with our own matrix library
 #include "Common/STLTypedefs.h"
 
  
@@ -56,10 +56,7 @@ class INI;
 class DebugWindowDialog;		// really ParticleEditorDialog
 class RenderInfoClass;			// ick
 
-enum ParticleSystemID
-{
-	INVALID_PARTICLE_SYSTEM_ID = 0
-};
+#include "GameClient/ParticleSystemID.h"
 
 #define MAX_VOLUME_PARTICLE_DEPTH ( 16 )
 #define DEFAULT_VOLUME_PARTICLE_DEPTH ( 0 )//The Default is not to do the volume thing!
@@ -82,34 +79,7 @@ struct RGBColorKeyframe
 	UnsignedInt frame;
 };
 
-enum ParticlePriorityType
-{
-	INVALID_PRIORITY = 0, 
-	PARTICLE_PRIORITY_LOWEST = 1,
-//	FLUFF = PARTICLE_PRIORITY_LOWEST,		///< total and absolute fluff
-//	DEBRIS,		///< debris related particles
-//	NATURE,	///< neato effects we just might see in the world
-//	WEAPON,		///< Weapons firing and flying in the air
-//	DAMAGE,		///< taking damage/dying explosions
-//	SPECIAL,	///< super special top priority like a superweapon
-
-	WEAPON_EXPLOSION = PARTICLE_PRIORITY_LOWEST,
-	SCORCHMARK,
-	DUST_TRAIL,
-	BUILDUP,
-	DEBRIS_TRAIL,
-	UNIT_DAMAGE_FX,
-	DEATH_EXPLOSION,
-	SEMI_CONSTANT,
-	CONSTANT,
-	WEAPON_TRAIL,
-	AREA_EFFECT,
-	CRITICAL,				///< super special top priority like a superweapon
-	ALWAYS_RENDER,	///< used for logically important display (not just fluff), so must never be culled, regardless of particle cap, lod, etc
-	// !!! *Noting* goes here ... special is the top priority !!!
-	PARTICLE_PRIORITY_HIGHEST = ALWAYS_RENDER,
-	NUM_PARTICLE_PRIORITIES  ///< Keep this last
-};
+#include "GameClient/ParticlePriorityType.h"
 
 /**
  * This structure is filled out and passed to the constructor of a Particle to initialize it

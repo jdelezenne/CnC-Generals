@@ -43,6 +43,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include "Platform/StringCompare.h"
 #include <always.h>
 #include "Platform/Paths.h"
 #include "W3DDevice/GameClient/W3DAssetManager.h"
@@ -196,7 +197,7 @@ TextureClass *W3DAssetManager::Get_Texture(
 	}
 
 	StringClass lower_case_name(filename,true);
-	_strlwr(lower_case_name.Peek_Buffer());
+	Platform::LowerCase(lower_case_name.Peek_Buffer());
 
 	/*
 	** See if the texture has already been loaded.
@@ -255,7 +256,7 @@ static inline void Munge_Render_Obj_Name(char *newname, const char *oldname, flo
 {
 	char lower_case_name[255];
 	strcpy(lower_case_name, oldname);
-	_strlwr(lower_case_name);
+	Platform::LowerCase(lower_case_name);
 
 	if (!textureName)
 		textureName = "";
@@ -268,7 +269,7 @@ static inline void Munge_Texture_Name(char *newname, const char *oldname, const 
 {
 	char lower_case_name[255];
 	strcpy(lower_case_name, oldname);
-	_strlwr(lower_case_name);
+	Platform::LowerCase(lower_case_name);
 	sprintf(newname,"#%d#%s", color, lower_case_name);
 }
 
@@ -411,7 +412,8 @@ static void remapTexture16Bit(Int dx, Int dy, Int pitch, SurfaceClass::SurfaceDe
 	Vector3 rgb,v_color((float)((color>>16)&0xff)/255.0f/255.0f,(float)((color>>8)&0xff)/255.0f/255.0f,(float)(color&0xff)/255.0f/255.0f);
 
 	//Generate a new color gradient palette based on reference color
-	for (Int y=0; y<TEAM_COLOR_PALETTE_SIZE; y++)
+	Int y;
+	for (y=0; y<TEAM_COLOR_PALETTE_SIZE; y++)
 	{	
 		rgb.X=(Real)houseColorScale[y]*v_color.X;
 		rgb.Y=(Real)houseColorScale[y]*v_color.Y;
@@ -514,7 +516,8 @@ static void remapTexture32Bit(Int dx, Int dy, Int pitch, SurfaceClass::SurfaceDe
 	Vector3 rgb,v_color((float)((color>>16)&0xff)/255.0f/255.0f,(float)((color>>8)&0xff)/255.0f/255.0f,(float)(color&0xff)/255.0f/255.0f);
 
 	//Generate a new color gradient palette based on reference color
-	for (Int y=0; y<TEAM_COLOR_PALETTE_SIZE; y++)
+	Int y;
+	for (y=0; y<TEAM_COLOR_PALETTE_SIZE; y++)
 	{	
 		rgb.X=(Real)houseColorScale[y]*v_color.X;
 		rgb.Y=(Real)houseColorScale[y]*v_color.Y;
@@ -704,7 +707,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(
 	Bool isGranny = false;
 	char *pext=strrchr(name,'.');	//find file extension
 	if (pext)
-		isGranny=(strnicmp(pext,".GR2",4) == 0);
+		isGranny=(Platform::CompareNoCase(pext,".GR2",4) == 0);
 #endif
 	Bool reallyscale = (WWMath::Fabs(scale - ident_scale) > scale_epsilon);
 	Bool reallycolor = (color & 0xFFFFFF) != 0;	//black is not a valid color and assumes no custom coloring.
@@ -767,16 +770,16 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(
 	{	
 		// If we didn't find one, try to load on demand
 		char filename [MAX_PATH];
-		char *mesh_name = ::strchr (name, '.');
+		const char *mesh_name = ::strchr (name, '.');
 		if (mesh_name != NULL) 
 		{
-			::lstrcpyn(filename, name, static_cast<int>(mesh_name - name) + 1);
+			Platform::CopyString(filename, name, static_cast<int>(mesh_name - name) + 1);
 #ifdef	INCLUDE_GRANNY_IN_BUILD
 			if (isGranny)
-				::lstrcat(filename, ".gr2");
+				strcat(filename, ".gr2");
 			else
 #endif
-				::lstrcat(filename, ".w3d");
+				strcat(filename, ".w3d");
 		} else {
 			sprintf( filename, "%s.w3d", name);
 		}
@@ -788,7 +791,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(
 			if (Load_3D_Assets( new_filename ) == false)
 			{
 #ifdef	INCLUDE_GRANNY_IN_BUILD
-				char *mesh_name = ::strchr (filename, '.');
+				const char *mesh_name = ::strchr (filename, '.');
 				::lstrcpyn (mesh_name, ".gr2",5);
 				Load_3D_Assets( filename );
 				isGranny=true;
@@ -897,7 +900,7 @@ int W3DAssetManager::Recolor_Mesh(RenderObjClass *robj, const int color)
 
 	// recolor vertex material (assuming mesh is housecolor)
 	if ( (( (meshName=strchr(mesh->Get_Name(),'.') ) != 0 && *(meshName++)) || ( (meshName=mesh->Get_Name()) != NULL)) &&
-		_strnicmp(meshName,"HOUSECOLOR", 10) == 0)
+		Platform::CompareNoCase(meshName,"HOUSECOLOR", 10) == 0)
 	{	for (i=0; i<material->Vertex_Material_Count(); i++)
 			Recolor_Vertex_Material(material->Peek_Vertex_Material(i),color);
 		didRecolor=1;
@@ -908,7 +911,7 @@ int W3DAssetManager::Recolor_Mesh(RenderObjClass *robj, const int color)
 	for (i=0; i<material->Texture_Count(); i++)
 	{
 		oldtex=material->Peek_Texture(i);
-		if (_strnicmp(oldtex->Get_Texture_Name(),"ZHC", 3) == 0)
+		if (Platform::CompareNoCase(oldtex->Get_Texture_Name(),"ZHC", 3) == 0)
 		{	//This texture needs to be adjusted for housecolor
 			newtex=Recolor_Texture(oldtex,color);
 			if (newtex)
@@ -990,7 +993,7 @@ bool W3DAssetManager::Load_3D_Assets( const char * filename )
 	Bool isGranny = false;
 	char *pext=strrchr(filename,'.');	//find file extension
 	if (pext)
-		isGranny=(strnicmp(pext,".GR2",4) == 0);
+		isGranny=(Platform::CompareNoCase(pext,".GR2",4) == 0);
 	if (!isGranny)
 #endif
 
@@ -1023,7 +1026,7 @@ bool W3DAssetManager::Load_3D_Assets( const char * filename )
 		if (logfile)
 		{	
 			StringClass lower_case_name(filename,true);
-			_strlwr(lower_case_name.Peek_Buffer());
+			Platform::LowerCase(lower_case_name.Peek_Buffer());
 			fprintf(logfile,"3D: %s\n",lower_case_name.Peek_Buffer());
 			fclose(logfile);
 		}
@@ -1093,7 +1096,7 @@ HAnimClass *	W3DAssetManager::Get_HAnim(const char * name)
 	Bool isGranny = false;
 	char *pext=strrchr(name,'.');	//find file extension
 	if (pext)
-		isGranny=(strnicmp(pext,".GR2",4) == 0);
+		isGranny=(Platform::CompareNoCase(pext,".GR2",4) == 0);
 	if (!isGranny)
 #endif
 	{
@@ -1175,7 +1178,7 @@ static Bool getMeshColorMethods(MeshClass *mesh, Bool &vertexColor, Bool &textur
 	MaterialInfoClass *material = mesh->Get_Material_Info();
 	if (material)
 	{	for (int j=0; j<material->Texture_Count(); j++)
-			if (_strnicmp(material->Peek_Texture(j)->Get_Texture_Name(),"ZHC",3) == 0)
+			if (Platform::CompareNoCase(material->Peek_Texture(j)->Get_Texture_Name(),"ZHC",3) == 0)
 			{	textureColor = true;
 				break;
 			}
@@ -1188,7 +1191,7 @@ static Bool getMeshColorMethods(MeshClass *mesh, Bool &vertexColor, Bool &textur
 	const char *meshName;
 	if ( ( (meshName=strchr(mesh->Get_Name(),'.') ) != 0 && *(meshName++)) || ( (meshName=mesh->Get_Name()) != NULL) )
 	{	//Check if this object has housecolors on mesh
-		if ( _strnicmp(meshName,"HOUSECOLOR", 10) == 0)
+		if ( Platform::CompareNoCase(meshName,"HOUSECOLOR", 10) == 0)
 			vertexColor = true;
 	}
 
@@ -1405,7 +1408,7 @@ static inline void Munge_Render_Obj_Name(char *newname, const char *oldname, flo
 {
 	char lower_case_name[255];
 	strcpy(lower_case_name, oldname);
-	_strlwr(lower_case_name);
+	Platform::LowerCase(lower_case_name);
 	sprintf(newname,"#%s!%gH%gS%gV%g", lower_case_name, scale, hsv_shift.X, hsv_shift.Y, hsv_shift.Z);
 }
 
@@ -1413,7 +1416,7 @@ static inline void Munge_Texture_Name(char *newname, const char *oldname, const 
 {
 	char lower_case_name[255];
 	strcpy(lower_case_name, oldname);
-	_strlwr(lower_case_name);
+	Platform::LowerCase(lower_case_name);
 	sprintf(newname,"#%s!H%gS%gV%g", lower_case_name, hsv_shift.X, hsv_shift.Y, hsv_shift.Z);
 }
 
@@ -1423,7 +1426,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(const char * name,float scal
 #ifdef	INCLUDE_GRANNY_IN_BUILD
 	char *pext=strrchr(name,'.');	//find file extension
 	if (pext)
-		isGranny=(strnicmp(pext,".GR2",4) == 0);
+		isGranny=(Platform::CompareNoCase(pext,".GR2",4) == 0);
 #endif
 	Bool reallyscale = (WWMath::Fabs(scale - ident_scale) > scale_epsilon);
 	Bool reallyhsv_shift = (WWMath::Fabs(hsv_shift.X - ident_HSV.X) > H_epsilon ||
@@ -1464,7 +1467,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(const char * name,float scal
 	Set_WW3D_Load_On_Demand(true); // Auto Load.
 	if (WW3D_Load_On_Demand && proto == NULL) {	// If we didn't find one, try to load on demand
 		char filename [MAX_PATH];
-		char *mesh_name = ::strchr (name, '.');
+		const char *mesh_name = ::strchr (name, '.');
 		if (mesh_name != NULL) {
 			::lstrcpyn (filename, name, static_cast<int>(mesh_name - name) + 1);
 			if (isGranny)
@@ -1480,7 +1483,7 @@ RenderObjClass * W3DAssetManager::Create_Render_Obj(const char * name,float scal
 			StringClass	new_filename = StringClass("..\\") + filename;
 			if (Load_3D_Assets( new_filename ) == false)
 			{
-				char *mesh_name = ::strchr (filename, '.');
+				const char *mesh_name = ::strchr (filename, '.');
 				::lstrcpyn (mesh_name, ".gr2",5);
 				Load_3D_Assets( filename );
 				isGranny=true;
@@ -1547,7 +1550,7 @@ TextureClass * W3DAssetManager::Get_Texture_With_HSV_Shift(const char * filename
 			// No cached texture - need to create
 			char lower_case_name[255];
 			strcpy(lower_case_name, filename);
-			_strlwr(lower_case_name);
+			Platform::LowerCase(lower_case_name);
 			TextureClass *oldtex = TextureHash.Get(lower_case_name);
 			if (!oldtex) {
 				oldtex = NEW_REF(TextureClass,(lower_case_name, NULL, mip_level_count));

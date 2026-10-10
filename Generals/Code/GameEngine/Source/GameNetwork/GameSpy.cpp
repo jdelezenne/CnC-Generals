@@ -26,6 +26,7 @@
 // GameSpy callbacks, etc
 // Author: Matthew D. Campbell, February 2002
 
+#include "Platform/IntegerText.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "GameSpy/GP/GP.h"
@@ -288,7 +289,7 @@ void GameSpyChat::update( void )
 				OptionPreferences *pref = NEW OptionPreferences;
 				char num[16];
 				num[0] = 0;
-				itoa(TheGlobalData->m_firewallBehavior, num, 10);
+				Platform::IntegerText(TheGlobalData->m_firewallBehavior, num, 10);
 				AsciiString numstr;
 				numstr = num;
 				(*pref)["FirewallBehavior"] = numstr;

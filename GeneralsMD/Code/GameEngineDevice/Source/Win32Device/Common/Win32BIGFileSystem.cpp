@@ -26,15 +26,16 @@
 // Bryan Cleveland, August 2002
 /////////////////////////////////////////////////////////////
 
-#include <winsock2.h>
+#include "Platform/ByteOrder.h"
+#include "Platform/Paths.h"
 #include "Common/ArchiveFile.h"
 #include "Common/ArchiveFileSystem.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/GameMemory.h"
 #include "Common/LocalFileSystem.h"
 #include "Win32Device/Common/Win32BIGFile.h"
 #include "Win32Device/Common/Win32BIGFileSystem.h"
-#include "Common/registry.h"
+#include "Common/Registry.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -98,7 +99,7 @@ ArchiveFile * Win32BIGFileSystem::openArchiveFile(const Char *filename) {
 	}
 
 	AsciiString asciibuf;
-	char buffer[_MAX_PATH];
+	char buffer[Platform::LegacyPathCapacity];
 	fp->read(buffer, 4); // read the "BIG" at the beginning of the file.
 	buffer[4] = 0;
 	if (strcmp(buffer, BIGFileIdentifier) != 0) {
@@ -118,7 +119,7 @@ ArchiveFile * Win32BIGFileSystem::openArchiveFile(const Char *filename) {
 	// read in the number of files contained in this BIG file.
 	// change the order of the bytes cause the file size is in reverse byte order for some reason.
 	fp->read(&numLittleFiles, 4);
-	numLittleFiles = ntohl(numLittleFiles);
+	numLittleFiles = Platform::NetworkOrder(numLittleFiles);
 
 	DEBUG_LOG(("Win32BIGFileSystem::openArchiveFile - %d are contained in archive\n", numLittleFiles));
 //	for (Int i = 0; i < 2; ++i) {
@@ -138,8 +139,8 @@ ArchiveFile * Win32BIGFileSystem::openArchiveFile(const Char *filename) {
 		fp->read(&fileOffset, 4);
 		fp->read(&filesize, 4);
 
-		filesize = ntohl(filesize);
-		fileOffset = ntohl(fileOffset);
+		filesize = Platform::NetworkOrder(filesize);
+		fileOffset = Platform::NetworkOrder(fileOffset);
 
 		fileInfo->m_archiveFilename = archiveFileName;
 		fileInfo->m_offset = fileOffset;

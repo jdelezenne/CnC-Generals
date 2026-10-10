@@ -215,7 +215,7 @@ void TeamFactory::clear()
 	m_prototypes.clear();
 	for (TeamPrototypeMap::iterator it = tmp.begin(); it != tmp.end(); ++it)
 	{
-		it->second->deleteInstance();
+		Platform::DeletePoolObject(it->second);
 	}
 }
 
@@ -837,7 +837,7 @@ TeamPrototype::TeamPrototype( TeamFactory *tf,
 		if (o)
 		{
 			TheTeamFactory->teamAboutToBeDeleted(o);
-			o->deleteInstance();
+			Platform::DeletePoolObject(o);
 		}
 	}
 
@@ -853,7 +853,7 @@ TeamPrototype::~TeamPrototype()
 
 	if (m_productionConditionScript) 
 	{
-		m_productionConditionScript->deleteInstance();
+		Platform::DeletePoolObject(m_productionConditionScript);
 	}
 	m_productionConditionScript = NULL;
 
@@ -861,7 +861,7 @@ TeamPrototype::~TeamPrototype()
 	{
 		if (m_genericScriptsToRun[i]) 
 		{
-			m_genericScriptsToRun[i]->deleteInstance();
+			Platform::DeletePoolObject(m_genericScriptsToRun[i]);
 			m_genericScriptsToRun[i] = NULL;
 		}
 	}
@@ -1087,7 +1087,7 @@ void TeamPrototype::updateState(void)
 
 				// So remove it
 				TheTeamFactory->teamAboutToBeDeleted(iter.cur());
-				iter.cur()->deleteInstance();
+				Platform::DeletePoolObject(iter.cur());
 
 				done = false;
 				break; // Not sure what state the iterator is in after deleting a member of the list. jba
@@ -1386,8 +1386,8 @@ Team::~Team()
 		m_proto->removeFrom_TeamInstanceList(this);
 
 	// delete the relation maps (the destructor clears the actual map if any data is present)
-	m_teamRelations->deleteInstance();
-	m_playerRelations->deleteInstance();
+	Platform::DeletePoolObject(m_teamRelations);
+	Platform::DeletePoolObject(m_playerRelations);
 
 	// make sure the xfer list is clear
 	m_xferMemberIDList.clear();

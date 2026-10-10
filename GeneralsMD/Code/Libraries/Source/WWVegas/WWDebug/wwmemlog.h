@@ -43,6 +43,7 @@
 
 #ifndef WWMEMLOG_H
 #define WWMEMLOG_H
+#include <cstddef>
 
 #define LOG_MEMORY	// Comment this out to disable memlog compiling in
 

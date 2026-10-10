@@ -44,7 +44,7 @@
 #include "Common/Debug.h"
 #include "Common/GameMemory.h"
 #include "Common/MessageStream.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 #include "GameClient/Keyboard.h"
 #include "GameClient/Mouse.h"
 #include "Win32Device/GameClient/Win32Mouse.h"
@@ -107,9 +107,24 @@ struct ApplicationInstanceLifetime
 // Necessary to allow memory managers and such to have useful critical sections.
 static CriticalSection critSec1, critSec2, critSec3, critSec4, critSec5;
 
+struct ApplicationCriticalSectionLifetime
+{
+    ApplicationCriticalSectionLifetime() { std::atexit(Release); }
+    ~ApplicationCriticalSectionLifetime() { Release(); }
+    static void Release()
+    {
+        TheAsciiStringCriticalSection = NULL;
+        TheUnicodeStringCriticalSection = NULL;
+        TheDmaCriticalSection = NULL;
+        TheMemoryPoolCriticalSection = NULL;
+        TheDebugLogCriticalSection = NULL;
+    }
+};
+
 int main(int argc, char* argv[])
 {
     ApplicationInstanceLifetime instance;
+    ApplicationCriticalSectionLifetime criticalSections;
 
 	try {
 

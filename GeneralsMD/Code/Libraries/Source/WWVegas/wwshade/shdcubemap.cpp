@@ -38,6 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <d3dx8math.h>
+#include "Platform/Paths.h"
 #include "dx8fvf.h"
 #include "dx8wrapper.h"
 #include "assetmgr.h"
@@ -109,9 +110,9 @@ bool ShdCubeMapDefClass::Save(ChunkSaveClass &csave)
 		bool retval = true;
 	
 		// only save the file name
-		char fname[_MAX_PATH];
+		char fname[Platform::LegacyPathCapacity];
 
-		_splitpath(TextureName,NULL,NULL,fname,NULL);
+		strcpy(fname, Platform::FileStem(TextureName).c_str());
 		strcat(fname,".dds");
 		TextureName=fname;
 

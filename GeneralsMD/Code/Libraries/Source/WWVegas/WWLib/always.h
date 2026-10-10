@@ -41,6 +41,7 @@
 #define ALWAYS_H
 
 #include <assert.h>
+#include "Platform/Allocation.h"
 
 // Disable warning about exception handling not being enabled. It's used as part of STL - in a part of STL we don't use.
 #pragma warning(disable : 4530)
@@ -235,7 +236,7 @@ template <class T> T max(T a,T b)
 #endif
 
 #if defined(__WATCOMC__)
-#include	"watcom.h"
+#include	"WATCOM.H"
 #endif
 
 

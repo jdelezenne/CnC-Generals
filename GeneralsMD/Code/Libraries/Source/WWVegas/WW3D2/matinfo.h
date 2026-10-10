@@ -43,8 +43,9 @@
 #define MATINFO_H
 
 #include "always.h"
+#include "Platform/StringCompare.h"
 #include "wwdebug.h"
-#include "vector.h"
+#include "Vector.H"
 #include "vertmaterial.h"
 #include "texture.h"
 #include "shader.h"
@@ -236,7 +237,7 @@ inline int MaterialInfoClass::Add_Vertex_Material(VertexMaterialClass * vmat)
 inline int MaterialInfoClass::Get_Vertex_Material_Index(const char * name)
 {
 	for (int i=0; i<VertexMaterials.Count(); i++) {
-		if (stricmp(name,VertexMaterials[i]->Get_Name()) == 0) {
+		if (Platform::CompareNoCase(name,VertexMaterials[i]->Get_Name()) == 0) {
 			return i;
 		}
 	}

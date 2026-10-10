@@ -44,7 +44,10 @@
 //----------------------------------------------------------------------------
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
-#include "Platform/Windows/Window.h"
+#include "Platform/StringCompare.h"
+#include "Platform/Window.h"
+#include "Platform/Dialogs.h"
+#include "Platform/UTF16.h"
 
 #include "GameClient/GameText.h"
 #include "Common/Language.h"
@@ -54,7 +57,7 @@
 #include "Common/UnicodeString.h"
 #include "Common/AsciiString.h"
 #include "Common/GlobalData.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 
 
@@ -371,13 +374,8 @@ void GameTextManager::init( void )
 	qsort( m_stringLUT, m_textCount, sizeof(StringLookUp), compareLUT  );
 
 	UnicodeString ourName = fetch("GUI:Command&ConquerGenerals");
-	AsciiString ourNameA;
-	ourNameA.translate(ourName);	//get ASCII version for Win 9x
-	if (Platform::NativeGameWindow()) {
-		//Set it twice because Win 9x does not support SetWindowTextW.
-		::SetWindowText(Platform::NativeGameWindow(), ourNameA.str());
-		::SetWindowTextW(Platform::NativeGameWindow(), ourName.str());
-	}
+	Platform::SetWindowTitle(Platform::UTF16ToUTF8(
+		Platform::EncodeUTF16LE(ourName.str(), ourName.getLength())).c_str());
 
 }
 
@@ -845,7 +843,7 @@ Bool GameTextManager::getStringCount( const char *filename, Int& textCount )
 				m_buffer[ len+1] = 0;
 			readToEndOfQuote( file, &m_buffer[1], m_buffer2, m_buffer3, MAX_UITEXT_LENGTH );
 		}
-		else if( !stricmp( m_buffer, "END") )
+		else if( !Platform::CompareNoCase( m_buffer, "END") )
 		{
 			textCount++;
 		}
@@ -963,28 +961,15 @@ Bool GameTextManager::parseCSF( const Char *filename )
 
 		 	file->read ( &len, sizeof ( Int ) );
 
-			if ( len )
-			{
-				file->read ( m_tbuffer, len*sizeof(WideChar) );
-			}
-
+			if (len < 0 || len >= MAX_UITEXT_LENGTH*2) goto quit;
+			std::vector<unsigned char> encoded(static_cast<std::size_t>(len)*2);
+			if (len && file->read(encoded.data(), len*2) != len*2) goto quit;
 			if ( num == 0 )
 			{
-				// only use the first string found
-				m_tbuffer[len] = 0;
-				
-				{
-					WideChar *ptr;
-				
-					ptr = m_tbuffer;
-				
-					while ( *ptr )
-					{
-						*ptr = ~*ptr;
-						ptr++;
-					}
-				}
-				
+				for (auto& byte : encoded) byte = static_cast<unsigned char>(~byte);
+				const auto text = Platform::DecodeUTF16LE<WideChar>(encoded.data(), len);
+				text.copy(m_tbuffer, text.size());
+				m_tbuffer[text.size()] = 0;
 				stripSpaces ( m_tbuffer );
 				m_stringInfo[listCount].text = m_tbuffer;
 			}
@@ -1056,7 +1041,7 @@ Bool GameTextManager::parseStringFile( const char *filename )
 
 		for ( Int i = 0; i < listCount; i++ )
 		{
-			if ( !stricmp ( m_stringInfo[i].label.str(), m_buffer ))
+			if ( !Platform::CompareNoCase( m_stringInfo[i].label.str(), m_buffer ))
 			{
 				DEBUG_ASSERTCRASH ( FALSE, ("String label '%s' multiply defined!", m_buffer ));
 			}
@@ -1107,7 +1092,7 @@ Bool GameTextManager::parseStringFile( const char *filename )
 					readString = TRUE;
 				}
 			}
-			else if ( !stricmp ( m_buffer, "END" ))
+			else if ( !Platform::CompareNoCase( m_buffer, "END" ))
 			{
 				break;
 			}
@@ -1187,7 +1172,7 @@ Bool GameTextManager::parseMapStringFile( const char *filename )
 
 		for ( Int i = 0; i < listCount; i++ )
 		{
-			if ( !stricmp ( m_mapStringInfo[i].label.str(), m_buffer ))
+			if ( !Platform::CompareNoCase( m_mapStringInfo[i].label.str(), m_buffer ))
 			{
 				DEBUG_ASSERTCRASH ( FALSE, ("String label '%s' multiply defined!", m_buffer ));
 			}
@@ -1242,7 +1227,7 @@ Bool GameTextManager::parseMapStringFile( const char *filename )
 					readString = TRUE;
 				}
 			}
-			else if ( !stricmp ( m_buffer, "END" ))
+			else if ( !Platform::CompareNoCase( m_buffer, "END" ))
 			{
 				break;
 			}
@@ -1406,5 +1391,5 @@ static int __cdecl compareLUT ( const void *i1,  const void*i2)
 	StringLookUp *lut1 = (StringLookUp*) i1;
 	StringLookUp *lut2 = (StringLookUp*) i2;
 
-	return stricmp( lut1->label->str(), lut2->label->str());
+	return Platform::CompareNoCase( lut1->label->str(), lut2->label->str());
 }

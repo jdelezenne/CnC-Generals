@@ -55,6 +55,7 @@ enum
 //         Includes                                                      
 //-----------------------------------------------------------------------------
 #include "W3DDevice/GameClient/W3DTreeBuffer.h"
+#include "Platform/Paths.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -80,12 +81,12 @@ enum
 #include "W3DDevice/GameClient/W3DShadow.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
 #include "W3DDevice/GameClient/W3DProjectedShadow.h"
-#include "WW3D2/Camera.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/DX8Renderer.h"
-#include "WW3D2/Matinfo.h"
-#include "WW3D2/Mesh.h"
-#include "WW3D2/MeshMdl.h"
+#include "WW3D2/camera.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/dx8renderer.h"
+#include "WW3D2/matinfo.h"
+#include "WW3D2/mesh.h"
+#include "WW3D2/meshmdl.h"
 #include "d3dx8tex.h"
 
 #ifdef _INTERNAL
@@ -465,7 +466,7 @@ void W3DTreeBuffer::updateTexture(void)
 	m_numTiles = 0;
 	File *theFile = NULL;
 	for (i=0; i<m_numTreeTypes; i++) {
-		char texturePath[ _MAX_PATH ];
+		char texturePath[ Platform::LegacyPathCapacity ];
 		m_treeTypes[i].m_numTiles = 0;
 		sprintf( texturePath, "%s%s", TERRAIN_TGA_DIR_PATH, m_treeTypes[i].m_data->m_textureName.str() );
 		theFile = TheFileSystem->openFile( texturePath, File::READ|File::BINARY);

@@ -49,6 +49,7 @@
 #define ASCIISTRING_H
 
 #include "Platform/StringCompare.h"
+#include "Platform/ReferenceCount.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +59,6 @@
 
 class UnicodeString;
 
-#include "windows.h"
 
 // -----------------------------------------------------
 /**
@@ -379,8 +379,7 @@ inline AsciiString::AsciiString(const AsciiString& stringSrc) : m_data(stringSrc
   // FastCriticalSectionClass::LockClass lock(TheAsciiStringCriticalSection);
 	if (m_data)
 		// ++m_data->m_refCount;
-    // yes, I know it's not a DWord but we're incrementing so we're safe
-    InterlockedIncrement((long *)&m_data->m_refCount);
+    Platform::IncrementReferenceCount(m_data->m_refCount);
 	validate();
 }
 
@@ -392,7 +391,7 @@ inline void AsciiString::releaseBuffer()
 	validate();
 	if (m_data)
 	{
-    InterlockedDecrement((long *)&m_data->m_refCount);
+    Platform::DecrementReferenceCount(m_data->m_refCount);
 		if (!m_data->m_refCount)
 			freeBytes();
 		m_data = 0;
@@ -457,14 +456,14 @@ inline void AsciiString::set(const AsciiString& stringSrc)
     // from the same thread which is illegal using fast CS's
 		if (m_data)
     {
-      InterlockedDecrement((long *)&m_data->m_refCount);
+      Platform::DecrementReferenceCount(m_data->m_refCount);
 		  if (!m_data->m_refCount)
 			  freeBytes();
     }
 
 		m_data = stringSrc.m_data;
 		if (m_data)
-      InterlockedIncrement((long *)&m_data->m_refCount);
+      Platform::IncrementReferenceCount(m_data->m_refCount);
 	}
 	validate();
 }

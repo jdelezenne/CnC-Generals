@@ -572,7 +572,7 @@ const char *ProfileFuncLevel::Id::GetSource(void) const
                                          helpFile,sizeof(helpFile),&func->funcLine,NULL);
     
     char help[300];
-    wsprintf(help,ofsFunc?"%s+0x%x":"%s",helpFunc,ofsFunc);
+    sprintf(help,ofsFunc?"%s+0x%x":"%s",helpFunc,ofsFunc);
     func->funcSource=(char *)ProfileAllocMemory(strlen(helpFile)+1);
     strcpy(func->funcSource,helpFile);
     func->funcName=(char *)ProfileAllocMemory(strlen(help)+1);
@@ -610,7 +610,7 @@ unsigned ProfileFuncLevel::Id::GetLine(void) const
   return func->funcLine;
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetCalls(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetCalls(unsigned frame) const
 {
   if (!m_funcPtr)
     return 0;
@@ -627,7 +627,7 @@ unsigned _int64 ProfileFuncLevel::Id::GetCalls(unsigned frame) const
   }
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetTime(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetTime(unsigned frame) const
 {
   if (!m_funcPtr)
     return 0;
@@ -644,7 +644,7 @@ unsigned _int64 ProfileFuncLevel::Id::GetTime(unsigned frame) const
   }
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetFunctionTime(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetFunctionTime(unsigned frame) const
 {
   if (!m_funcPtr)
     return 0;
@@ -747,17 +747,17 @@ unsigned ProfileFuncLevel::Id::GetLine(void) const
   return 0;
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetCalls(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetCalls(unsigned frame) const
 {
   return 0;
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetTime(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetTime(unsigned frame) const
 {
   return 0;
 }
 
-unsigned _int64 ProfileFuncLevel::Id::GetFunctionTime(unsigned frame) const
+unsigned __int64 ProfileFuncLevel::Id::GetFunctionTime(unsigned frame) const
 {
   return 0;
 }
@@ -784,4 +784,3 @@ ProfileFuncLevel::ProfileFuncLevel(void)
 #endif // !defined HAS_PROFILE
 
 ProfileFuncLevel ProfileFuncLevel::Instance;
-HANDLE ProfileFastCS::testEvent=::CreateEvent(NULL,FALSE,FALSE,"");

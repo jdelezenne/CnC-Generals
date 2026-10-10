@@ -29,6 +29,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Platform/IntegerText.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Clock.h"
 
@@ -438,7 +439,7 @@ void updateBuddyInfo( void )
 		else if (!info.m_statusString.compareNoCase(L"Chatting"))
 		{
 			UnicodeString roomName;
-			GroupRoomMap::iterator gIt = TheGameSpyInfo->getGroupRoomList()->find( _wtoi(info.m_locationString.str()) );
+			GroupRoomMap::iterator gIt = TheGameSpyInfo->getGroupRoomList()->find( Platform::WideInteger(info.m_locationString.str()) );
 			if (gIt != TheGameSpyInfo->getGroupRoomList()->end())
 			{
 				AsciiString s;
@@ -697,7 +698,7 @@ void deleteNotificationBox( void )
 	if(noticeLayout)
 	{
 		noticeLayout->destroyWindows();
-		noticeLayout->deleteInstance();
+		Platform::DeletePoolObject(noticeLayout);
 		noticeLayout = NULL;
 	}
 }
@@ -1179,7 +1180,7 @@ static void closeRightClickMenu(GameWindow *win)
 		if(!winLay)
 			return;
 		winLay->destroyWindows();					
-		winLay->deleteInstance();
+		Platform::DeletePoolObject(winLay);
 		winLay = NULL;
 
 	}

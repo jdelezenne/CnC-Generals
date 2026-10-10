@@ -60,15 +60,8 @@ std::basic_string<Character> DecodeUTF16LE(const unsigned char* bytes, std::size
     text.reserve(units);
     for (std::size_t i = 0; i < units; ++i) {
         auto value = read(i);
-        if constexpr (sizeof(Character) == 4) {
-            if (value >= 0xd800 && value <= 0xdbff && i + 1 < units) {
-                const auto low = read(i + 1);
-                if (low >= 0xdc00 && low <= 0xdfff) {
-                    value = 0x10000 + ((value - 0xd800) << 10) + (low - 0xdc00);
-                    ++i;
-                }
-            }
-        }
+        // Game strings count/index UTF-16 units. A four-byte host character
+        // still stores one original unit, including each half of a pair.
         text.push_back(static_cast<Character>(value));
     }
     return text;

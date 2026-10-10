@@ -27,6 +27,7 @@
 // Description: Quoted-printable encode/decode
 ////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/UTF16.h"
 
 #include "Common/QuotedPrintable.h"
 
@@ -56,7 +57,11 @@ static int hexDigitToInt(char c)
 AsciiString UnicodeStringToQuotedPrintable(UnicodeString original)
 {
 	static char dest[1024];
-	const char *src = (const char *)original.str();
+	const auto encoded = Platform::EncodeUTF16LE(original.str(), original.getLength());
+	std::vector<unsigned char> terminated(encoded);
+	terminated.push_back(0);
+	terminated.push_back(0);
+	const char *src = reinterpret_cast<const char*>(terminated.data());
 	int i=0;
 	while ( !(src[0]=='\0' && src[1]=='\0') && i<1021 )
 	{
@@ -159,7 +164,10 @@ UnicodeString QuotedPrintableToUnicodeString(AsciiString original)
 
 	*c = 0;
 
-	UnicodeString out(dest);
+	std::size_t units = 0;
+	while (dest[units] != 0) ++units;
+	const auto decoded = Platform::DecodeUTF16LE<WideChar>(reinterpret_cast<const unsigned char*>(dest), units);
+	UnicodeString out(decoded.c_str());
 	return out;
 }
 

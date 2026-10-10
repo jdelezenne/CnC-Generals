@@ -32,6 +32,7 @@
 #ifndef MapObject_H
 #define MapObject_H
 
+#include "GameLogic/WaypointID.h"
 #include "Common/Dict.h"
 #include "Common/GameMemory.h"
 #include "GameClient/TerrainRoads.h"

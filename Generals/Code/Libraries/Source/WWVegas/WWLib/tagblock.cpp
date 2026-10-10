@@ -52,7 +52,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "tagblock.h"
+#include "TagBlock.h"
+#include "Platform/StringCompare.h"
 #include "realcrc.h"
 
 #include <assert.h>
@@ -471,7 +472,7 @@ TagBlockIndex *TagBlockFile::Find_Block(const char *tagname)
 			// Is it a match?
          assert(name != NULL);
          assert(tagname != NULL);
-			if (!strcmpi(name, tagname)) {
+			if (!Platform::CompareNoCase(name, tagname)) {
 				return(cur);
 			}
 		}

@@ -28,6 +28,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
   
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include <cmath>
+#include "Platform/StringCompare.h"
 
 #include "Common/AudioEventInfo.h"
 #include "Common/DynamicAudioEventInfo.h"
@@ -162,7 +164,7 @@ void DrawableIconInfo::clear()
 	for (int i = 0; i < MAX_ICONS; ++i)
 	{
 		if (m_icon[i])
-			m_icon[i]->deleteInstance();
+			Platform::DeletePoolObject(m_icon[i]);
 		m_icon[i] = NULL;
 		m_keepTillFrame[i] = 0;
 	}
@@ -174,7 +176,7 @@ void DrawableIconInfo::killIcon(DrawableIconType t)
 {
 	if (m_icon[t])
 	{
-		m_icon[t]->deleteInstance();
+		Platform::DeletePoolObject(m_icon[t]);
 		m_icon[t] = NULL;
 		m_keepTillFrame[t] = 0;
 	}
@@ -235,7 +237,7 @@ static DrawableIconType drawableIconNameToIndex( const char *iconName )
 	DEBUG_ASSERTCRASH( iconName != NULL, ("drawableIconNameToIndex - Illegal name\n") );
 
 	for( Int i = ICON_FIRST; i < MAX_ICONS; ++i )
-		if( stricmp( TheDrawableIconNames[ i ], iconName ) == 0 )
+		if( Platform::CompareNoCase( TheDrawableIconNames[ i ], iconName ) == 0 )
 			return (DrawableIconType)i;
 
 	return ICON_INVALID;
@@ -549,7 +551,7 @@ Drawable::~Drawable()
 	{
 		for (Module** m = m_modules[i]; m && *m; ++m)
 		{
-			(*m)->deleteInstance();
+			Platform::DeletePoolObject((*m));
 			*m = NULL;	// in case other modules call findModule from their dtor!
 		}
 		delete [] m_modules[i]; 
@@ -559,7 +561,7 @@ Drawable::~Drawable()
 	stopAmbientSound();
 	if (m_ambientSound)
 	{
-		m_ambientSound->deleteInstance();
+		Platform::DeletePoolObject(m_ambientSound);
 		m_ambientSound = NULL;
 	}
 
@@ -574,17 +576,17 @@ Drawable::~Drawable()
 
 	// delete any icons present
 	if (m_iconInfo)
-		m_iconInfo->deleteInstance();
+		Platform::DeletePoolObject(m_iconInfo);
 
 	if (m_selectionFlashEnvelope)
-		m_selectionFlashEnvelope->deleteInstance();
+		Platform::DeletePoolObject(m_selectionFlashEnvelope);
 
 	if (m_colorTintEnvelope)
-		m_colorTintEnvelope->deleteInstance();
+		Platform::DeletePoolObject(m_colorTintEnvelope);
 
 	if (m_locoInfo)
 	{
-		m_locoInfo->deleteInstance();
+		Platform::DeletePoolObject(m_locoInfo);
 		m_locoInfo = NULL;
 	}
 }
@@ -2531,7 +2533,7 @@ const AudioEventRTS& Drawable::getAmbientSoundByDamage(BodyDamageType dt)
 void Drawable::validatePos() const
 {
 	const Coord3D* ourPos = getPosition();
-	if (_isnan(ourPos->x) || _isnan(ourPos->y) || _isnan(ourPos->z))
+	if (std::isnan(ourPos->x) || std::isnan(ourPos->y) || std::isnan(ourPos->z))
 	{
 		DEBUG_CRASH(("Drawable/Object position NAN! '%s'\n", getTemplate()->getName().str()));
 	}
@@ -4540,7 +4542,7 @@ void Drawable::startAmbientSound(BodyDamageType dt, TimeOfDay tod, Bool onlyIfPe
 		else
 		{
 			DEBUG_CRASH( ("Ambient sound %s missing! Skipping...", m_ambientSound->m_event.getEventName().str() ) );
-			m_ambientSound->deleteInstance();
+			Platform::DeletePoolObject(m_ambientSound);
 			m_ambientSound = NULL;
 		}
 	}
@@ -4935,7 +4937,7 @@ void Drawable::xfer( Xfer *xfer )
 	if( xfer->getXferMode() == XFER_LOAD && m_ambientSound )
 	{
 		TheAudio->killAudioEventImmediately( m_ambientSound->m_event.getPlayingHandle() );
-		m_ambientSound->deleteInstance();
+		Platform::DeletePoolObject(m_ambientSound);
 		m_ambientSound = NULL;
 	}
 
@@ -5387,7 +5389,7 @@ void Drawable::xfer( Xfer *xfer )
             }
             else
             {
-              customizedInfo->deleteInstance();
+              Platform::DeletePoolObject(customizedInfo);
               customizedInfo = NULL;
             }
           }
@@ -5395,7 +5397,7 @@ void Drawable::xfer( Xfer *xfer )
           {
             // since Xfer can throw exceptions -- don't leak memory!
             if ( customizedInfo != NULL ) 
-              customizedInfo->deleteInstance();
+              Platform::DeletePoolObject(customizedInfo);
 
             throw; //rethrow
           }

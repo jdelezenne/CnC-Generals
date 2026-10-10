@@ -51,7 +51,7 @@
 #include "wwdebug.h"
 #include "saveload.h"
 
-class PersistClass;
+#include "persist.h"
 
 /*
 ** PersistFactoryClass
@@ -130,7 +130,7 @@ SimplePersistFactoryClass<T,CHUNKID>::Load(ChunkLoadClass & cload) const
 template<class T, int CHUNKID> void
 SimplePersistFactoryClass<T,CHUNKID>::Save(ChunkSaveClass & csave,PersistClass * obj) const 
 {
-	uint32 objptr = (uint32)obj;
+	uint32 objptr = static_cast<uint32>(reinterpret_cast<std::uintptr_t>(obj));
 	csave.Begin_Chunk(SIMPLEFACTORY_CHUNKID_OBJPOINTER);
 	csave.Write(&objptr,sizeof(uint32));
 	csave.End_Chunk();

@@ -101,7 +101,7 @@ ProfileHighLevel::Block::Block(const char *name)
 
 ProfileHighLevel::Block::~Block()
 {
-  _int64 end;
+  __int64 end;
   ProfileGetTime(end);
   end-=m_start;
 
@@ -195,14 +195,14 @@ void ProfileId::Maximum(double max)
 const char *ProfileId::AsString(double v) const
 {
   char help1[10],help[40];
-  wsprintf(help1,"%%%i.lf",m_precision);
+  sprintf(help1,"%%%i.lf",m_precision);
   
   double mul=1.0;
   int k;
   for (k=m_exp10;k<0;k++) mul*=10.0;
   for (;k>0;k--) mul/=10.0;
 
-  unsigned len=_snprintf(help,sizeof(help),help1,v*mul)+1;
+  unsigned len=Platform::PrintBytes(help,sizeof(help),help1,v*mul)+1;
 
   ProfileFastCS::Lock lock(cs);
   if (stringBufUnused+len>STRING_BUFFER_SIZE)
@@ -217,7 +217,8 @@ int ProfileId::FrameStart(void)
 {
   ProfileFastCS::Lock lock(cs);
 
-  for (unsigned i=0;i<MAX_FRAME_RECORDS;i++)
+  unsigned i;
+  for ( i=0;i<MAX_FRAME_RECORDS;i++)
     if (!(frameRecordMask&(1<<i)))
       break;
   if (i==MAX_FRAME_RECORDS)
@@ -311,7 +312,8 @@ ProfileHighLevel::Id ProfileHighLevel::AddProfile(const char *name, const char *
 bool ProfileHighLevel::EnumProfile(unsigned index, Id &id)
 {
   ProfileFastCS::Lock lock(cs);
-  for (ProfileId *cur=ProfileId::GetFirst();cur&&index--;cur=cur->GetNext());
+  ProfileId * cur;
+  for (cur=ProfileId::GetFirst();cur&&index--;cur=cur->GetNext());
   id.m_idPtr=cur;
   return cur!=NULL;
 }

@@ -29,13 +29,16 @@
 // the game.
 // Author: Matthew D. Campbell, June 2002
 
+#include "Platform/Sockets.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/TextFormat.h"
+#include "Platform/StringCompare.h"
 #include "Platform/Clock.h"
 
 #include "Common/Registry.h"
 #include "Common/StackDump.h"
 #include "Common/UserPreferences.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 #include "GameNetwork/IPEnumeration.h"
 #include "GameNetwork/GameSpy/BuddyThread.h"
 #include "GameNetwork/GameSpy/PeerDefs.h"
@@ -1155,11 +1158,11 @@ void checkQR2Queries( PEER peer, SOCKET sock )
 	while (1)
 	{
 		error = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
-		if (SOCKET_ERROR == error || 0 == error)
+		if (-1 == error || 0 == error)
 			return;
 		//else we have data
-		error = recvfrom(sock, indata, INBUF_LEN - 1, 0, (struct sockaddr *)&saddr, &saddrlen);
-		if (error != SOCKET_ERROR)
+		error = Platform::ReadDatagram(sock, indata, INBUF_LEN - 1, (struct sockaddr *)&saddr, &saddrlen);
+		if (error != -1)
 		{
 			indata[error] = '\0';
 			peerParseQuery( peer, indata, error, (sockaddr *)&saddr );
@@ -1172,7 +1175,9 @@ static UnsignedInt localIP = 0;
 void PeerThreadClass::Thread_Function()
 {
 	try {
-	_set_se_translator( DumpExceptionInfo ); // Hook that allows stack trace.
+	#ifdef _WIN32
+	_set_se_translator( DumpExceptionInfo ); // Native MSVC structured-exception reporting.
+#endif
 
 	PEER peer;
 
@@ -1494,24 +1499,24 @@ void PeerThreadClass::Thread_Function()
 
 					// Testing alternate way to push stats
 #ifdef USE_BROADCAST_KEYS
-					_snprintf(s_valueBuffers[0], 20, "%d", incomingRequest.statsToPush.locale);
-					_snprintf(s_valueBuffers[1], 20, "%d", incomingRequest.statsToPush.wins);
-					_snprintf(s_valueBuffers[2], 20, "%d", incomingRequest.statsToPush.losses);
-					_snprintf(s_valueBuffers[3], 20, "%d", incomingRequest.statsToPush.rankPoints);
-					_snprintf(s_valueBuffers[4], 20, "%d", incomingRequest.statsToPush.side);
-					_snprintf(s_valueBuffers[5], 20, "%d", incomingRequest.statsToPush.preorder);
+					Platform::PrintBytes(s_valueBuffers[0], 20, "%d", incomingRequest.statsToPush.locale);
+					Platform::PrintBytes(s_valueBuffers[1], 20, "%d", incomingRequest.statsToPush.wins);
+					Platform::PrintBytes(s_valueBuffers[2], 20, "%d", incomingRequest.statsToPush.losses);
+					Platform::PrintBytes(s_valueBuffers[3], 20, "%d", incomingRequest.statsToPush.rankPoints);
+					Platform::PrintBytes(s_valueBuffers[4], 20, "%d", incomingRequest.statsToPush.side);
+					Platform::PrintBytes(s_valueBuffers[5], 20, "%d", incomingRequest.statsToPush.preorder);
 					pushStatsToRoom(peer);
 #else
 					const char *keys[6] = { "locale", "wins", "losses", "points", "side", "pre" };
 					char valueStrings[6][20];
 					char *values[6] = { valueStrings[0], valueStrings[1], valueStrings[2],
 						valueStrings[3], valueStrings[4], valueStrings[5]};
-					_snprintf(values[0], 20, "%d", incomingRequest.statsToPush.locale);
-					_snprintf(values[1], 20, "%d", incomingRequest.statsToPush.wins);
-					_snprintf(values[2], 20, "%d", incomingRequest.statsToPush.losses);
-					_snprintf(values[3], 20, "%d", incomingRequest.statsToPush.rankPoints);
-					_snprintf(values[4], 20, "%d", incomingRequest.statsToPush.side);
-					_snprintf(values[5], 20, "%d", incomingRequest.statsToPush.preorder);
+					Platform::PrintBytes(values[0], 20, "%d", incomingRequest.statsToPush.locale);
+					Platform::PrintBytes(values[1], 20, "%d", incomingRequest.statsToPush.wins);
+					Platform::PrintBytes(values[2], 20, "%d", incomingRequest.statsToPush.losses);
+					Platform::PrintBytes(values[3], 20, "%d", incomingRequest.statsToPush.rankPoints);
+					Platform::PrintBytes(values[4], 20, "%d", incomingRequest.statsToPush.side);
+					Platform::PrintBytes(values[5], 20, "%d", incomingRequest.statsToPush.preorder);
 					peerSetGlobalKeys(peer, 6, (const char **)keys, (const char **)values);
 					peerSetGlobalWatchKeys(peer, GroupRoom,   0, NULL, PEERFalse);
 					peerSetGlobalWatchKeys(peer, StagingRoom, 0, NULL, PEERFalse);
@@ -1839,9 +1844,10 @@ void PeerThreadClass::handleQMMatch(PEER peer, Int mapIndex, Int seed,
 		m_qmStatus = QM_MATCHED;
 		peerLeaveRoom(peer, GroupRoom, "");
 
-		for (Int i=0; i<MAX_SLOTS; ++i)
+		Int i;
+		for (i=0; i<MAX_SLOTS; ++i)
 		{
-			if (playerName[i] && stricmp(playerName[i], m_loginName.c_str()))
+			if (playerName[i] && Platform::CompareNoCase(playerName[i], m_loginName.c_str()))
 			{
 				peerMessagePlayer( peer, playerName[i], "We're matched!", NormalMessage );
 			}
@@ -1993,37 +1999,37 @@ void PeerThreadClass::doQuickMatch( PEER peer )
 								char buf[64];
 								buf[63] = '\0';
 								std::string msg = "\\CINFO";
-								_snprintf(buf, 63, "\\Widen\\%d", m_qmInfo.QM.widenTime);
+								Platform::PrintBytes(buf, 63, "\\Widen\\%d", m_qmInfo.QM.widenTime);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\LadID\\%d", m_qmInfo.QM.ladderID);
+								Platform::PrintBytes(buf, 63, "\\LadID\\%d", m_qmInfo.QM.ladderID);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\LadPass\\%d", m_qmInfo.QM.ladderPassCRC);
+								Platform::PrintBytes(buf, 63, "\\LadPass\\%d", m_qmInfo.QM.ladderPassCRC);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\PointsMin\\%d", m_qmInfo.QM.minPointPercentage);
+								Platform::PrintBytes(buf, 63, "\\PointsMin\\%d", m_qmInfo.QM.minPointPercentage);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\PointsMax\\%d", m_qmInfo.QM.maxPointPercentage);
+								Platform::PrintBytes(buf, 63, "\\PointsMax\\%d", m_qmInfo.QM.maxPointPercentage);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\Points\\%d", m_qmInfo.QM.points);
+								Platform::PrintBytes(buf, 63, "\\Points\\%d", m_qmInfo.QM.points);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\Discons\\%d", m_qmInfo.QM.discons);
+								Platform::PrintBytes(buf, 63, "\\Discons\\%d", m_qmInfo.QM.discons);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\DisconMax\\%d", m_qmInfo.QM.maxDiscons);
+								Platform::PrintBytes(buf, 63, "\\DisconMax\\%d", m_qmInfo.QM.maxDiscons);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\NumPlayers\\%d", m_qmInfo.QM.numPlayers);
+								Platform::PrintBytes(buf, 63, "\\NumPlayers\\%d", m_qmInfo.QM.numPlayers);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\Pings\\%s", m_qmInfo.QM.pings);
+								Platform::PrintBytes(buf, 63, "\\Pings\\%s", m_qmInfo.QM.pings);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\IP\\%d", ntohl(peerGetLocalIP(peer)));// not ntohl(localIP), as we need EXTERNAL address for proper NAT negotiation!
+								Platform::PrintBytes(buf, 63, "\\IP\\%d", ntohl(peerGetLocalIP(peer)));// not ntohl(localIP), as we need EXTERNAL address for proper NAT negotiation!
 								msg.append(buf);
-								_snprintf(buf, 63, "\\Side\\%d", m_qmInfo.QM.side);
+								Platform::PrintBytes(buf, 63, "\\Side\\%d", m_qmInfo.QM.side);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\Color\\%d", m_qmInfo.QM.color);
+								Platform::PrintBytes(buf, 63, "\\Color\\%d", m_qmInfo.QM.color);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\NAT\\%d", m_qmInfo.QM.NAT);
+								Platform::PrintBytes(buf, 63, "\\NAT\\%d", m_qmInfo.QM.NAT);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\EXE\\%d", m_qmInfo.QM.exeCRC);
+								Platform::PrintBytes(buf, 63, "\\EXE\\%d", m_qmInfo.QM.exeCRC);
 								msg.append(buf);
-								_snprintf(buf, 63, "\\INI\\%d", m_qmInfo.QM.iniCRC);
+								Platform::PrintBytes(buf, 63, "\\INI\\%d", m_qmInfo.QM.iniCRC);
 								msg.append(buf);
 								buf[0] = 0;
 								msg.append("\\Maps\\");
@@ -2711,7 +2717,7 @@ void playerLeftCallback(PEER peer, RoomType roomType, const char * nick, const c
 //	DEBUG_ASSERTCRASH(t, ("No Peer thread!"));
 	if (t->getQMStatus() != QM_IDLE && t->getQMStatus() != QM_STOPPED)
 	{
-		if (!stricmp(t->getQMBotName().c_str(), nick))
+		if (!Platform::CompareNoCase(t->getQMBotName().c_str(), nick))
 		{
 			// matchbot left - bail
 			PeerResponse resp;

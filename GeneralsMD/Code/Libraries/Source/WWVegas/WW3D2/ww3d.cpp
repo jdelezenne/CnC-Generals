@@ -82,6 +82,8 @@
 
 
 #include "ww3d.h"
+#include "Platform/BitmapFormat.h"
+#include "Platform/Clock.h"
 #include "rinfo.h"
 #include "assetmgr.h"
 #include "boxrobj.h"
@@ -101,17 +103,17 @@
 #include "statistics.h"
 #include "pointgr.h"
 #include "ffactory.h"
-#include "ini.h"
+#include "INI.H"
 #include "dazzle.h"
 #include "meshmdl.h"
 #include "dx8renderer.h"
 #include "render2d.h"
 #include "bound.h"
 #include "rddesc.h"
-#include "vector3i.h"
+#include "Vector3i.h"
 #include <cstdio>
 #include "dx8wrapper.h"
-#include "targa.h"
+#include "TARGA.H"
 #include "sortingrenderer.h"
 #include "thread.h"
 #include "cpudetect.h"
@@ -219,7 +221,7 @@ unsigned													WW3D::NPatchesLevel=1;
 bool														WW3D::IsTexturingEnabled=true;
 bool										WW3D::IsColoringEnabled=false;
 
-static HWND												_Hwnd = NULL;		// Not a member to hide windows from WW3D users
+static void* _RenderWindow = NULL;
 static int												_TextureReduction = 0;
 static int												_TextureMinDim = 1;
 static bool												_LargeTextureExtraReductionEnabled = false;
@@ -269,7 +271,7 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 {
 	assert(IsInitted == false);
 	WWDEBUG_SAY(("WW3D::Init hwnd = %p\n",hwnd));
-	_Hwnd = (HWND)hwnd;
+	_RenderWindow = hwnd;
 	Lite = lite;
 
 	/*
@@ -277,14 +279,14 @@ WW3DErrorType WW3D::Init(void *hwnd, char *defaultpal, bool lite)
 	*/
 	Init_D3D_To_WW3_Conversion();
 	WWDEBUG_SAY(("Init DX8Wrapper\n"));
-	if (!DX8Wrapper::Init(_Hwnd, lite)) {
+	if (!DX8Wrapper::Init(_RenderWindow, lite)) {
 		return(WW3D_ERROR_INITIALIZATION_FAILED);
 	}
 	WWDEBUG_SAY(("Allocate Debug Resources\n"));
 	Allocate_Debug_Resources();
 
- 	MMRESULT r=timeBeginPeriod(1);
-	WWASSERT(r==TIMERR_NOERROR);
+	int r=Platform::ConfigureMillisecondTiming(true);
+	WWASSERT(r==0);
 
 	/*
 	** Initialize the dazzle system
@@ -341,8 +343,8 @@ WW3DErrorType WW3D::Shutdown(void)
 #endif //WW3D_DX8
 
 	//restore the previous timer resolution
-	MMRESULT r=timeEndPeriod(1);
-	WWASSERT(r==TIMERR_NOERROR);
+	int r=Platform::ConfigureMillisecondTiming(false);
+	WWASSERT(r==0);
 	/*
 	** Free memory in predictive LOD optimizer
 	*/
@@ -488,7 +490,7 @@ WW3DErrorType WW3D::Set_Next_Render_Device(void)
  *=============================================================================================*/
 void *WW3D::Get_Window( void )
 {
-	return _Hwnd;
+	return _RenderWindow;
 }
 
 /***********************************************************************************************
@@ -1352,7 +1354,7 @@ void WW3D::Make_Screen_Shot( const char * filename_base , const float gamma, con
 	fb->GetDesc(&desc);
 
 	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
+	bounds.left = bounds.top = 0; bounds.right = desc.Width; bounds.bottom = desc.Height;
 
 	D3DLOCKED_RECT lrect;
 
@@ -1406,33 +1408,19 @@ void WW3D::Make_Screen_Shot( const char * filename_base , const float gamma, con
 		break;
 		case BMP:
 			{
-				BITMAPFILEHEADER fileheader;
-				BITMAPINFOHEADER header;
-				memset(&header, 0, sizeof(BITMAPINFOHEADER));
-				header.biSize = sizeof(BITMAPINFOHEADER);
-				header.biWidth = width;
-				header.biHeight = height;
-				header.biPlanes = 1;
-				header.biBitCount = 24;
-				header.biCompression = BI_RGB;
-				header.biXPelsPerMeter = 0xB12;
-				header.biYPelsPerMeter = 0xB12;
-				int len = ((width * 24 +31) & ~31) /8;
-    
-				memset(&fileheader, 0, sizeof(BITMAPFILEHEADER));
-				fileheader.bfType = 19778; // BM
-				fileheader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-				fileheader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + 3 * len * height * sizeof(char);
+				const int len = ((width * 24 +31) & ~31) /8;
+				auto header = Platform::BitmapInfoHeader(width, height);
+				auto fileheader = Platform::BitmapFileHeader(54 + 3 * len * height);
 
 				FileClass *file = _TheWritingFileFactory->Get_File( filename );
 				if ( file ) {
 					file->Create();
 					file->Open(FileClass::WRITE);
 					int num;
-					num = file->Write(&fileheader, sizeof(BITMAPFILEHEADER));
-					WWASSERT(num == sizeof(BITMAPFILEHEADER));
-					num = file->Write(&header, sizeof(BITMAPINFOHEADER));
-					WWASSERT(num == sizeof(BITMAPINFOHEADER));
+					num = file->Write(fileheader.data(), fileheader.size());
+					WWASSERT(num == fileheader.size());
+					num = file->Write(header.data(), header.size());
+					WWASSERT(num == header.size());
 					char *temp = new char [3 * len];
 					memset(temp, 0, 3 * len * sizeof(char));
 					// invert image, pad and swap R and B
@@ -1473,17 +1461,15 @@ void WW3D::Make_Screen_Shot( const char * filename_base , const float gamma, con
  *=============================================================================================*/
 void WW3D::Start_Movie_Capture( const char * filename_base, float frame_rate )
 {
-#ifdef _WINDOWS
+
 	if (IsCapturing) {
 		Stop_Movie_Capture();
 	}
 	WWASSERT( !IsCapturing);
 	IsCapturing = true;
 
-	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
-	int height=bounds.bottom-bounds.top;
-	int width=bounds.right-bounds.left;
+	int height = DX8Wrapper::Get_Device_Resolution_Height();
+	int width = DX8Wrapper::Get_Device_Resolution_Width();
 	int depth=24;
 
 	WWASSERT( Movie == NULL);
@@ -1498,7 +1484,7 @@ void WW3D::Start_Movie_Capture( const char * filename_base, float frame_rate )
 	Movie = W3DNEW FrameGrabClass( filename_base, FrameGrabClass::AVI, width, height, depth, frame_rate);
 
 	WWDEBUG_SAY(( "Starting Movie %s\n", filename_base ));
-#endif
+
 }
 
 
@@ -1516,7 +1502,7 @@ void WW3D::Start_Movie_Capture( const char * filename_base, float frame_rate )
  *=============================================================================================*/
 void WW3D::Stop_Movie_Capture( void )
 {
-#ifdef _WINDOWS
+
 	if (IsCapturing) {
 		IsCapturing = false;
 		WWDEBUG_SAY(( "Stoping Movie\n" ));
@@ -1525,7 +1511,7 @@ void WW3D::Stop_Movie_Capture( void )
 		delete Movie;
 		Movie = NULL;
 	}
-#endif
+
 }
 
 
@@ -1674,7 +1660,7 @@ bool WW3D::Is_Movie_Ready()
  *=============================================================================================*/
 void WW3D::Update_Movie_Capture( void )
 {
-#ifdef _WINDOWS
+
 	WWASSERT( IsCapturing);
 	WWPROFILE("WW3D::Update_Movie_Capture");
 	WWDEBUG_SAY(( "Updating\n"));
@@ -1687,7 +1673,7 @@ void WW3D::Update_Movie_Capture( void )
 	fb->GetDesc(&desc);
 
 	RECT bounds;
-	GetWindowRect(_Hwnd,&bounds);
+	bounds.left = bounds.top = 0; bounds.right = desc.Width; bounds.bottom = desc.Height;
 
 	D3DLOCKED_RECT lrect;
 
@@ -1718,7 +1704,7 @@ void WW3D::Update_Movie_Capture( void )
 	fb->Release();
 
 	Movie->Grab(image);
-#endif
+
 }
 
 
@@ -1736,11 +1722,11 @@ void WW3D::Update_Movie_Capture( void )
  *=============================================================================================*/
 float	WW3D::Get_Movie_Capture_Frame_Rate( void )
 {
-#ifdef _WINDOWS
+
 	if (IsCapturing) {
 		return Movie->GetFrameRate();
 	}
-#endif
+
 	return 0;
 }
 

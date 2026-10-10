@@ -174,6 +174,7 @@ long Load_Uncompress(FileClass & file, Buffer & uncomp_buff, Buffer & dest_buff,
 }
 
 
+#ifdef _WIN32
 typedef struct SRecord {
 	int ID;						// ID number of the string resource.
 	int TimeStamp;				// 'Time' that this string was last requested.
@@ -283,6 +284,8 @@ void const * Fetch_Resource(LPCSTR resname, LPCSTR restype)
 #endif
 }
 
+
+#endif
 
 int Load_Picture(FileClass & file, Buffer & scratchbuf, Buffer & destbuf, unsigned char * palette, PicturePlaneType )
 {

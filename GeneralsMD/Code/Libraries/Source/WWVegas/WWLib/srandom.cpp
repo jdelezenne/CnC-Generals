@@ -26,20 +26,6 @@
 #include "Platform/Clock.h"
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef _UNIX
-#include "osdep.h"
-#include <linux/kernel.h>
-#include <linux/sys.h>
-
-extern "C" {
-	int sysinfo(struct sysinfo *info);
-}
-
-#else
-
-#include "win.h"
-#include <process.h>
-#endif
 #include <time.h>
 #include <assert.h>
 #include "sha.h"
@@ -136,85 +122,3 @@ unsigned long SecureRandomClass::Randval(void)
 //
 // Caution: Under windows this isn't nearly as safe as under UNIX!
 //
-void SecureRandomClass::Generate_Seed(void)
-{
-	int i;
-
-	// Start with some garbage values
-	memset(Seeds, 0xAA, SeedLength);
-
-	unsigned int *int_seeds=(unsigned int *)Seeds;
-	int int_seed_length=SeedLength/sizeof(unsigned int);
-
-#ifdef _USE_DEV_RANDOM
-	//
-	// On UNIX we've already got a great random number souce.
-	// This should be used only for a seed since it's slow.
-	//
-	FILE *in=fopen("/dev/random","r");
-	if (in)
-	{
-		for (i=0; i<SeedLength; i++)
-			Seeds[i]^=fgetc(in); 
-		fclose(in);
-	}
-	else
-		assert(0);
-#elif defined(_UNIX)
-	// UNIX without /dev/random (or it's too slow)
-
-	int_seeds[0]^=getuid();
-
-	struct sysinfo info;
-	sysinfo(&info);
-
-	int_seeds[1 % int_seed_length]^=info.loads[0];
-	int_seeds[2 % int_seed_length]^=info.loads[1];
-	int_seeds[3 % int_seed_length]^=info.loads[2];
-	int_seeds[4 % int_seed_length]^=info.freeram;
-	int_seeds[5 % int_seed_length]^=info.freeswap;
-	int_seeds[6 % int_seed_length]^=info.procs;
-	int_seeds[7 % int_seed_length]^=info.bufferram;
-#else
-
-	//
-	// Get free drive space
-	//
-	DWORD spc, bps, nfc, tnc;	// various drive attributes (we don't care what they mean)
-	GetDiskFreeSpace(NULL, &spc, &bps, &nfc, &tnc);
-	int_seeds[0]^=spc;
-	int_seeds[1 % int_seed_length]^=bps;
-	int_seeds[2 % int_seed_length]^=nfc;
-	int_seeds[3 % int_seed_length]^=tnc;
-
-	//
-	// Get computer & user name
-	//
-	char	comp_name[128];
-	char	user_name[128];
-	DWORD	comp_len=128;
-	DWORD	name_len=128;
-
-	GetComputerName(comp_name, &comp_len);
-	GetUserName(user_name, &name_len);
-	for (i=0; i<128; i++)
-	{
-		// Offset in case user_name == comp_name
-		Seeds[(i+0) % SeedLength]^=comp_name[i];
-		Seeds[(i+2) % SeedLength]^=user_name[i];
-	}
-
-#endif
-
-	for (i=0; i<int_seed_length; i++)
-	{
-		if ((i % 4) == 0)
-			int_seeds[i]^=time(NULL);
-		else if ((i % 4) == 1)
-			int_seeds[i]^=getpid();
-		else if ((i % 4) == 2)
-			int_seeds[i]^=Platform::Milliseconds();
-		else if ((i % 4) == 3)
-			int_seeds[i]^=i;
-	}
-}

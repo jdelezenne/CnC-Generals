@@ -31,12 +31,14 @@
 
 #ifndef WorldHeightMap_H
 #define WorldHeightMap_H
+class TerrainTextureClass;
+class AlphaTerrainTextureClass;
 
 #include "Lib/BaseType.h"
-#include "WWLib/RefCount.h"
-#include "WWMath/Vector3.h"
+#include "WWLib/refcount.h"
+#include "WWMath/vector3.h"
 #include "W3DDevice/GameClient/TileData.h"
-#include "../../gameengine/include/common/MapObject.h"
+#include "../../GameEngine/Include/Common/MapObject.h"
 
 #include "Common/STLTypedefs.h"
 typedef std::vector<ICoord2D> VecICoord2D;

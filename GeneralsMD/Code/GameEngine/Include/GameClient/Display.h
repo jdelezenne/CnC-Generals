@@ -51,7 +51,7 @@ class DebugDisplayInterface;
 class Radar;
 class Image;
 class DisplayString;
-enum StaticGameLODLevel;
+#include "Common/StaticGameLODLevel.h"
 /**
  * The Display class implements the Display interface
  */

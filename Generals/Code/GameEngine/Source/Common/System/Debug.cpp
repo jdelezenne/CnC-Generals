@@ -46,7 +46,9 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
-#include "Platform/Windows/Window.h"
+#include "Platform/Dialogs.h"
+#include "Platform/UTF16.h"
+#include <cstdlib>
 
 
 // USER INCLUDES 
@@ -55,7 +57,7 @@
 #include "Common/CriticalSection.h"
 #endif
 #include "Common/Debug.h"
-#include "Common/registry.h"
+#include "Common/Registry.h"
 #include "Common/SystemInfo.h"
 #include "Common/UnicodeString.h"
 #include "GameClient/GameText.h"
@@ -105,7 +107,7 @@ static FILE *theLogFile = NULL;
 #define LARGE_BUFFER	8192
 static char theBuffer[ LARGE_BUFFER ];	// make it big to avoid weird overflow bugs in debug mode
 static int theDebugFlags = 0;
-static DWORD theMainThreadID = 0;
+
 // ----------------------------------------------------------------------------
 // PUBLIC DATA 
 // ----------------------------------------------------------------------------
@@ -127,7 +129,7 @@ static const char *prepBuffer(const char* format, char *buffer);
 #ifdef DEBUG_LOGGING
 static void doLogOutput(const char *buffer);
 #endif
-static int doCrashBox(const char *buffer, Bool logResult);
+static Platform::DialogResult doCrashBox(const char *buffer, Bool logResult);
 static void whackFunnyCharacters(char *buf);
 #ifdef DEBUG_STACKTRACE
 static void doStackDump();
@@ -148,20 +150,15 @@ inline Bool ignoringAsserts()
 }
 
 // ----------------------------------------------------------------------------
-inline HWND getThreadHWND()
+static Platform::DialogResult MessageBoxWrapper(const char* text, const char* caption,
+    Platform::DialogButtons buttons, Platform::DialogIcon icon = Platform::DialogIcon::None,
+    Platform::DialogResult defaultButton = Platform::DialogResult::OK)
 {
-	return (theMainThreadID == GetCurrentThreadId())?Platform::NativeGameWindow():NULL;
-}
-
-// ----------------------------------------------------------------------------
-
-int MessageBoxWrapper( LPCSTR lpText, LPCSTR lpCaption, UINT uType )
-{
-	HWND threadHWND = getThreadHWND();
-	if (!threadHWND)
-		return (uType & MB_ABORTRETRYIGNORE)?IDIGNORE:IDYES;
-
-	return ::MessageBox(threadHWND, lpText, lpCaption, uType);
+    if (!Platform::IsGameThread() || !Platform::HasGameWindow())
+        return buttons == Platform::DialogButtons::AbortRetryIgnore ?
+            Platform::DialogResult::Ignore : Platform::DialogResult::Yes;
+    return Platform::ShowDialog(Platform::LegacyTextToUTF8(text).c_str(),
+        Platform::LegacyTextToUTF8(caption).c_str(), buttons, icon, defaultButton, true);
 }
 
 // ----------------------------------------------------------------------------
@@ -234,7 +231,7 @@ static void doLogOutput(const char *buffer)
 	// log message to dev studio output window
 	if (theDebugFlags & DEBUG_FLAG_LOG_TO_CONSOLE)
 	{
-		::OutputDebugString(buffer);
+		Platform::DebuggerOutput(buffer);
 	}
 }
 #endif
@@ -246,34 +243,33 @@ static void doLogOutput(const char *buffer)
 	we exit the app, break into debugger, or continue execution. 
 */
 // ----------------------------------------------------------------------------
-static int doCrashBox(const char *buffer, Bool logResult)
+static Platform::DialogResult doCrashBox(const char *buffer, Bool logResult)
 {
-	int result;
+	Platform::DialogResult result;
 
 	if (!ignoringAsserts()) {
-		//result = MessageBoxWrapper(buffer, "Assertion Failure", MB_ABORTRETRYIGNORE|MB_TASKMODAL|MB_ICONWARNING|MB_DEFBUTTON3);
-		result = MessageBoxWrapper(buffer, "Assertion Failure", MB_ABORTRETRYIGNORE|MB_TASKMODAL|MB_ICONWARNING);
+		result = MessageBoxWrapper(buffer, "Assertion Failure", Platform::DialogButtons::AbortRetryIgnore, Platform::DialogIcon::Warning, Platform::DialogResult::Abort);
 	}	else {
-		result = IDIGNORE;
+		result = Platform::DialogResult::Ignore;
 	}
 
 	switch(result)
 	{
-		case IDABORT:
+		case Platform::DialogResult::Abort:
 #ifdef DEBUG_LOGGING
 			if (logResult)
 				DebugLog("[Abort]\n");
 #endif
-			_exit(1);
+			std::_Exit(1);
 			break;
-		case IDRETRY:
+		case Platform::DialogResult::Retry:
 #ifdef DEBUG_LOGGING
 			if (logResult)
 				DebugLog("[Retry]\n");
 #endif
-			::DebugBreak();
+			Platform::BreakDebugger();
 			break;
-		case IDIGNORE:
+		case Platform::DialogResult::Ignore:
 #ifdef DEBUG_LOGGING
 			// do nothing, just keep going
 			if (logResult)
@@ -334,21 +330,20 @@ static void whackFunnyCharacters(char *buf)
 void DebugInit(int flags)
 {
 //	if (theDebugFlags != 0)
-//		::MessageBox(NULL, "Debug already inited", "", MB_OK|MB_APPLMODAL);
 
 	// just quietly allow multiple calls to this, so that static ctors can call it.
 	if (theDebugFlags == 0 && strcmp(gAppPrefix, "wb_") != 0) 
 	{
 		theDebugFlags = flags;
 
-		theMainThreadID = GetCurrentThreadId();
+		Platform::SetGameThread();
 
 	#ifdef DEBUG_LOGGING
 
 		const char* dirbuf = Platform::PreferenceDirectory(Platform::CurrentGame());
 
-		char prevbuf[ _MAX_PATH ];
-		char curbuf[ _MAX_PATH ];
+		char prevbuf[ 260 ];
+		char curbuf[ 260 ];
 
 		strcpy(prevbuf, dirbuf);
 		strcat(prevbuf, gAppPrefix);
@@ -384,7 +379,7 @@ void DebugLog(const char *format, ...)
 #endif
 
 	if (theDebugFlags == 0)
-		MessageBoxWrapper("DebugLog - Debug not inited properly", "", MB_OK|MB_TASKMODAL);
+		MessageBoxWrapper("DebugLog - Debug not inited properly", "", Platform::DialogButtons::OK, Platform::DialogIcon::None, Platform::DialogResult::OK);
 
 	format = prepBuffer(format, theBuffer);
 
@@ -394,7 +389,7 @@ void DebugLog(const char *format, ...)
   va_end(arg);
 
 	if (strlen(theBuffer) >= sizeof(theBuffer))
-		MessageBoxWrapper("String too long for debug buffer", "", MB_OK|MB_TASKMODAL);
+		MessageBoxWrapper("String too long for debug buffer", "", Platform::DialogButtons::OK, Platform::DialogIcon::None, Platform::DialogResult::OK);
 
 	whackFunnyCharacters(theBuffer);
 	doLogOutput(theBuffer);
@@ -421,11 +416,9 @@ void DebugCrash(const char *format, ...)
 	if (theDebugFlags == 0)
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (Platform::NativeGameWindow()) {
-				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
-			}
+			Platform::HideGameWindow();
 		}
-		MessageBoxWrapper("DebugCrash - Debug not inited properly", "", MB_OK|MB_TASKMODAL);
+		MessageBoxWrapper("DebugCrash - Debug not inited properly", "", Platform::DialogButtons::OK, Platform::DialogIcon::None, Platform::DialogResult::OK);
 	}
 
 	format = prepBuffer(format, theCrashBuffer);
@@ -439,11 +432,9 @@ void DebugCrash(const char *format, ...)
 	if (strlen(theCrashBuffer) >= sizeof(theCrashBuffer))
 	{
 		if (!DX8Wrapper_IsWindowed) {
-			if (Platform::NativeGameWindow()) {
-				ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
-			}
+			Platform::HideGameWindow();
 		}
-		MessageBoxWrapper("String too long for debug buffers", "", MB_OK|MB_TASKMODAL);
+		MessageBoxWrapper("String too long for debug buffers", "", Platform::DialogButtons::OK, Platform::DialogIcon::None, Platform::DialogResult::OK);
 	}
 
 #ifdef DEBUG_LOGGING
@@ -463,20 +454,20 @@ void DebugCrash(const char *format, ...)
 
 	strcat(theCrashBuffer, "\n\nAbort->exception; Retry->debugger; Ignore->continue\n");
 
-	int result = doCrashBox(theCrashBuffer, true);
+	Platform::DialogResult result = doCrashBox(theCrashBuffer, true);
 
-	if (result == IDIGNORE && TheCurrentIgnoreCrashPtr != NULL) 
+	if (result == Platform::DialogResult::Ignore && TheCurrentIgnoreCrashPtr != NULL)
 	{
-		int yn;
+		Platform::DialogResult yn;
 		if (!ignoringAsserts()) 
 		{
-			yn = MessageBoxWrapper("Ignore this crash from now on?", "", MB_YESNO|MB_TASKMODAL);
+			yn = MessageBoxWrapper("Ignore this crash from now on?", "", Platform::DialogButtons::YesNo, Platform::DialogIcon::None, Platform::DialogResult::Yes);
 		}	
 		else 
 		{
-			yn = IDYES;
+			yn = Platform::DialogResult::Yes;
 		}
-		if (yn == IDYES)
+		if (yn == Platform::DialogResult::Yes)
 			*TheCurrentIgnoreCrashPtr = 1;
 		if( TheKeyboard )
 			TheKeyboard->resetKeys();
@@ -541,7 +532,7 @@ void DebugSetFlags(int flags)
 // ----------------------------------------------------------------------------
 SimpleProfiler::SimpleProfiler()
 {
-	QueryPerformanceFrequency((LARGE_INTEGER*)&m_freq);
+	m_freq = Platform::PerformanceFrequency();
 	m_startThisSession = 0;
 	m_totalThisSession = 0;
 	m_totalAllSessions = 0;
@@ -552,7 +543,7 @@ SimpleProfiler::SimpleProfiler()
 void SimpleProfiler::start()
 {
 	DEBUG_ASSERTCRASH(m_startThisSession == 0, ("already started"));
-	QueryPerformanceCounter((LARGE_INTEGER*)&m_startThisSession);
+	m_startThisSession = Platform::PerformanceCounter();
 }
 
 // ----------------------------------------------------------------------------
@@ -561,7 +552,7 @@ void SimpleProfiler::stop()
 	if (m_startThisSession != 0) 
 	{
 		__int64 stop;
-		QueryPerformanceCounter((LARGE_INTEGER*)&stop);
+		stop = Platform::PerformanceCounter();
 		m_totalThisSession = stop - m_startThisSession;
 		m_totalAllSessions += stop - m_startThisSession;
 		m_startThisSession = 0;
@@ -647,8 +638,8 @@ void ReleaseCrash(const char *reason)
 	/// do additional reporting on the crash, if possible
 
 
-	char prevbuf[ _MAX_PATH ];
-	char curbuf[ _MAX_PATH ];
+	char prevbuf[ 260 ];
+	char curbuf[ 260 ];
 
 	strcpy(prevbuf, TheGlobalData->getPath_UserData().str());
 	strcat(prevbuf, RELEASECRASH_FILE_NAME_PREV);
@@ -675,32 +666,29 @@ void ReleaseCrash(const char *reason)
 	}
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (Platform::NativeGameWindow()) {
-			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
-		}
+		Platform::HideGameWindow();
 	}
 
 #if defined(_DEBUG) || defined(_INTERNAL)
 	/* static */ char buff[8192]; // not so static so we can be threadsafe
-	_snprintf(buff, 8192, "Sorry, a serious error occurred. (%s)", reason);
+	std::snprintf(buff, 8192, "Sorry, a serious error occurred. (%s)", reason);
 	buff[8191] = 0;
-	::MessageBox(NULL, buff, "Technical Difficulties...", MB_OK|MB_SYSTEMMODAL|MB_ICONERROR);
+	Platform::ShowDialog(Platform::LegacyTextToUTF8(buff).c_str(), Platform::LegacyTextToUTF8("Technical Difficulties...").c_str(), Platform::DialogButtons::OK, Platform::DialogIcon::Error, Platform::DialogResult::OK, false);
 #else
 // crash error messaged changed 3/6/03 BGC
-//	::MessageBox(NULL, "Sorry, a serious error occurred.", "Technical Difficulties...", MB_OK|MB_TASKMODAL|MB_ICONERROR);
 
 	if (!GetRegistryLanguage().compareNoCase("german2") || !GetRegistryLanguage().compareNoCase("german") )
 	{
-		::MessageBox(NULL, "Es ist ein gravierender Fehler aufgetreten. Solche Fehler k�nnen durch viele verschiedene Dinge wie Viren, �berhitzte Hardware und Hardware, die den Mindestanforderungen des Spiels nicht entspricht, ausgel�st werden. Tipps zur Vorgehensweise findest du in den Foren unter www.generals.ea.com, Informationen zum Technischen Kundendienst im Handbuch zum Spiel.", "Fehler...", MB_OK|MB_TASKMODAL|MB_ICONERROR);
+		Platform::ShowDialog(Platform::LegacyTextToUTF8("Es ist ein gravierender Fehler aufgetreten. Solche Fehler k�nnen durch viele verschiedene Dinge wie Viren, �berhitzte Hardware und Hardware, die den Mindestanforderungen des Spiels nicht entspricht, ausgel�st werden. Tipps zur Vorgehensweise findest du in den Foren unter www.generals.ea.com, Informationen zum Technischen Kundendienst im Handbuch zum Spiel.").c_str(), Platform::LegacyTextToUTF8("Fehler...").c_str(), Platform::DialogButtons::OK, Platform::DialogIcon::Error, Platform::DialogResult::OK, false);
 	} 
 	else
 	{
-		::MessageBox(NULL, "You have encountered a serious error.  Serious errors can be caused by many things including viruses, overheated hardware and hardware that does not meet the minimum specifications for the game. Please visit the forums at www.generals.ea.com for suggested courses of action or consult your manual for Technical Support contact information.", "Technical Difficulties...", MB_OK|MB_TASKMODAL|MB_ICONERROR);
+		Platform::ShowDialog(Platform::LegacyTextToUTF8("You have encountered a serious error.  Serious errors can be caused by many things including viruses, overheated hardware and hardware that does not meet the minimum specifications for the game. Please visit the forums at www.generals.ea.com for suggested courses of action or consult your manual for Technical Support contact information.").c_str(), Platform::LegacyTextToUTF8("Technical Difficulties...").c_str(), Platform::DialogButtons::OK, Platform::DialogIcon::Error, Platform::DialogResult::OK, false);
 	}
 
 #endif
 
-	_exit(1);
+	std::_Exit(1);
 }  
 
 void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
@@ -718,29 +706,16 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	/// do additional reporting on the crash, if possible
 
 	if (!DX8Wrapper_IsWindowed) {
-		if (Platform::NativeGameWindow()) {
-			ShowWindow(Platform::NativeGameWindow(), SW_HIDE);
-		}
+		Platform::HideGameWindow();
 	}
 
-	if (TheSystemIsUnicode) 
-	{
-		::MessageBoxW(NULL, mesg.str(), prompt.str(), MB_OK|MB_SYSTEMMODAL|MB_ICONERROR);
-	} 
-	else 
-	{
-		// However, if we're using the default version of the message box, we need to 
-		// translate the string into an AsciiString
-		AsciiString promptA, mesgA;
-		promptA.translate(prompt);
-		mesgA.translate(mesg);
-		//Make sure main window is not TOP_MOST
-		::SetWindowPos(Platform::NativeGameWindow(), HWND_NOTOPMOST, 0, 0, 0, 0,SWP_NOSIZE |SWP_NOMOVE);
-		::MessageBoxA(NULL, mesgA.str(), promptA.str(), MB_OK|MB_TASKMODAL|MB_ICONERROR);
-	}
+    Platform::ShowDialog(
+        Platform::UTF16ToUTF8(Platform::EncodeUTF16LE(mesg.str(), mesg.getLength())).c_str(),
+        Platform::UTF16ToUTF8(Platform::EncodeUTF16LE(prompt.str(), prompt.getLength())).c_str(),
+        Platform::DialogButtons::OK, Platform::DialogIcon::Error, Platform::DialogResult::OK, false);
 
-	char prevbuf[ _MAX_PATH ];
-	char curbuf[ _MAX_PATH ];
+	char prevbuf[ 260 ];
+	char curbuf[ 260 ];
 
 	strcpy(prevbuf, TheGlobalData->getPath_UserData().str());
 	strcat(prevbuf, RELEASECRASH_FILE_NAME_PREV);
@@ -766,5 +741,5 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 		theReleaseCrashLogFile = NULL;
 	}
 
-	_exit(1);
+	std::_Exit(1);
 }

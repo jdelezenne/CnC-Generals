@@ -54,8 +54,8 @@
 
 #include	"always.h"
 #include "Platform/Paths.h"
-#include	"rawfile.h"
-#include	<direct.h>
+#include "Platform/Files.h"
+#include	"RAWFILE.H"
 //#include	<share.h>
 #include	<stddef.h>
 #include	<stdio.h>
@@ -64,10 +64,7 @@
 #include "win.h"
 #include	<limits.h>
 #include	<errno.h>
-#ifdef _UNIX
-#include <sys/types.h>
-#include <sys/stat.h>
-#endif
+
 
 
 #if 0		//#ifdef NEVER    (gth) the MAX sdk must #define NEVER! yikes :-)
@@ -439,32 +436,15 @@ int RawFileClass::Open(int rights)
 				break;
 
 			case READ:
-				#ifdef _UNIX
-					Handle = Platform::OpenStream(Filename, "r");
-				#else
-					Handle = CreateFileA(Platform::ReadPath(Filename).c_str(), GENERIC_READ, FILE_SHARE_READ,
-												NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-				#endif
+				Handle = Platform::OpenRawFile(Filename, Platform::FileMode::Read);
 				break;
 
 			case WRITE:
-				#ifdef _UNIX
-					Handle = Platform::OpenStream(Filename, "w");
-				#else
-					Handle = CreateFileA(Platform::WritePath(Filename).c_str(), GENERIC_WRITE, 0,
-												NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-				#endif
+				Handle = Platform::OpenRawFile(Filename, Platform::FileMode::Write);
 				break;
 
 			case READ|WRITE:
-				#ifdef _UNIX
-					Handle = Platform::OpenStream(Filename, "w");
-				#else
-					// SKB 5/13/99 use OPEN_ALWAYS instead of CREATE_ALWAYS so that files
-					//					does not get destroyed.
-					Handle = CreateFileA(Platform::WritePath(Filename).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
-												NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-				#endif
+				Handle = Platform::OpenRawFile(Filename, Platform::FileMode::ReadWrite);
 				break;
 		}
 
@@ -483,7 +463,7 @@ int RawFileClass::Open(int rights)
 		if (Handle == NULL_HANDLE) {
 			return(false);
 
-//			Error(GetLastError(), false, Filename);
+//			Error(Platform::LastFileError(), false, Filename);
 //			continue;
 		}
 		break;
@@ -537,12 +517,7 @@ bool RawFileClass::Is_Available(int forced)
 	*/
 	for (;;) {
 
-		#ifdef _UNIX
-			Handle=Platform::OpenStream(Filename,"r");
-		#else
-			Handle = CreateFileA(Platform::ReadPath(Filename).c_str(), GENERIC_READ, FILE_SHARE_READ,
-											NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		#endif
+		Handle = Platform::OpenRawFile(Filename, Platform::FileMode::Read);
 
 		if (Handle == NULL_HANDLE) {
 			return(false);
@@ -554,13 +529,9 @@ bool RawFileClass::Is_Available(int forced)
 	**	Since the file could be opened, then close it and return that the file exists.
 	*/
 	int closeok;
-	#ifdef _UNIX
-		closeok=((fclose(Handle)==0)?TRUE:FALSE);
-	#else
-		closeok=CloseHandle(Handle);
-	#endif
+	closeok = Platform::CloseRawFile(Handle);
 	if (! closeok) {
-		Error(GetLastError(), false, Filename);
+		Error(Platform::LastFileError(), false, Filename);
 	}
 	Handle = NULL_HANDLE;
 
@@ -595,14 +566,10 @@ void RawFileClass::Close(void)
 		**	call the error routine.
 		*/
 		int closeok;
-		#ifdef _UNIX
-			closeok=(fclose(Handle)==0)?TRUE:FALSE;	
-		#else
-			closeok=CloseHandle(Handle);
-		#endif
+		closeok = Platform::CloseRawFile(Handle);
 
 		if (!closeok) {
-			Error(GetLastError(), false, Filename);
+			Error(Platform::LastFileError(), false, Filename);
 		}
 
 		/*
@@ -670,20 +637,15 @@ int RawFileClass::Read(void * buffer, int size)
 
 		int readok=TRUE;
 
-		#ifdef _UNIX
-			readok=TRUE;
-			bytesread=fread(buffer,1,size,Handle);
-			if ((bytesread == 0)&&( ! feof(Handle)))
-				readok=ferror(Handle);
-		#else
-			readok=ReadFile(Handle, buffer, size, &(unsigned long&)bytesread, NULL);
-		#endif
+		std::uint32_t transferred = 0;
+		readok = Platform::ReadRawFile(Handle, buffer, size, transferred);
+		bytesread = transferred;
 			
 
 		if (! readok) {
 			size -= bytesread;
 			total += bytesread;
-			Error(GetLastError(), true, Filename);
+			Error(Platform::LastFileError(), true, Filename);
 			continue;
 		}
 		size -= bytesread;
@@ -737,16 +699,12 @@ int RawFileClass::Write(void const * buffer, int size)
 	}
 
    int writeok=TRUE;
-   #ifdef _UNIX
-		byteswritten = fwrite(buffer, 1, size, Handle);
-		if (byteswritten != size)
-			writeok = FALSE;
-	#else
-		writeok=WriteFile(Handle, buffer, size, &(unsigned long&)byteswritten, NULL);
-	#endif
+   std::uint32_t transferred = 0;
+	writeok = Platform::WriteRawFile(Handle, buffer, size, transferred);
+	byteswritten = transferred;
 
 	if (! writeok) {
-		Error(GetLastError(), false, Filename);
+		Error(Platform::LastFileError(), false, Filename);
 	}
 
 	/*
@@ -879,27 +837,13 @@ int RawFileClass::Size(void)
 	*/
 	if (Is_Open()) {
 
-      #ifdef _UNIX
-			fpos_t curpos,startpos,endpos;
-			fgetpos(Handle,&curpos);	
-
-			fseek(Handle,0,SEEK_SET);
-			fgetpos(Handle,&startpos);	
-
-			fseek(Handle,0,SEEK_END);
-			fgetpos(Handle,&endpos);	
-
-			size=endpos-startpos;
-			fsetpos(Handle,&curpos);
-		#else
-			size = GetFileSize(Handle, NULL);
-		#endif
+      size = Platform::RawFileSize(Handle);
 
 		/*
 		**	If there was in internal error, then call the error function.
 		*/
 		if (size == 0xFFFFFFFF) {
-			Error(GetLastError(), false, Filename);
+			Error(Platform::LastFileError(), false, Filename);
 		}
 
 	} else {
@@ -1010,14 +954,10 @@ int RawFileClass::Delete(void)
 		}
 
 		int deleteok;
-		#ifdef _UNIX
-			deleteok=(unlink(Platform::WritePath(Filename).c_str())==0)?TRUE:FALSE;
-		#else
-			deleteok=Platform::RemoveUserFile(Filename);
-		#endif
+		deleteok = Platform::RemoveUserFile(Filename);
 
 		if (! deleteok) {
-			Error(GetLastError(), false, Filename);
+			Error(Platform::LastFileError(), false, Filename);
 			return(false);
 		}
 		break;
@@ -1048,21 +988,7 @@ int RawFileClass::Delete(void)
  *=============================================================================================*/
 unsigned long RawFileClass::Get_Date_Time(void)
 {
-#ifdef _UNIX
-	struct stat statbuf;
-	lstat(Filename, &statbuf);
-	return(statbuf.st_mtime);
-#else
-	BY_HANDLE_FILE_INFORMATION info;
-
-	if (GetFileInformationByHandle(Handle, &info)) {
-		WORD dosdate;
-		WORD dostime;
-		FileTimeToDosDateTime(&info.ftLastWriteTime, &dosdate, &dostime);
-		return((dosdate << 16) | dostime);
-	}
-	return(0);
-#endif
+return Platform::RawFileDateTime(Handle);
 }
 
 
@@ -1083,24 +1009,8 @@ unsigned long RawFileClass::Get_Date_Time(void)
  *=============================================================================================*/
 bool RawFileClass::Set_Date_Time(unsigned long datetime)
 {
-#ifdef _UNIX
-	assert(0);
-	return(false);
-#else
-	if (RawFileClass::Is_Open()) {
-		BY_HANDLE_FILE_INFORMATION info;
-
-		if (GetFileInformationByHandle(Handle, &info)) {
-			FILETIME filetime;
-			if (DosDateTimeToFileTime((WORD)(datetime >> 16), (WORD)(datetime & 0x0FFFF), &filetime)) {
-				return(SetFileTime(Handle, &info.ftCreationTime, &filetime, &filetime) != 0);
-			}
-		}
-	}
-	return(false);
-#endif
+	return RawFileClass::Is_Open() && Platform::SetRawFileDateTime(Handle, static_cast<std::uint32_t>(datetime));
 }
-
 
 /***********************************************************************************************
  * RawFileClass::Bias -- Bias a file with a specific starting position and length.             *
@@ -1175,30 +1085,13 @@ int RawFileClass::Raw_Seek(int pos, int dir)
 		Error(EBADF, false, Filename);
 	}
 
-   #ifdef _UNIX
-      pos=fseek(Handle, pos, dir);
-   #else
-		switch (dir) {
-			case SEEK_SET:
-				dir = FILE_BEGIN;
-				break;
-
-			case SEEK_CUR:
-				dir = FILE_CURRENT;
-				break;
-
-			case SEEK_END:
-				dir = FILE_END;
-				break;
-		}
-		pos = SetFilePointer(Handle, pos, NULL, dir);
-	#endif
+   pos = Platform::SeekRawFile(Handle, pos, dir);
 
 	/*
 	**	If there was an error in the seek, then bail with an error condition.
 	*/
 	if (pos == 0xFFFFFFFF) {
-		Error(GetLastError(), false, Filename);
+		Error(Platform::LastFileError(), false, Filename);
 	}
 
 	/*
@@ -1231,11 +1124,7 @@ void RawFileClass::Attach (void *handle, int rights)
 	Time = 0;
 	Allocated = false;
 
-	#ifdef _UNIX
-	  Handle = (FILE *)handle;
-	#else
-	  Handle = handle;
-	#endif
+	Handle = handle;
 }
 
 /***********************************************************************************************

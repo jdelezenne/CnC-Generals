@@ -10,9 +10,22 @@
 
 namespace fs = std::filesystem;
 
+std::string Platform::DesktopDirectory()
+{
+    const char* path = SDL_GetUserFolder(SDL_FOLDER_DESKTOP);
+    return path ? path : "";
+}
+
 Platform::GameTitle Platform::CurrentGame()
 {
     return std::strcmp(GEN_GAME_NAME, "Generals") == 0 ? GameTitle::Generals : GameTitle::ZeroHour;
+}
+
+const char* Platform::ExecutableDirectory()
+{
+    const char* directory = SDL_GetBasePath();
+    if (!directory) throw std::runtime_error(SDL_GetError());
+    return directory;
 }
 
 const char* Platform::PreferenceDirectory(GameTitle game)
@@ -190,6 +203,21 @@ std::string Platform::FileName(const char* path)
     const std::string name(path);
     const auto separator = name.find_last_of("/\\");
     return separator == std::string::npos ? name : name.substr(separator + 1);
+}
+
+std::string Platform::WorkingDirectory()
+{
+    std::error_code error;
+    return fs::current_path(error).string();
+}
+
+std::string Platform::FileStem(const char* path)
+{
+    std::string name = FileName(path);
+    if (name.size() >= 2 && name[1] == ':') name.erase(0, 2);
+    const auto extension = name.find_last_of('.');
+    if (extension != std::string::npos) name.erase(extension);
+    return name;
 }
 
 bool Platform::CreateUserDirectory(const char* name)

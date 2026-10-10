@@ -38,6 +38,8 @@
 *
 ****************************************************************************/
 
+#include <cstdint>
+
 #pragma pack(push, 1)
 
 // If you wish to display loading error messages call targa functions inside of
@@ -133,8 +135,8 @@ typedef struct _TGAHeader
  */
 typedef struct _TGA2Footer
 	{
-	long Extension;
-	long Developer;
+	std::int32_t Extension;
+	std::int32_t Developer;
 	char Signature[16];
 	char RsvdChar;
 	char BZST;
@@ -224,14 +226,18 @@ typedef struct _TGA2Extension
 	TGA2TimeStamp JobTime;
 	char          SoftID[41];
 	TGA2SoftVer   SoftVer;
-	long          KeyColor;
+	std::int32_t KeyColor;
 	TGA2Ratio     Aspect;
 	TGA2Ratio     Gamma;
-	long          ColorCor;
-	long          PostStamp;
-	long          ScanLine;
+	std::int32_t ColorCor;
+	std::int32_t PostStamp;
+	std::int32_t ScanLine;
 	char          Attributes;
 	} TGA2Extension;
+
+static_assert(sizeof(TGAHeader) == 18);
+static_assert(sizeof(TGA2Footer) == 26);
+static_assert(sizeof(TGA2Extension) == 495);
 
 /* Alpha channel attributes (Extension Area) */
 #define EXTA_NOALPHA 0  /* No alpha data included */

@@ -44,7 +44,7 @@
 #include	"always.h"
 #include	"blit.h"
 #include	"bsurface.h"
-//#include	"rle.h"
+//#include	"RLE.H"
 #include	"xsurface.h"
 //#include	<stdlib.h>
 

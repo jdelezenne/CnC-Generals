@@ -38,6 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "w3d_file.h"
+#include "Platform/StringCompare.h"
 #include "chunkio.h"
 #include "shddef.h"
 #include "shddefmanager.h"
@@ -104,7 +105,7 @@ ShdDefFactoryClass * ShdDefManagerClass::Find_Factory (const char *name)
 		//
 		//	Is this the factory we were looking for?
 		//
-		if (::stricmp (curr_factory->Get_Name (), name) == 0) {
+		if (Platform::CompareNoCase(curr_factory->Get_Name (), name) == 0) {
 			factory = curr_factory;
 		}
 	}

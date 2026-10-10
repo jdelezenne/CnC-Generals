@@ -28,7 +28,8 @@
 
 #define INSTANTIATE_WELL_KNOWN_KEYS
 
-#include "windows.h"
+
+#include "Platform/Paths.h"
 #include "stdlib.h"
 #include <string.h>
 #include "Common/STLTypedefs.h"
@@ -134,7 +135,7 @@ MapObject::~MapObject(void)
 		while (cur) {
 			next = cur->getNext();
 			cur->setNextMap(NULL); // prevents recursion. 
-			cur->deleteInstance();
+			Platform::DeletePoolObject(cur);
 			cur = next;
 		}
 	}
@@ -432,7 +433,7 @@ void WorldHeightMap::freeListOfMapObjects(void)
 {
 	if (MapObject::TheMapObjectListPtr) 
 	{
-		MapObject::TheMapObjectListPtr->deleteInstance();
+		Platform::DeletePoolObject(MapObject::TheMapObjectListPtr);
 		MapObject::TheMapObjectListPtr = NULL;
 	}
 	MapObject::getWorldDict()->clear();
@@ -1022,13 +1023,13 @@ Bool WorldHeightMap::ParseBlendTileDataChunk(DataChunkInput &file, DataChunkInfo
 /** Function to read in the tiles for a texture class. */
 void WorldHeightMap::readTexClass(TXTextureClass *texClass, TileData **tileData) 
 {
-	char path[_MAX_PATH];
+	char path[Platform::LegacyPathCapacity];
 	path[0] = 0;
 	File *theFile = NULL;
 
 	// get the file from the description in TheTerrainTypes
 	TerrainType *terrain = TheTerrainTypes->findTerrain( texClass->name );
-	char texturePath[ _MAX_PATH ];
+	char texturePath[ Platform::LegacyPathCapacity ];
 	if (terrain==NULL) 
 	{
 #ifdef LOAD_TEST_ASSETS

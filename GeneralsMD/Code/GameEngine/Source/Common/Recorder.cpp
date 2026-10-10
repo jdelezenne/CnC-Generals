@@ -23,11 +23,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/ReplayText.h"
 #include "Platform/Paths.h"
 
 #include "Common/Recorder.h"
 #include "Common/FileSystem.h"
-#include "Common/playerlist.h"
+#include "Common/PlayerList.h"
 #include "Common/Player.h"
 #include "Common/GlobalData.h"
 #include "Common/GameEngine.h"
@@ -40,11 +41,11 @@
 #include "GameNetwork/LANAPICallbacks.h"
 #include "GameNetwork/GameMessageParser.h"
 #include "GameNetwork/GameSpy/PeerDefs.h"
-#include "GameNetwork/NetworkUtil.h"
+#include "GameNetwork/networkutil.h"
 #include "GameLogic/GameLogic.h"
 #include "Common/RandomValue.h"
 #include "Common/CRCDebug.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -292,9 +293,9 @@ void RecorderClass::cleanUpReplayFile( void )
 #if defined(_DEBUG) || defined(_INTERNAL)
 	if (TheGlobalData->m_saveStats)
 	{
-		char fname[_MAX_PATH+1];
-		strncpy(fname, TheGlobalData->m_baseStatsDir.str(), _MAX_PATH);
-		strncat(fname, m_fileName.str(), _MAX_PATH - strlen(fname));
+		char fname[Platform::LegacyPathCapacity+1];
+		strncpy(fname, TheGlobalData->m_baseStatsDir.str(), Platform::LegacyPathCapacity);
+		strncat(fname, m_fileName.str(), Platform::LegacyPathCapacity - strlen(fname));
 		DEBUG_LOG(("Saving replay to %s\n", fname));
 		AsciiString oldFname;
 		oldFname.format("%s%s", getReplayDir().str(), m_fileName.str());
@@ -576,22 +577,19 @@ void RecorderClass::startRecording(GameDifficulty diff, Int originalGameMode, In
 	// Print out the name of the replay.
 	UnicodeString replayName;
 	replayName = TheGameText->fetch("GUI:LastReplay");
-	fwprintf(m_file, L"%ws", replayName.str());
-	fputwc(0, m_file);
+	Platform::WriteReplayText(m_file, replayName.str(), replayName.getLength());
 
 	// Date and Time
-	SYSTEMTIME systemTime;
-	GetLocalTime( &systemTime );
-	fwrite(&systemTime, sizeof(SYSTEMTIME), 1, m_file);
+	const Platform::CalendarTime systemTime = Platform::LocalCalendarTime();
+	const auto replayTime = Platform::EncodeReplayTime(systemTime);
+	fwrite(replayTime.data(), replayTime.size(), 1, m_file);
 
 	// write out version info
 	UnicodeString versionString = TheVersion->getUnicodeVersion();
 	UnicodeString versionTimeString = TheVersion->getUnicodeBuildTime();
 	UnsignedInt versionNumber = TheVersion->getVersionNumber();
-	fwprintf(m_file, L"%ws", versionString.str());
-	fputwc(0, m_file);
-	fwprintf(m_file, L"%ws", versionTimeString.str());
-	fputwc(0, m_file);
+	Platform::WriteReplayText(m_file, versionString.str(), versionString.getLength());
+	Platform::WriteReplayText(m_file, versionTimeString.str(), versionTimeString.getLength());
 	fwrite(&versionNumber, sizeof(UnsignedInt), 1, m_file);
 	fwrite(&(TheGlobalData->m_exeCRC), sizeof(UnsignedInt), 1, m_file);
 	fwrite(&(TheGlobalData->m_iniCRC), sizeof(UnsignedInt), 1, m_file);
@@ -660,11 +658,9 @@ void RecorderClass::startRecording(GameDifficulty diff, Int originalGameMode, In
 			continue;
 		}
 		UnicodeString name = player->getPlayerDisplayName();
-		fwprintf(m_file, L"%s", name.str());
-		fputwc(0, m_file);
+		Platform::WriteReplayText(m_file, name.str(), name.getLength());
 		UnicodeString faction = player->getFaction()->getFactionDisplayName();
-		fwprintf(m_file, L"%s", faction.str());
-		fputwc(0, m_file);
+		Platform::WriteReplayText(m_file, faction.str(), faction.getLength());
 		Int color = player->getColor()->getAsInt();
 		fwrite(&color, sizeof(color), 1, m_file);
 		Int team = 0;
@@ -778,7 +774,7 @@ void RecorderClass::writeToFile(GameMessage * msg) {
 		writeArgument(msg->getArgumentDataType(i), *(msg->getArgument(i)));
 	}
 
-	parser->deleteInstance();
+	Platform::DeletePoolObject(parser);
 	parser = NULL;
 
 	fflush(m_file); ///< @todo should this be in the final release?
@@ -853,7 +849,9 @@ Bool RecorderClass::readReplayHeader(ReplayHeader& header)
 	header.replayName = readUnicodeString();
 
 	// Read the date and time.  We don't really do anything with this either. Oh well.
-	fread(&header.timeVal, sizeof(SYSTEMTIME), 1, m_file);
+	unsigned char replayTime[16];
+	fread(replayTime, sizeof(replayTime), 1, m_file);
+	header.timeVal = Platform::DecodeReplayTime(replayTime);
 
 	// Read in the Version info
 	header.versionString = readUnicodeString();
@@ -1166,28 +1164,8 @@ Bool RecorderClass::playbackFile(AsciiString filename)
  * Read a unicode string from the current file position. The string is assumed to be 0-terminated.
  */
 UnicodeString RecorderClass::readUnicodeString() {
-	UnsignedShort str[1024] = L"";
-	Int index = 0;
-
-	Int c = fgetwc(m_file);
-	if (c == EOF) {
-		str[index] = 0;
-	}
-	str[index] = c;
-
-	while (index < 1024 && str[index] != 0) {
-		++index;
-		Int c = fgetwc(m_file);
-		if (c == EOF) {
-			str[index] = 0;
-			break;
-		}
-		str[index] = c;
-	}
-	str[1023] = L'\0';
-
-	UnicodeString retval(str);
-	return retval;
+    const auto text = Platform::ReadReplayText<WideChar>(m_file);
+    return UnicodeString(text.c_str());
 }
 
 /**
@@ -1326,17 +1304,17 @@ void RecorderClass::appendNextCommand() {
 
 	if (type == GameMessage::MSG_CLEAR_GAME_DATA || type == GameMessage::MSG_BEGIN_NETWORK_MESSAGES)
 	{
-		msg->deleteInstance();
+		Platform::DeletePoolObject(msg);
 		msg = NULL;
 	}
 
 	if (m_doingAnalysis)
 	{
-		msg->deleteInstance();
+		Platform::DeletePoolObject(msg);
 		msg = NULL;
 	}
 
-	parser->deleteInstance();
+	Platform::DeletePoolObject(parser);
 	parser = NULL;
 }
 
@@ -1471,7 +1449,7 @@ void RecorderClass::cullBadCommands() {
 				(msg->getType() < GameMessage::MSG_END_NETWORK_MESSAGES) &&
 				(msg->getType() != GameMessage::MSG_LOGIC_CRC)) {
 
-			msg->deleteInstance();
+			Platform::DeletePoolObject(msg);
 		}
 
 		msg = next;

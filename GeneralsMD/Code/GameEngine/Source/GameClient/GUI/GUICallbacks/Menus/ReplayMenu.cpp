@@ -28,6 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Platform/System.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Paths.h"
 
@@ -37,10 +38,10 @@
 #include "Common/GameEngine.h"
 #include "Common/GameState.h"
 #include "Common/Recorder.h"
-#include "Common/Version.h"
+#include "Common/version.h"
 #include "GameClient/WindowLayout.h"
 #include "GameClient/Gadget.h"
-#include "GameClient/GadgetListbox.h"
+#include "GameClient/GadgetListBox.h"
 #include "GameClient/Shell.h"
 #include "GameClient/KeyDefs.h"
 #include "GameClient/GameWindowManager.h"
@@ -631,11 +632,10 @@ void deleteReplay( void )
 	filename.concat(translate);
 	if(Platform::RemoveUserFile(filename.str()) == 0)
 	{
-		char buffer[1024];
-		FormatMessage ( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
+		wchar_t buffer[1024];
+		Platform::FormatSystemError(Platform::LastSystemError(), buffer, sizeof(buffer) / sizeof(buffer[0]));
 		UnicodeString errorStr;
-		translate.set(buffer);
-		errorStr.translate(translate);
+		errorStr.set(buffer);
 		MessageBoxOk(TheGameText->fetch("GUI:Error"),errorStr, NULL);
 	}
 	//Load the listbox shiznit
@@ -659,18 +659,15 @@ void copyReplay( void )
 	translate.translate(GetReplayFilenameFromListbox(listboxReplayFiles, selected));
 	filename.concat(translate);
 	
-	char path[1024];
-	LPITEMIDLIST pidl;
-	SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &pidl);
-	SHGetPathFromIDList(pidl,path);
+	const std::string path = Platform::DesktopDirectory();
 	AsciiString newFilename;
-	newFilename.set(path);
+	newFilename.set(path.c_str());
 	newFilename.concat("\\");
 	newFilename.concat(translate);
 	if(Platform::CopyUserFile(filename.str(),newFilename.str(), FALSE) == 0)
 	{
 		wchar_t buffer[1024];
-		FormatMessageW( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
+		Platform::FormatSystemError(Platform::LastSystemError(), buffer, sizeof(buffer) / sizeof(buffer[0]));
 		UnicodeString errorStr;
 		errorStr.set(buffer);
 		errorStr.trim();

@@ -39,12 +39,7 @@
 
 enum ObjectID;
 
-enum PhysicsTurningType
-{
-	TURN_NEGATIVE = -1,
-	TURN_NONE = 0,
-	TURN_POSITIVE = 1
-};
+#include "GameLogic/PhysicsTurningType.h"
 
 //-------------------------------------------------------------------------------------------------
 class PhysicsBehaviorModuleData : public UpdateModuleData

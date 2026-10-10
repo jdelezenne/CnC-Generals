@@ -35,6 +35,7 @@
 #include "Common/Upgrade.h"
 #include "Common/GameState.h"
 #include "Common/Xfer.h"
+#include "Common/Science.h"
 #include "Common/BitFlagsIO.h"
 
 //-------------------------------------------------------------------------------------------------

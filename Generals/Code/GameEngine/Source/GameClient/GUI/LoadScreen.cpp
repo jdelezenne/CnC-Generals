@@ -401,7 +401,8 @@ void SinglePlayerLoadScreen::init( GameInfo *game )
 	
 	Mission *mission = TheCampaignManager->getCurrentMission();
 	AsciiString lineName;
-	for(Int i = 0; i < MAX_OBJECTIVE_LINES; ++i)
+	Int i;
+	for(i = 0; i < MAX_OBJECTIVE_LINES; ++i)
 	{
 		lineName.format("SinglePlayerLoadScreen.wnd:StaticTextLine%d",i);
 		m_objectiveLines[i] = TheWindowManager->winGetWindowFromId( m_loadScreen,TheNameKeyGenerator->nameToKey( lineName ));
@@ -500,7 +501,7 @@ void SinglePlayerLoadScreen::init( GameInfo *game )
 
 			if(!m_videoStream->isFrameReady())
 			{
-				Sleep(1);	
+				Platform::Delay(1);
 				continue;
 			}
 
@@ -544,7 +545,7 @@ void SinglePlayerLoadScreen::init( GameInfo *game )
 		// if we're min speced
 		m_videoStream->frameGoto(m_videoStream->frameCount()); // zero based
 		while(!m_videoStream->isFrameReady())
-			Sleep(1);
+			Platform::Delay(1);
 		m_videoStream->frameDecompress();
 		m_videoStream->frameRender(m_videoBuffer);
 		if(m_videoBuffer)
@@ -574,7 +575,7 @@ void SinglePlayerLoadScreen::init( GameInfo *game )
 
 			TheWindowManager->update();
 			TheDisplay->draw();
-			Sleep(100);
+			Platform::Delay(100);
 			currTime = Platform::Milliseconds();
 		}
 		
@@ -628,7 +629,7 @@ ShellGameLoadScreen::~ShellGameLoadScreen( void )
 
 void ShellGameLoadScreen::init( GameInfo *game )
 {
-	static BOOL firstLoad = TRUE;
+	static Bool firstLoad = TRUE;
 
 	
 	// create the layout of the load screen
@@ -713,7 +714,7 @@ void ShellGameLoadScreen::init( GameInfo *game )
 		while(showTime + 3000 > Platform::Milliseconds())
 		{	
 			LoadScreen::update(0);
-			Sleep(100);
+			Platform::Delay(100);
 		}
 
 	}
@@ -807,7 +808,8 @@ void MultiPlayerLoadScreen::init( GameInfo *game )
 	//DEBUG_LOG(("NumPlayers %d\n", TheNetwork->getNumPlayers()));
 
 	GameWindow *teamWin[MAX_SLOTS];
-	for (Int i = 0; i < MAX_SLOTS; ++i)
+	Int i;
+	for (i = 0; i < MAX_SLOTS; ++i)
 	{
 		teamWin[i] = NULL;
 	}
@@ -1019,7 +1021,8 @@ GameSlot *lSlot = game->getSlot(game->getLocalSlotNum());
 		m_loadScreen->winSetEnabledImage(0, loadScreenImage);
 
 	GameWindow *teamWin[MAX_SLOTS];
-	for (Int i = 0; i < MAX_SLOTS; ++i)
+	Int i;
+	for ( i = 0; i < MAX_SLOTS; ++i)
 	{
 		teamWin[i] = NULL;
 	}

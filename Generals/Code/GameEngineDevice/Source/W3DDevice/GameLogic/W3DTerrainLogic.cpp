@@ -28,6 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "Common/GameMemory.h"
+#include "Platform/Paths.h"
 #include "W3DDevice/GameClient/HeightMap.h"
 #include "W3DDevice/GameLogic/W3DTerrainLogic.h"
 #include "W3DDevice/GameClient/WorldHeightMap.h"
@@ -122,8 +123,8 @@ Bool W3DTerrainLogic::loadMap( AsciiString filename , Bool query )
 
 	WorldHeightMap *terrainHeightMap;				///< holds raw heightmap data samples
 
-	char	tempBuf[_MAX_PATH];
-	char	filenameBuf[_MAX_PATH];
+	char	tempBuf[Platform::LegacyPathCapacity];
+	char	filenameBuf[Platform::LegacyPathCapacity];
 	int length = 0;
 
 	strcpy(tempBuf, filename.str());
@@ -131,7 +132,7 @@ Bool W3DTerrainLogic::loadMap( AsciiString filename , Bool query )
 	length = strlen( tempBuf );
 	if( length >= 4 )
 	{
-		memset( filenameBuf, '\0', _MAX_PATH);
+		memset( filenameBuf, '\0', Platform::LegacyPathCapacity);
 		strncpy( filenameBuf, tempBuf, length - 4);
 	}
 

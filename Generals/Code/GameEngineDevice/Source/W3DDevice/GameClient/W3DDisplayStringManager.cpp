@@ -154,7 +154,7 @@ void W3DDisplayStringManager::freeDisplayString( DisplayString *string )
 	}
 
 	// free data
-	string->deleteInstance();
+	Platform::DeletePoolObject(string);
 
 }  // end freeDisplayString
 

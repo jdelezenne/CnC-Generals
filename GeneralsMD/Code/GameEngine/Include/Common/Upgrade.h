@@ -43,16 +43,14 @@ class Player;
 class UpgradeTemplate;
 enum NameKeyType;
 class Image;
-enum AcademyClassificationType;
+#include "Common/AcademyClassificationType.h"
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
 
 
 //The maximum number of upgrades. 
-#define UPGRADE_MAX_COUNT 128
-
-typedef BitFlags<UPGRADE_MAX_COUNT>	UpgradeMaskType;
+#include "Common/UpgradeMaskType.h"
 
 #define MAKE_UPGRADE_MASK(k) UpgradeMaskType(UpgradeMaskType::kInit, (k))
 #define MAKE_UPGRADE_MASK2(k,a) UpgradeMaskType(UpgradeMaskType::kInit, (k), (a))

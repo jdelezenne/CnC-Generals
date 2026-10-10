@@ -26,14 +26,14 @@
 // Bryan Cleveland, August 2002
 ////////////////////////////////////////////////////////////
 
-#include <windows.h>
+#include "Platform/FileSystem.h"
 #include "Platform/Paths.h"
 #include "Common/AsciiString.h"
 #include "Common/GameMemory.h"
 #include "Common/PerfTimer.h"
 #include "Win32Device/Common/Win32LocalFileSystem.h"
 #include "Win32Device/Common/Win32LocalFile.h"
-#include <io.h>
+#include "Platform/Directory.h"
 
 Win32LocalFileSystem::Win32LocalFileSystem() : LocalFileSystem() 
 {
@@ -55,7 +55,7 @@ File * Win32LocalFileSystem::openFile(const Char *filename, Int access /* = 0 */
 
 	if (file->open(filename, access) == FALSE) {
 		file->close();
-		file->deleteInstance();
+		Platform::DeletePoolObject(file);
 		file = NULL;
 	} else {
 		file->deleteOnClose();
@@ -99,106 +99,47 @@ void Win32LocalFileSystem::reset()
 Bool Win32LocalFileSystem::doesFileExist(const Char *filename) const
 {
 	//USE_PERF_TIMER(Win32LocalFileSystem_doesFileExist)
-	if (_access(Platform::ReadPath(filename).c_str(), 0) == 0) {
+	if (Platform::PathExists(filename)) {
 		return TRUE;
 	}
 	return FALSE;
 }
 
-void Win32LocalFileSystem::getFileListInDirectory(const AsciiString& currentDirectory, const AsciiString& originalDirectory, const AsciiString& searchName, FilenameList & filenameList, Bool searchSubdirectories) const
+void Win32LocalFileSystem::getFileListInDirectory(const AsciiString& currentDirectory, const AsciiString& originalDirectory, const AsciiString& searchName, FilenameList& filenameList, Bool searchSubdirectories) const
 {
-	AsciiString logicalDirectory = originalDirectory;
-	logicalDirectory.concat(currentDirectory);
-	FilenameList subdirectories;
-	for (const std::string& nativeDirectory : Platform::SearchDirectories(logicalDirectory.str()))
-	{
-		HANDLE fileHandle = NULL;
-		WIN32_FIND_DATA findData;
-
-		char search[_MAX_PATH];
-		AsciiString asciisearch;
-		asciisearch = nativeDirectory.c_str();
-		if (!nativeDirectory.empty() && nativeDirectory.back() != '\\' && nativeDirectory.back() != '/')
-			asciisearch.concat('\\');
-		asciisearch.concat(searchName);
-		strcpy(search, asciisearch.str());
-
-		Bool done = FALSE;
-
-		fileHandle = FindFirstFile(search, &findData);
-		done = (fileHandle == INVALID_HANDLE_VALUE);
-
-		while (!done)	{
-			if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-					(strcmp(findData.cFileName, ".") && strcmp(findData.cFileName, ".."))) {
-				// if we haven't already, add this filename to the list.
-					// a stl set should only allow one copy of each filename
-					AsciiString newFilename;
-					newFilename = originalDirectory;
-					newFilename.concat(currentDirectory);
-					newFilename.concat(findData.cFileName);
-					if (filenameList.find(newFilename) == filenameList.end()) {
-						filenameList.insert(newFilename);
-					}
-			}
-
-			done = (FindNextFile(fileHandle, &findData) == 0);
-		}
-		FindClose(fileHandle);
-
-		if (searchSubdirectories) {
-			AsciiString subdirsearch;
-			subdirsearch = nativeDirectory.c_str();
-			if (!nativeDirectory.empty() && nativeDirectory.back() != '\\' && nativeDirectory.back() != '/')
-				subdirsearch.concat('\\');
-			subdirsearch.concat("*.");
-			fileHandle = FindFirstFile(subdirsearch.str(), &findData);
-			done = fileHandle == INVALID_HANDLE_VALUE;
-
-			while (!done) {
-				if ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-						(strcmp(findData.cFileName, ".") && strcmp(findData.cFileName, ".."))) {
-
-						AsciiString tempsearchstr;
-						tempsearchstr.concat(currentDirectory);
-						tempsearchstr.concat(findData.cFileName);
-						tempsearchstr.concat('\\');
-
-						// recursively add files in subdirectories if required.
-						subdirectories.insert(tempsearchstr);
-				}
-
-				done = (FindNextFile(fileHandle, &findData) == 0);
-			}
-
-			FindClose(fileHandle);
-		}
-
-	}
-	for (const AsciiString& subdirectory : subdirectories)
-		getFileListInDirectory(subdirectory, originalDirectory, searchName, filenameList, searchSubdirectories);
+    AsciiString logicalDirectory = originalDirectory;
+    logicalDirectory.concat(currentDirectory);
+    FilenameList subdirectories;
+    for (const auto& directory : Platform::SearchDirectories(logicalDirectory.str())) {
+        for (const auto& entry : Platform::ReadDirectory(directory.c_str(), searchName.str())) {
+            if (entry.info.directory) continue;
+            AsciiString filename = logicalDirectory;
+            filename.concat(entry.name.c_str());
+            filenameList.insert(filename);
+        }
+        if (searchSubdirectories) {
+            for (const auto& entry : Platform::ReadDirectory(directory.c_str(), "*.")) {
+                if (!entry.info.directory || entry.name == "." || entry.name == "..") continue;
+                AsciiString subdirectory = currentDirectory;
+                subdirectory.concat(entry.name.c_str());
+                subdirectory.concat('\\');
+                subdirectories.insert(subdirectory);
+            }
+        }
+    }
+    for (const auto& subdirectory : subdirectories)
+        getFileListInDirectory(subdirectory, originalDirectory, searchName, filenameList, searchSubdirectories);
 }
-
-Bool Win32LocalFileSystem::getFileInfo(const AsciiString& filename, FileInfo *fileInfo) const 
+Bool Win32LocalFileSystem::getFileInfo(const AsciiString& filename, FileInfo* fileInfo) const
 {
-	WIN32_FIND_DATA findData;
-	HANDLE findHandle = NULL;
-	findHandle = FindFirstFile(Platform::ReadPath(filename.str()).c_str(), &findData);
-
-	if (findHandle == INVALID_HANDLE_VALUE) {
-		return FALSE;
-	}
-
-	fileInfo->timestampHigh = findData.ftLastWriteTime.dwHighDateTime;
-	fileInfo->timestampLow = findData.ftLastWriteTime.dwLowDateTime;
-	fileInfo->sizeHigh = findData.nFileSizeHigh;
-	fileInfo->sizeLow = findData.nFileSizeLow;
-
-	FindClose(findHandle);
-
-	return TRUE;
+    Platform::FileMetadata info;
+    if (!Platform::ReadFileMetadata(filename.str(), info)) return FALSE;
+    fileInfo->timestampHigh = static_cast<UnsignedInt>(info.lastWriteTime >> 32);
+    fileInfo->timestampLow = static_cast<UnsignedInt>(info.lastWriteTime);
+    fileInfo->sizeHigh = static_cast<UnsignedInt>(info.size >> 32);
+    fileInfo->sizeLow = static_cast<UnsignedInt>(info.size);
+    return TRUE;
 }
-
 Bool Win32LocalFileSystem::createDirectory(AsciiString directory)
 {
 	return Platform::CreateUserDirectory(directory.str());

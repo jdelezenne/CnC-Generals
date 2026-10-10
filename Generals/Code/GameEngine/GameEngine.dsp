@@ -65,7 +65,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /G6 /MDd /W3 /WX /Gm /GX /ZI /Od /I "..\Libraries\Source\WWVegas" /I "..\Libraries\Source\WWVegas\WWLib" /I "../Libraries/Source/Compression" /I "Include/Precompiled" /I "../Libraries/Source/WWVegas" /I "../Libraries/Source/WWVegas\WWLib" /I "Include" /I "../Libraries/Include" /I "../Libraries/Source/GameSpy" /D "_DEBUG" /D "BROWSER_DEBUG" /D "_MBCS" /D "_LIB" /D "_WINDOWS" /D "WIN32" /D "Z_PREFIX" /Fr /Yu"PreRTS.h" /FD /GZ /c
+# ADD CPP /nologo /G6 /MDd /W3 /WX /Gm /GX /ZI /Od /I "..\Libraries\Source\WWVegas" /I "..\Libraries\Source\WWVegas\WWLib" /I "../Libraries/Source/Compression" /I "Include/Precompiled" /I "../Libraries/Source/WWVegas" /I "../Libraries/Source/WWVegas\WWLib" /I "Include" /I "../Libraries/Include" /I "../Libraries/Source/GameSpy" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "_WINDOWS" /D "WIN32" /D "Z_PREFIX" /Fr /Yu"PreRTS.h" /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -433,10 +433,6 @@ SOURCE=.\Source\Common\INI\INIWater.cpp
 # Begin Source File
 
 SOURCE=.\Source\Common\INI\INIWeapon.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\Source\Common\INI\INIWebpageURL.cpp
 # End Source File
 # End Group
 # Begin Group "Audio"
@@ -2267,14 +2263,6 @@ SOURCE=.\Source\GameClient\Water.cpp
 # Begin Group "GameNetwork"
 
 # PROP Default_Filter ""
-# Begin Group "WOLBrowser"
-
-# PROP Default_Filter ".cpp"
-# Begin Source File
-
-SOURCE=.\Source\GameNetwork\WOLBrowser\WebBrowser.cpp
-# End Source File
-# End Group
 # Begin Group "GameSpy"
 
 # PROP Default_Filter ""
@@ -4361,18 +4349,6 @@ SOURCE=.\Include\GameClient\WinInstanceData.h
 # Begin Group "GameNetwork.H"
 
 # PROP Default_Filter ""
-# Begin Group "WOLBrowser H"
-
-# PROP Default_Filter ".h"
-# Begin Source File
-
-SOURCE=.\Include\GameNetwork\WOLBrowser\FEBDispatch.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\Include\GameNetwork\WOLBrowser\WebBrowser.h
-# End Source File
-# End Group
 # Begin Group "GameSpyLibs.H"
 
 # PROP Default_Filter ""

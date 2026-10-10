@@ -34,7 +34,8 @@
 
 #define NO_DEBUG_CRC
 
-#include "Common/CRC.h"
+#include "Platform/StringCompare.h"
+#include "Common/crc.h"
 #include "Platform/Paths.h"
 #include "Common/CRCDebug.h"
 #include "Common/GameState.h"
@@ -61,11 +62,11 @@
 #include "W3DDevice/GameClient/W3DShadow.h"
 #include "W3DDevice/GameClient/W3DTerrainTracks.h"
 #include "W3DDevice/GameClient/WorldHeightMap.h"
-#include "WW3D2/HAnim.h"
-#include "WW3D2/HLod.h"
-#include "WW3D2/RendObj.h"
-#include "WW3D2/Mesh.h"
-#include "WW3D2/MeshMdl.h"
+#include "WW3D2/hanim.h"
+#include "WW3D2/hlod.h"
+#include "WW3D2/rendobj.h"
+#include "WW3D2/mesh.h"
+#include "WW3D2/meshmdl.h"
 #include "Common/BitFlagsIO.h"
 
 #ifdef _INTERNAL
@@ -102,7 +103,7 @@ protected:
 
 LogClass::LogClass(const char *fname)
 {
-	char buffer[ _MAX_PATH ];
+	char buffer[ Platform::LegacyPathCapacity ];
 	GetModuleFileName( NULL, buffer, sizeof( buffer ) );
 	char *pEnd = buffer + strlen( buffer );
 	while( pEnd != buffer )
@@ -1258,7 +1259,7 @@ static void parseShowHideSubObject(INI* ini, void *instance, void *store, const 
 		Bool found = false;
 		for (std::vector<ModelConditionInfo::HideShowSubObjInfo>::iterator it = vec->begin(); it != vec->end(); ++it)
 		{
-			if (stricmp(it->subObjName.str(), subObjName.str()) == 0)
+			if (Platform::CompareNoCase(it->subObjName.str(), subObjName.str()) == 0)
 			{
 				it->hide = (userData != NULL);
 				found = true;
@@ -1285,7 +1286,7 @@ void W3DModelDraw::showSubObject( const AsciiString& name, Bool show )
 		Bool found = false;
 		for( std::vector<ModelConditionInfo::HideShowSubObjInfo>::iterator it = m_subObjectVec.begin(); it != m_subObjectVec.end(); ++it )
 		{
-			if( stricmp( it->subObjName.str(), name.str() ) == 0 )
+			if( Platform::CompareNoCase( it->subObjName.str(), name.str() ) == 0 )
 			{
 				it->hide = !show;
 				found = true;
@@ -3390,7 +3391,8 @@ Int W3DModelDraw::getPristineBonePositionsForConditionState(
 	Int posCount = 0;
 	Int endIndex = (startIndex == 0) ? 0 : 99;	
 	char buffer[256];
-	for (Int i = startIndex; i <= endIndex; ++i)
+	Int i;
+	for (i = startIndex; i <= endIndex; ++i)
 	{
 		if (i == 0)
 			strcpy(buffer, boneNamePrefix);
@@ -3504,7 +3506,8 @@ Int W3DModelDraw::getCurrentBonePositions(
 	Int posCount = 0;
 	Int endIndex = (startIndex == 0) ? 0 : 99;	
 	char buffer[256];
-	for (Int i = startIndex; i <= endIndex; ++i)
+	Int i;
+	for (i = startIndex; i <= endIndex; ++i)
 	{
 		if (i == 0)
 			strcpy(buffer, boneNamePrefix);
@@ -4191,7 +4194,8 @@ void W3DModelDrawModuleData::xfer( Xfer *x )
 				x->xferInt(&(bone->boneIndex));
 				x->xferUser(&(bone->mtx), sizeof(Matrix3D));
 			}
-			for (Int i=0; i<MAX_TURRETS; ++i)
+			Int i;
+			for (i=0; i<MAX_TURRETS; ++i)
 			{
 				x->xferInt(&(info->m_turrets[i].m_turretAngleBone));
 				x->xferInt(&(info->m_turrets[i].m_turretPitchBone));

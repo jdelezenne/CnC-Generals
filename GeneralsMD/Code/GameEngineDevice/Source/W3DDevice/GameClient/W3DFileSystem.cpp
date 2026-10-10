@@ -40,8 +40,10 @@
 // for now we maintain old legacy files
 // #define MAINTAIN_LEGACY_FILES
 
+#include "Platform/StringCompare.h"
+#include "Platform/Paths.h"
 #include "Common/Debug.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GlobalData.h"
 #include "Common/MapObject.h"
@@ -49,7 +51,7 @@
 #include "W3DDevice/GameClient/W3DFileSystem.h"
 // DEFINES ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <io.h>
+
 
 //-------------------------------------------------------------------------------------------------
 /** Game file access.  At present this allows us to access test assets, assets from
@@ -144,9 +146,9 @@ char const * GameFileClass::Set_Name( char const *filename )
 		Close();
 
 	// save the filename
-	strncpy( m_filename, filename, _MAX_PATH );
+	strncpy( m_filename, filename, Platform::LegacyPathCapacity );
 
-	char name[_MAX_PATH];
+	char name[Platform::LegacyPathCapacity];
 	const Int EXT_LEN = 32;
 	char extension[EXT_LEN];
 	extension[0] = 0;
@@ -175,11 +177,11 @@ char const * GameFileClass::Set_Name( char const *filename )
 
 	// test the extension to recognize a few key file types
 	GameFileType fileType = FILE_TYPE_COMPLETELY_UNKNOWN;  // MBL FILE_TYPE_UNKNOWN change due to compile error
-	if( stricmp( extension, ".w3d" ) == 0 )
+	if( Platform::CompareNoCase( extension, ".w3d" ) == 0 )
 		fileType = FILE_TYPE_W3D;
-	else if( stricmp( extension, ".tga" ) == 0 )
+	else if( Platform::CompareNoCase( extension, ".tga" ) == 0 )
 		fileType = FILE_TYPE_TGA;
-	else if( stricmp( extension, ".dds" ) == 0 )
+	else if( Platform::CompareNoCase( extension, ".dds" ) == 0 )
 		fileType = FILE_TYPE_DDS;
 
 

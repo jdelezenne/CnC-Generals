@@ -32,7 +32,7 @@
 void DebugIOOds::Write(StringType type, const char *src, const char *str)
 {
   if (type!=StringType::StructuredCmdReply&&str)
-    OutputDebugString(str);
+    Platform::DebugMonitorOutput(str);
 }
 
 DebugIOInterface *DebugIOOds::Create(void)

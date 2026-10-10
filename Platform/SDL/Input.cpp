@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Platform/Input.h"
+#include "Platform/Cursor.h"
+#include "Platform/TextInput.h"
 #include "Platform/Window.h"
 #include "InputInternal.h"
 #include "KeyMapping.h"
@@ -11,6 +13,7 @@ SDL_Window* Window = nullptr;
 std::deque<Platform::KeyEvent> Keys;
 std::deque<Platform::MouseEvent> Mouse;
 std::array<bool, 256> Down{};
+std::array<bool, SDL_SCANCODE_COUNT> ScanDown{}, ScanPressed{};
 unsigned int Sequence = 0;
 std::array<bool, 4> MouseDown{};
 int MouseX = 0, MouseY = 0;
@@ -48,9 +51,16 @@ void Platform::ShutdownInput()
     ResetMouseInput();
 }
 
-void Platform::ResetKeyboardInput() { Keys.clear(); Down.fill(false); }
+void Platform::ResetKeyboardInput() { Keys.clear(); Down.fill(false); ScanDown.fill(false); ScanPressed.fill(false); }
 void Platform::ResetMouseInput() { Mouse.clear(); MouseDown.fill(false); }
 bool Platform::CapsLockEnabled() { return (SDL_GetModState() & SDL_KMOD_CAPS) != 0; }
+bool Platform::KeyDownOrPressed(int scancode)
+{
+    if (scancode <= 0 || static_cast<std::size_t>(scancode) >= ScanDown.size()) return false;
+    const bool result = ScanDown[scancode] || ScanPressed[scancode];
+    ScanPressed[scancode] = false;
+    return result;
+}
 #ifndef _WIN32
 bool Platform::FrenchKeyboardLayout()
 {
@@ -79,6 +89,7 @@ bool Platform::ReadMouseEvent(MouseEvent& event)
 void Platform::PumpInput()
 {
     if (!Window) return;
+    UpdateCursor();
     const auto windowID = SDL_GetWindowID(Window);
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -97,11 +108,35 @@ void Platform::PumpInput()
             break;
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
-            if (event.key.windowID == windowID && !event.key.repeat)
+            if (event.key.windowID == windowID && !event.key.repeat) {
+                if (event.key.scancode > 0 && event.key.scancode < SDL_SCANCODE_COUNT) {
+                    ScanDown[event.key.scancode] = event.key.down;
+                    if (event.key.down) ScanPressed[event.key.scancode] = true;
+                }
                 QueueKey(Legacy_Key_ID(event.key.scancode), event.key.down);
+                if (event.key.down && (event.key.scancode == SDL_SCANCODE_RETURN || event.key.scancode == SDL_SCANCODE_KP_ENTER))
+                    DispatchTextInput({TextInputKind::Return});
+            }
+            break;
+        case SDL_EVENT_TEXT_INPUT:
+            if (event.text.windowID == windowID) DispatchTextInput({TextInputKind::Commit, event.text.text});
+            break;
+        case SDL_EVENT_TEXT_EDITING:
+            if (event.edit.windowID == windowID)
+                DispatchTextInput({TextInputKind::Composition, event.edit.text, event.edit.start, event.edit.length});
+            break;
+        case SDL_EVENT_TEXT_EDITING_CANDIDATES:
+            if (event.edit_candidates.windowID == windowID) {
+                TextInputEvent candidates{TextInputKind::Candidates};
+                candidates.selected = event.edit_candidates.selected_candidate;
+                for (int i = 0; i < event.edit_candidates.num_candidates; ++i)
+                    candidates.candidates.emplace_back(event.edit_candidates.candidates[i]);
+                DispatchTextInput(candidates);
+            }
             break;
         case SDL_EVENT_WINDOW_FOCUS_LOST:
             if (event.window.windowID == windowID) {
+                ScanDown.fill(false); ScanPressed.fill(false);
                 for (unsigned key = 1; key < Down.size(); ++key) QueueKey(key, false);
                 Mouse.clear();
                 for (unsigned button = 1; button < MouseDown.size(); ++button)

@@ -4,6 +4,7 @@
 #define INITGUID
 #endif
 #include <d3dx8.h>
+#include "Platform/System.h"
 #include <DirectXTex.h>
 #include <algorithm>
 #include <bit>
@@ -178,8 +179,8 @@ extern "C" D3DXVECTOR4* WINAPI D3DXVec3Transform(D3DXVECTOR4* output, const D3DX
 extern "C" HRESULT WINAPI D3DXGetErrorStringA(HRESULT error, char* output, UINT length)
 {
     if (!output || !length) return E_INVALIDARG;
-    if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, error, 0, output, length, nullptr))
-        std::snprintf(output, length, "Direct3D error 0x%08lx", static_cast<unsigned long>(error));
+    if (!Platform::FormatSystemErrorMessage(error, output, length))
+        std::snprintf(output, length, "Direct3D error 0x%08x", static_cast<unsigned int>(error));
     return S_OK;
 }
 extern "C" HRESULT WINAPI D3DXCreateTexture(IDirect3DDevice8* device, UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool, IDirect3DTexture8** output)

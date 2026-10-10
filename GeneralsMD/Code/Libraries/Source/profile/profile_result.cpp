@@ -49,7 +49,8 @@ void ProfileResultFileCSV::WriteThread(ProfileFuncLevel::Thread &thread)
 
   // CSV file header
   fprintf(f,"Function\tFile\tCall count\tPTT (all)\tGTT (all)\tPT/C (all)\tGT/C (all)\tCaller (all)");
-  for (unsigned k=0;k<Profile::GetFrameCount();k++)
+  unsigned k;
+  for ( k=0;k<Profile::GetFrameCount();k++)
   {
     const char *s=Profile::GetFrameName(k);
     fprintf(f,"\tCall (%s)\tPTT (%s)\tGTT (%s)\tPT/C (%s)\tGT/C (%s)\tCaller (%s)",s,s,s,s,s,s);
@@ -73,19 +74,19 @@ void ProfileResultFileCSV::WriteThread(ProfileFuncLevel::Thread &thread)
       }
 
       // call count
-      fprintf(f,"\t%I64i",id.GetCalls(i));
+      fprintf(f,"\t%lli",id.GetCalls(i));
 
       // pure total time
-      fprintf(f,"\t%I64i",id.GetFunctionTime(i));
+      fprintf(f,"\t%lli",id.GetFunctionTime(i));
 
       // global total time
-      fprintf(f,"\t%I64i",id.GetTime(i));
+      fprintf(f,"\t%lli",id.GetTime(i));
 
       // pure time per call
-      fprintf(f,"\t%I64i",id.GetFunctionTime(i)/id.GetCalls(i));
+      fprintf(f,"\t%lli",id.GetFunctionTime(i)/id.GetCalls(i));
 
       // global time per call
-      fprintf(f,"\t%I64i",id.GetTime(i)/id.GetCalls(i));
+      fprintf(f,"\t%lli",id.GetTime(i)/id.GetCalls(i));
 
       // list of callers
       ProfileFuncLevel::IdList idlist=id.GetCaller(i);
@@ -104,7 +105,8 @@ void ProfileResultFileCSV::WriteThread(ProfileFuncLevel::Thread &thread)
 void ProfileResultFileCSV::WriteResults(void)
 {
   ProfileFuncLevel::Thread t;
-  for (unsigned k=0;ProfileFuncLevel::EnumThreads(k,t);k++)
+  unsigned k;
+  for ( k=0;ProfileFuncLevel::EnumThreads(k,t);k++)
     WriteThread(t);
 
   FILE *f=Platform::OpenStream("profile-high.csv","wt");
@@ -172,7 +174,8 @@ void ProfileResultFileDOT::WriteResults(void)
     return;
 
   unsigned curMax=0;
-  for (unsigned k=1;ProfileFuncLevel::EnumThreads(k,t);k++)
+  unsigned k;
+  for ( k=1;ProfileFuncLevel::EnumThreads(k,t);k++)
   {
     for (;curMax++;)
     {
@@ -227,7 +230,8 @@ void ProfileResultFileDOT::WriteResults(void)
     for (k=0;tMax.EnumProfile(k,id);k++)
     {
       const char *source=id.GetSource();
-      for (FoldHelper *cur=fold;cur;cur=cur->next)
+      FoldHelper * cur;
+      for (cur=fold;cur;cur=cur->next)
         if (!strcmp(source,cur->source))
         {
           if (cur->numId<MAX_FUNCTIONS_PER_FILE)
@@ -258,7 +262,8 @@ void ProfileResultFileDOT::WriteResults(void)
         for (unsigned i=0;idlist.Enum(i,caller);i++)
         {
           const char *s=caller.GetSource();
-          for (FoldHelper *cur2=fold;cur2;cur2=cur2->next)
+          FoldHelper * cur2;
+          for (cur2=fold;cur2;cur2=cur2->next)
             if (!strcmp(cur2->source,s))
               break;
           if (!cur2||cur2->mark)

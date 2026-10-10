@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 
 #include "GameClient/FXList.h"
 
@@ -797,7 +798,7 @@ void FXList::clear()
 	for (FXNuggetList::iterator it = m_nuggets.begin(); it != m_nuggets.end(); ++it)
 	{
 		if (*it)
-			(*it)->deleteInstance();
+			Platform::DeletePoolObject((*it));
 	}
 	m_nuggets.clear();
 }
@@ -848,7 +849,7 @@ FXListStore::~FXListStore()
 //-------------------------------------------------------------------------------------------------
 const FXList *FXListStore::findFXList(const char* name) const
 {
-	if (stricmp(name, "None") == 0)
+	if (Platform::CompareNoCase(name, "None") == 0)
 		return NULL;
 
   FXListMap::const_iterator it = m_fxmap.find(NAMEKEY(name));

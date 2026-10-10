@@ -40,6 +40,7 @@
  *   *ArgvClass::Get_Cur_Value -- Get value of current argugment.                              * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "argv.h"
+#include "Platform/StringCompare.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -122,7 +123,7 @@ const char *ArgvClass::Find_Again(const char *arg)
 			if (Is_Exact_Size()) {
 				// Note case sensitive, Exact Size.
 				for (; CurrentPos < Argc; CurrentPos++) {
-					if (!stricmp(arg, Argv[CurrentPos])) {
+					if (!Platform::CompareNoCase(arg, Argv[CurrentPos])) {
 						return Argv[CurrentPos];
 					}
 				}
@@ -130,7 +131,7 @@ const char *ArgvClass::Find_Again(const char *arg)
 				// Note case sensitive, Match first strlen(arg).
 				int len = strlen(arg);
 				for (; CurrentPos < Argc; CurrentPos++) {
-					if (!strnicmp(arg, Argv[CurrentPos], len)) {
+					if (!Platform::CompareNoCase(arg, Argv[CurrentPos], len)) {
 						return Argv[CurrentPos];
 					}
 				}

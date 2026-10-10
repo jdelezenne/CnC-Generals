@@ -29,13 +29,14 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Platform/DateTime.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
 
 #include "Common/STLTypedefs.h"
 
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/GameEngine.h"
 #include "Common/GameSpyMiscPreferences.h"
@@ -68,7 +69,6 @@
 
 #include "GameNetwork/GameSpyOverlay.h"
 
-#include "GameNetwork/WOLBrowser/WebBrowser.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -80,8 +80,6 @@
 Bool GameSpyUseProfiles = false;
 #endif // ALLOW_NON_PROFILED_LOGIN
 
-static Bool webBrowserActive = FALSE;
-static Bool useWebBrowserForTOS = FALSE;
 
 static Bool isShuttingDown = false;
 static Bool buttonPushed = false;
@@ -119,13 +117,13 @@ static AsciiString obfuscate( AsciiString in )
 {
 	char *buf = NEW char[in.getLength() + 1];
 	strcpy(buf, in.str());
-	static const char *xor = "1337Munkee";
+	static const char *xorMask = "1337Munkee";
 	char *c = buf;
-	const char *c2 = xor;
+	const char *c2 = xorMask;
 	while (*c)
 	{
 		if (!*c2)
-			c2 = xor;
+			c2 = xorMask;
 		if (*c != *c2)
 			*c = *c++ ^ *c2++;
 		else
@@ -721,14 +719,7 @@ void WOLLoginMenuShutdown( WindowLayout *layout, void *userData )
 	isShuttingDown = true;
 	loggedInOK = false;
 	TheWindowManager->clearTabList();
-	if (webBrowserActive)
-	{
-		if (TheWebBrowser != NULL)
-		{
-			TheWebBrowser->closeBrowserWindow(listboxTOS);
-		}
-		webBrowserActive = FALSE;
-	}
+
 
 	// if we are shutting down for an immediate pop, skip the animations
 	Bool popImmediate = *(Bool *)userData;
@@ -969,10 +960,7 @@ static Bool isAgeOkay(AsciiString &month, AsciiString &day, AsciiString year)
 	// test the year first
 	#define DATE_BUFFER_SIZE 256
 	char dateBuffer[ DATE_BUFFER_SIZE ];
-	GetDateFormat( LOCALE_SYSTEM_DEFAULT,
-								 0, NULL,
-								 "yyyy",
-								 dateBuffer, DATE_BUFFER_SIZE );
+	snprintf(dateBuffer, DATE_BUFFER_SIZE, "%u", Platform::LocalCalendarTime().year);
 	Int sysVal = atoi(dateBuffer);
 	Int userVal = atoi(year.str());
 	if(sysVal - userVal >= 14)
@@ -980,10 +968,7 @@ static Bool isAgeOkay(AsciiString &month, AsciiString &day, AsciiString year)
 	else if( sysVal - userVal <= 12)
 		return FALSE;
 
-	GetDateFormat( LOCALE_SYSTEM_DEFAULT,
-								 0, NULL,
-								 "MM",
-								 dateBuffer, DATE_BUFFER_SIZE );
+	snprintf(dateBuffer, DATE_BUFFER_SIZE, "%u", Platform::LocalCalendarTime().month);
 	sysVal = atoi(dateBuffer);
 	userVal = atoi(month.str());
 	if(sysVal - userVal >0 )
@@ -991,10 +976,7 @@ static Bool isAgeOkay(AsciiString &month, AsciiString &day, AsciiString year)
 	else if( sysVal -userVal < 0 )
 		return FALSE;
 //	month.format("%02.2d",userVal);
-	GetDateFormat( LOCALE_SYSTEM_DEFAULT,
-								 0, NULL,
-								 "dd",
-								 dateBuffer, DATE_BUFFER_SIZE );
+	snprintf(dateBuffer, DATE_BUFFER_SIZE, "%u", Platform::LocalCalendarTime().day);
 	sysVal = atoi(dateBuffer);
 	userVal = atoi(day.str());
 	if(sysVal - userVal< 0)
@@ -1420,61 +1402,52 @@ WindowMsgHandledType WOLLoginMenuSystem( GameWindow *window, UnsignedInt msg,
 				else if ( controlID == buttonTOSID )
 				{
 					parentTOS->winHide(FALSE);
-					useWebBrowserForTOS = FALSE;//loginPref->getBool("UseTOSBrowser", TRUE);
-					if (useWebBrowserForTOS && (TheWebBrowser != NULL))
+					// Load the localized Terms of Service text.
+					GadgetListBoxReset(listboxTOS);
+					AsciiString fileName;
+					fileName.format("Data\\%s\\TOS.txt", GetRegistryLanguage().str());
+					File *theFile = TheFileSystem->openFile(fileName.str(), File::READ);
+					if (theFile)
 					{
-						TheWebBrowser->createBrowserWindow("TermsOfService", listboxTOS);
-						webBrowserActive = TRUE;
-					}
-					else
-					{
-						// Okay, no web browser.  This means we're looking at a UTF-8 text file.
-						GadgetListBoxReset(listboxTOS);
-						AsciiString fileName;
-						fileName.format("Data\\%s\\TOS.txt", GetRegistryLanguage().str());
-						File *theFile = TheFileSystem->openFile(fileName.str(), File::READ);
-						if (theFile)
+						Int size = theFile->size();
+
+						char *fileBuf = new char[size];
+						Color tosColor = GameMakeColor(255, 255, 255, 255);
+
+						Int bytesRead = theFile->read(fileBuf, size);
+						if (bytesRead == size && size > 2)
 						{
-							Int size = theFile->size();
-
-							char *fileBuf = new char[size];
-							Color tosColor = GameMakeColor(255, 255, 255, 255);
-
-							Int bytesRead = theFile->read(fileBuf, size);
-							if (bytesRead == size && size > 2)
+							fileBuf[size-1] = 0; // just to be safe
+							AsciiString asciiBuf = fileBuf+2;
+							AsciiString asciiLine;
+							while (asciiBuf.nextToken(&asciiLine, "\r\n"))
 							{
-								fileBuf[size-1] = 0; // just to be safe
-								AsciiString asciiBuf = fileBuf+2;
-								AsciiString asciiLine;
-								while (asciiBuf.nextToken(&asciiLine, "\r\n"))
+								UnicodeString uniLine;
+								uniLine = UnicodeString(MultiByteToWideCharSingleLine(asciiLine.str()).c_str());
+								int len = uniLine.getLength();
+								for (int index = len-1; index >= 0; index--)
 								{
-									UnicodeString uniLine;
-									uniLine = UnicodeString(MultiByteToWideCharSingleLine(asciiLine.str()).c_str());
-									int len = uniLine.getLength();
-									for (int index = len-1; index >= 0; index--)
+									if (iswspace(uniLine.getCharAt(index)))
 									{
-										if (iswspace(uniLine.getCharAt(index)))
-										{
-											uniLine.removeLastChar();
-										}
-										else
-										{
-											break;
-										}
+										uniLine.removeLastChar();
 									}
-									//uniLine.trim();
-									DEBUG_LOG(("adding TOS line: [%ls]\n", uniLine.str()));
-									GadgetListBoxAddEntryText(listboxTOS, uniLine, tosColor, -1);
+									else
+									{
+										break;
+									}
 								}
-
+								//uniLine.trim();
+								DEBUG_LOG(("adding TOS line: [%ls]\n", uniLine.str()));
+								GadgetListBoxAddEntryText(listboxTOS, uniLine, tosColor, -1);
 							}
 
-							delete fileBuf;
-							fileBuf = NULL;
-
-							theFile->close();
-							theFile = NULL;
 						}
+
+						delete fileBuf;
+						fileBuf = NULL;
+
+						theFile->close();
+						theFile = NULL;
 					}
 					EnableLoginControls( FALSE );
 					buttonBack->winEnable(FALSE);
@@ -1485,18 +1458,11 @@ WindowMsgHandledType WOLLoginMenuSystem( GameWindow *window, UnsignedInt msg,
 					EnableLoginControls( TRUE );
 
 					parentTOS->winHide(TRUE);
-					if (useWebBrowserForTOS && (TheWebBrowser != NULL))
-					{
-						if (listboxTOS != NULL)
-						{
-							TheWebBrowser->closeBrowserWindow(listboxTOS);
-						}
-					}
+
 
 					OptionPreferences optionPref;
 					optionPref["SawTOS"] = "yes";
 					optionPref.write();
-					webBrowserActive = FALSE;
 					buttonBack->winEnable(TRUE);
 				}
 				break;

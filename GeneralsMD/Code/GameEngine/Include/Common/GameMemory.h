@@ -62,6 +62,7 @@
 
 // SYSTEM INCLUDES ////////////////////////////////////////////////////////////
 
+#include "Platform/PoolCleanup.h"
 #include "Platform/Allocation.h"
 #include <stdio.h>
 #ifdef MEMORYPOOL_OVERRIDE_MALLOC
@@ -777,7 +778,7 @@ public:
 	MemoryPoolObjectHolder(MemoryPoolObject *mpo = NULL) : m_mpo(mpo) { }
 	void hold(MemoryPoolObject *mpo) { DEBUG_ASSERTCRASH(!m_mpo, ("already holding")); m_mpo = mpo; }
 	void release() { m_mpo = NULL; }
-	~MemoryPoolObjectHolder() { m_mpo->deleteInstance(); }
+	~MemoryPoolObjectHolder() { Platform::DeletePoolObject(m_mpo); }
 };
 
 

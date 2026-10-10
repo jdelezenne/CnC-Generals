@@ -18,8 +18,9 @@
 
 // FILE: W3DSnow.h /////////////////////////////////////////////////////////
 
+#include "Platform/StringCompare.h"
 #include "W3DDevice/GameClient/W3DSnow.h"
-#include "W3DDevice/GameClient/heightmap.h"
+#include "W3DDevice/GameClient/HeightMap.h"
 #include "GameClient/View.h"
 #include "WW3D2/dx8wrapper.h"
 #include "WW3D2/rinfo.h"
@@ -147,7 +148,7 @@ void W3DSnowManager::updateIniSettings(void)
 	//Call base class
 	SnowManager::updateIniSettings();
 
-	if (m_snowTexture && stricmp(m_snowTexture->Get_Texture_Name(),TheWeatherSetting->m_snowTexture.str()) != 0)
+	if (m_snowTexture && Platform::CompareNoCase(m_snowTexture->Get_Texture_Name(),TheWeatherSetting->m_snowTexture.str()) != 0)
 	{	
 		REF_PTR_RELEASE(m_snowTexture);
 		m_snowTexture = WW3DAssetManager::Get_Instance()->Get_Texture(TheWeatherSetting->m_snowTexture.str());

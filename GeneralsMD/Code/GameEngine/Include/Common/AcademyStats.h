@@ -68,13 +68,7 @@ struct AcademyAdviceInfo
 	UnsignedInt numTips;
 };
 
-enum AcademyClassificationType
-{
-	//Don't forget to update the strings too!
-	ACT_NONE,
-	ACT_UPGRADE_RADAR,
-	ACT_SUPERPOWER,
-};
+#include "Common/AcademyClassificationType.h"
 extern const char *TheAcademyClassificationTypeNames[]; //Change above, change this!
 
 

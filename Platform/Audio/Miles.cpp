@@ -138,7 +138,7 @@ struct Decoder {
     }
     bool Seek(std::uint64_t frame)
     {
-        return IsWave ? drwav_seek_to_pcm_frame(&Wave, std::min(frame, Wave.totalPCMFrameCount)) != 0
+        return IsWave ? drwav_seek_to_pcm_frame(&Wave, std::min<std::uint64_t>(frame, Wave.totalPCMFrameCount)) != 0
                       : drmp3_seek_to_pcm_frame(&MP3, frame) != 0;
     }
     ~Decoder()
@@ -220,12 +220,16 @@ std::shared_ptr<AudioData> Decode(const void* image, size_t bytes)
     for (size_t i = 0; i < bytes; ++i) hash = (hash ^ source[i]) * 1099511628211ull;
     if (auto cached = Sounds[hash].lock()) return cached;
     auto data = std::make_shared<AudioData>();
+    drwav_uint64 waveFrames = 0;
     float* pcm = drwav_open_memory_and_read_pcm_frames_f32(image, bytes,
-        &data->Channels, &data->Rate, &data->Frames, nullptr);
+        &data->Channels, &data->Rate, &waveFrames, nullptr);
+    data->Frames = waveFrames;
     bool wave = pcm != nullptr;
     if (!pcm) {
         drmp3_config format{};
-        pcm = drmp3_open_memory_and_read_pcm_frames_f32(image, bytes, &format, &data->Frames, nullptr);
+        drmp3_uint64 mp3Frames = 0;
+        pcm = drmp3_open_memory_and_read_pcm_frames_f32(image, bytes, &format, &mp3Frames, nullptr);
+        data->Frames = mp3Frames;
         data->Channels = format.channels; data->Rate = format.sampleRate;
     }
     if (!pcm) { SetError("Cannot decode audio sample"); return {}; }

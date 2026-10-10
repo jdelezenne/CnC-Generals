@@ -41,8 +41,9 @@
 
 #include "wwmemlog.h"
 #include "wwdebug.h"
-#include "vector.h"
-#include <windows.h>
+#include "Vector.H"
+#include "Platform/System.h"
+#include "Platform/Synchronization.h"
 
 #if (STEVES_NEW_CATCHER || PARAM_EDITING_ON)
 	#define DISABLE_MEMLOG	1
@@ -215,7 +216,7 @@ static bool							_MemLogAllocated = false;
 void * Get_Mem_Log_Mutex(void)
 {
 	if (_MemLogMutex == NULL) {
-		_MemLogMutex=CreateMutex(NULL,false,NULL);
+		_MemLogMutex=Platform::CreateRecursiveMutex();
 		WWASSERT(_MemLogMutex);
 	}
 	return _MemLogMutex;
@@ -227,8 +228,8 @@ void Lock_Mem_Log_Mutex(void)
 #ifdef DEBUG_CRASHING
 	int res =
 #endif
-		WaitForSingleObject(mutex,INFINITE);
-	WWASSERT(res==WAIT_OBJECT_0);
+		(Platform::LockRecursiveMutex(mutex,-1) ? 0 : 1);
+	WWASSERT(res==0);
 	_MemLogLockCounter++;
 }
 
@@ -239,7 +240,7 @@ void Unlock_Mem_Log_Mutex(void)
 #ifdef DEBUG_CRASHING
 	int res=
 #endif
-		ReleaseMutex(mutex);
+		Platform::UnlockRecursiveMutex(mutex);
 	WWASSERT(res);
 }
 
@@ -276,7 +277,7 @@ ActiveCategoryStackClass::operator = (const ActiveCategoryStackClass & that)
 ***************************************************************************************************/
 ActiveCategoryStackClass & ActiveCategoryClass::Get_Active_Stack(void)
 {
-	int current_thread = ::GetCurrentThreadId();
+	int current_thread = Platform::CurrentThreadIdentifier();
 
 	/*
 	** If we already have an allocated category stack for the current thread,

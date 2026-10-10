@@ -45,6 +45,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 
+#include "Platform/System.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
@@ -290,7 +291,7 @@ void reallySaveReplay(void)
 		if(Platform::RemoveUserFile(filename.str()) == 0)
 		{
 			wchar_t buffer[1024];
-			FormatMessageW ( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
+			Platform::FormatSystemError(Platform::LastSystemError(), buffer, sizeof(buffer) / sizeof(buffer[0]));
 			UnicodeString errorStr;
 			errorStr.set(buffer);
 			errorStr.trim();
@@ -315,7 +316,7 @@ void reallySaveReplay(void)
 	if(Platform::CopyUserFile(oldFilename.str(),filename.str(), FALSE) == 0)
 	{
 		wchar_t buffer[1024];
-		FormatMessageW( FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, sizeof(buffer), NULL);
+		Platform::FormatSystemError(Platform::LastSystemError(), buffer, sizeof(buffer) / sizeof(buffer[0]));
 		UnicodeString errorStr;
 		errorStr.set(buffer);
 		errorStr.trim();

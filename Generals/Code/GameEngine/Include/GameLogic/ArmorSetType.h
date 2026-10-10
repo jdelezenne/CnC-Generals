@@ -1,0 +1,31 @@
+/*
+**	Command & Conquer Generals(tm)
+**	Copyright 2025 Electronic Arts Inc.
+**
+**	This program is free software: you can redistribute it and/or modify
+**	it under the terms of the GNU General Public License as published by
+**	the Free Software Foundation, either version 3 of the License, or
+**	(at your option) any later version.
+**
+**	This program is distributed in the hope that it will be useful,
+**	but WITHOUT ANY WARRANTY; without even the implied warranty of
+**	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**	GNU General Public License for more details.
+**
+**	You should have received a copy of the GNU General Public License
+**	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+enum ArmorSetType
+{
+	// The access and use of this enum has the bit shifting built in, so this is a 0,1,2,3,4,5 enum
+	ARMORSET_VETERAN		= 0,
+	ARMORSET_ELITE			= 1,
+	ARMORSET_HERO				= 2,
+	ARMORSET_PLAYER_UPGRADE = 3,
+	ARMORSET_WEAK_VERSUS_BASEDEFENSES = 4,
+
+	ARMORSET_COUNT			///< keep last, please
+};

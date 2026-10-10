@@ -113,14 +113,14 @@ class TempWeaponBonusHelper;
 class ObjectWeaponStatusHelper;
 class ObjectDefectionHelper;
 
-enum CommandSourceType;
+#include "Common/CommandSourceType.h"
 enum NameKeyType;
 enum SpecialPowerType;
-enum WeaponBonusConditionType;
+#include "GameLogic/WeaponBonusConditionType.h"
 enum WeaponChoiceCriteria;
 enum WeaponSetConditionType;
 enum WeaponSetType;
-enum ArmorSetType;
+#include "GameLogic/ArmorSetType.h"
 enum WeaponStatus;
 enum RadarPriorityType;
 enum CanAttackResult;

@@ -53,25 +53,27 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "Platform/Clock.h"
+#include "Platform/System.h"
 #include "dx8wrapper.h"
 #include "assetmgr.h"
 #include "Lib/BaseType.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "W3DDevice/GameClient/W3DShaderManager.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
 #include "W3DDevice/GameClient/HeightMap.h"
 #include "W3DDevice/GameClient/W3DCustomScene.h"
-#include "GameClient/view.h"
+#include "GameClient/View.h"
 #include "GameClient/CommandXlat.h"
-#include "GameClient/display.h"
+#include "GameClient/Display.h"
 #include "GameClient/Water.h"
 #include "GameLogic/GameLogic.h"
-#include "common/GlobalData.h"
-#include "common/GameLOD.h"
+#include "Common/GlobalData.h"
+#include "Common/GameLOD.h"
 #include "d3dx8tex.h"
 #include "dx8caps.h"
-#include "common/gamelod.h"
+#include "Common/GameLOD.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -2437,7 +2439,8 @@ void W3DShaderManager::shutdown(void)
 	m_currentShader = ST_INVALID;
 	m_currentFilter = FT_NULL_FILTER;
 	//release any assets associated with a shader (vertex/pixel shaders, textures, etc.)
-	for (Int i=0; i<W3DShaderManager::ST_MAX; i++) {
+	Int i;
+	for (i=0; i<W3DShaderManager::ST_MAX; i++) {
 		if (W3DShaders[i]) {
 			W3DShaders[i]->shutdown();
 		}
@@ -2668,7 +2671,7 @@ ChipsetType W3DShaderManager::getChipset( void )
 	{
 
 		D3DADAPTER_IDENTIFIER8 did;
-		::ZeroMemory(&did, sizeof(D3DADAPTER_IDENTIFIER8));
+		memset(&did, 0, sizeof(D3DADAPTER_IDENTIFIER8));
 	/*	HRESULT res = */ d3d8Interface->GetAdapterIdentifier(0,D3DENUM_NO_WHQL_LEVEL,&did);
 		
 		if(did.VendorId == DC_NVIDIA_VENDOR_ID)
@@ -2751,7 +2754,7 @@ HRESULT W3DShaderManager::LoadAndCreateD3DShader(char* strFilePath, const DWORD*
 		file = TheFileSystem->openFile(strFilePath, File::READ | File::BINARY);
 		if (file == NULL)
 		{
-			OutputDebugString("Could not find file \n" );
+			Platform::DebugMonitorOutput("Could not find file \n" );
 			return E_FAIL;
 		}
 
@@ -2762,7 +2765,7 @@ HRESULT W3DShaderManager::LoadAndCreateD3DShader(char* strFilePath, const DWORD*
 		const DWORD* pShader = (DWORD*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwFileSize);
 		if (!pShader)
 		{
-			OutputDebugString( "Failed to allocate memory to load shader\n " );
+			Platform::DebugMonitorOutput( "Failed to allocate memory to load shader\n " );
 			return E_FAIL;
 		}
 
@@ -2784,13 +2787,13 @@ HRESULT W3DShaderManager::LoadAndCreateD3DShader(char* strFilePath, const DWORD*
 
 		if (FAILED(hr))
 		{
-			OutputDebugString( "Failed to create shader\n "); 
+			Platform::DebugMonitorOutput( "Failed to create shader\n ");
 			return E_FAIL;
 		}
 	}
 	catch(...)
 	{
-		OutputDebugString( "Error opening file \n" );
+		Platform::DebugMonitorOutput( "Error opening file \n" );
 		return E_FAIL;
 	}
 
@@ -2876,8 +2879,8 @@ Real W3DShaderManager::GetCPUBenchTime(void)
     long int low, ixran, itot, j, iprod;
 
   	__int64 endTime64,freq64,startTime64;
-	QueryPerformanceFrequency((LARGE_INTEGER *)&freq64);
-	QueryPerformanceCounter((LARGE_INTEGER *)&startTime64);
+	freq64 = Platform::PerformanceFrequency();
+	startTime64 = Platform::PerformanceCounter();
 
     ztot = 0.0;
     low = 1;
@@ -2904,6 +2907,6 @@ Real W3DShaderManager::GetCPUBenchTime(void)
 	}
 	pi = 4.0 * (float)low/(float)itot;
 
-	QueryPerformanceCounter((LARGE_INTEGER *)&endTime64);
+	endTime64 = Platform::PerformanceCounter();
 	return ((double)(endTime64-startTime64)/(double)(freq64));
 }

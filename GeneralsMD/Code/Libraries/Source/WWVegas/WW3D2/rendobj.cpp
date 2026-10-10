@@ -73,6 +73,7 @@
 
 
 #include "rendobj.h"
+#include "Platform/StringCompare.h"
 #include "assetmgr.h"
 #include "_mono.h"
 #include "bsurface.h"
@@ -114,12 +115,12 @@ Filename_From_Asset_Name (const char *asset_name)
 		//
 		// Copy the model name into a new filename buffer
 		//
-		::lstrcpy (filename.Get_Buffer (::lstrlen (asset_name) + 5), asset_name);
+		::strcpy (filename.Get_Buffer (::strlen (asset_name) + 5), asset_name);
 		
 		//
 		// Do we need to strip off the model's suffix?
 		//
-		char *suffix = ::strchr (filename, '.');
+		char *suffix = ::strchr (filename.Peek_Buffer(), '.');
 		if (suffix != NULL) {
 			suffix[0] = 0;
 		}
@@ -532,7 +533,7 @@ RenderObjClass * RenderObjClass::Get_Sub_Object_By_Name(const char * name, int *
 	for (i=0; i<Get_Num_Sub_Objects(); i++) {
 		RenderObjClass * robj = Get_Sub_Object(i);
 		if (robj) {
-			if (stricmp(robj->Get_Name(),name) == 0) {
+			if (Platform::CompareNoCase(robj->Get_Name(),name) == 0) {
 				if (index) *index=i;
 				return robj;
 			} else {
@@ -553,7 +554,7 @@ RenderObjClass * RenderObjClass::Get_Sub_Object_By_Name(const char * name, int *
 				subobjname = subobjname+1;
 			}
 
-			if (stricmp(subobjname,name) == 0) {
+			if (Platform::CompareNoCase(subobjname,name) == 0) {
 				if (index) *index=i;
 				return robj;
 			} else {
@@ -1155,7 +1156,7 @@ void RenderObjClass::Add_Dependencies_To_List
 		const HTreeClass *phtree = Get_HTree ();
 		if (phtree != NULL) {
 			const char *htree_name = phtree->Get_Name ();
-			if (::lstrcmpi (htree_name, model_name) != 0) {
+			if (Platform::CompareNoCase (htree_name, model_name) != 0) {
 								
 				//
 				// Add this file to the list

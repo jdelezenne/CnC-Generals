@@ -33,6 +33,9 @@
 #define INTERNAL_H
 
 #include "../debug/debug.h"
+#include "Platform/System.h"
+#include "Platform/Clock.h"
+#include <atomic>
 #include <cstdint>
 #if defined(_M_X64)
 #include <intrin.h>
@@ -47,43 +50,17 @@ class ProfileFastCS
   ProfileFastCS(const ProfileFastCS&);
   ProfileFastCS& operator=(const ProfileFastCS&);
 
-	volatile unsigned m_Flag;
-  static HANDLE testEvent;
+	std::atomic<unsigned> m_Flag;
 
-	void ThreadSafeSetFlag()
-	{
-		volatile unsigned& nFlag=m_Flag;
+  void ThreadSafeSetFlag()
+  {
+    while (m_Flag.exchange(1, std::memory_order_acquire)) Platform::Delay(1);
+  }
 
-		#define ts_lock _emit 0xF0
-		DASSERT((reinterpret_cast<std::uintptr_t>(&nFlag) % 4) == 0);
-
-#if defined(_M_X64)
-        while (_interlockedbittestandset(reinterpret_cast<volatile long*>(&nFlag), 0))
-        {
-            if (testEvent) ::WaitForSingleObject(testEvent, 1);
-        }
-#else
-		__asm mov ebx, [nFlag]
-		__asm ts_lock
-		__asm bts dword ptr [ebx], 0
-		__asm jc The_Bit_Was_Previously_Set_So_Try_Again
-		return;
-
-	The_Bit_Was_Previously_Set_So_Try_Again:
-    // can't use SwitchToThread() here because Win9X doesn't have it!
-    if (testEvent)
-		  ::WaitForSingleObject(testEvent,1);
-		__asm mov ebx, [nFlag]
-		__asm ts_lock
-		__asm bts dword ptr [ebx], 0
-		__asm jc  The_Bit_Was_Previously_Set_So_Try_Again
-#endif
-	}
-
-	void ThreadSafeClearFlag()
-	{
-		m_Flag=0;
-	}
+  void ThreadSafeClearFlag()
+  {
+    m_Flag.store(0, std::memory_order_release);
+  }
 
 public:
 	ProfileFastCS(void):
@@ -120,7 +97,9 @@ void ProfileFreeMemory(void *ptr);
 
 __forceinline void ProfileGetTime(__int64 &t)
 {
-#if defined(_M_X64)
+#ifndef _WIN32
+  t = Platform::ProcessorTicks();
+#elif defined(_M_X64)
   t = __rdtsc();
 #else
   _asm

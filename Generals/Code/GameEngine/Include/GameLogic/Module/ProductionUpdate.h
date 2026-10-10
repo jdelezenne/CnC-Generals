@@ -33,6 +33,8 @@
 #define __PRODUCTIONUPDATE_H_
 
 // USER INCLUDES //////////////////////////////////////////////////////////////////////////////////
+#include "GameLogic/ProductionTypes.h"
+#include "Common/BuildResultTypes.h"
 #include "Common/ModelState.h"
 #include "GameLogic/Module/DieModule.h"
 #include "GameLogic/Module/UpdateModule.h"
@@ -43,17 +45,9 @@ class ThingTemplate;
 class UpgradeTemplate;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-enum ProductionID
-{
-	PRODUCTIONID_INVALID = 0
-};
 
-enum ProductionType
-{
-	PRODUCTION_INVALID = 0,
-	PRODUCTION_UNIT,
-	PRODUCTION_UPGRADE
-};
+
+
 
 //-------------------------------------------------------------------------------------------------
 /** A ProductionEntry is a single entry representing something that we are supposed to 

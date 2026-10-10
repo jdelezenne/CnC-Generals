@@ -37,9 +37,11 @@
 
 #define MAX_RIDERS 8 //***NOTE: If you change this, make sure you update the parsing section!
 
-enum WeaponSetType;
-enum ObjectStatusType;
-enum LocomotorSetType;
+#include "GameLogic/WeaponSetType.h"
+#include "Common/ObjectStatusTypes.h"
+// The original MSVC opaque enum has int representation and no definition.
+enum ObjectStatusType : int;
+#include "GameLogic/LocomotorSetType.h"
 
 struct RiderInfo
 {

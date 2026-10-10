@@ -222,16 +222,7 @@ extern const char *TheVeterancyNames[];
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-enum CommandSourceType 
-{ 
-
-	CMD_FROM_PLAYER = 0, 
-	CMD_FROM_SCRIPT, 
-	CMD_FROM_AI,
-	CMD_FROM_DOZER,							// Special rare command when the dozer originates a command to attack a mine. Mines are not ai-attackable, and it seems deceitful for the dozer to generate a player or script command. jba.
-	CMD_DEFAULT_SWITCH_WEAPON,	// Special case: A weapon that can be chosen -- this is the default case (machine gun vs flashbang).
-
-};		///< the source of a command
+#include "Common/CommandSourceType.h"		///< the source of a command
 
 //-------------------------------------------------------------------------------------------------
 enum AbleToAttackType

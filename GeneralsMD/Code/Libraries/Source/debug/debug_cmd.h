@@ -51,7 +51,7 @@
 class DebugCmdInterface
 {
   // no copy/assign op
-  DebugCmdInterface(const &DebugCmdInterface);
+  DebugCmdInterface(const int &DebugCmdInterface);
   DebugCmdInterface& operator=(const DebugCmdInterface&);
 
 protected:

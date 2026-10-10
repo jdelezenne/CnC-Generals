@@ -39,8 +39,9 @@
 #ifndef __W3DFILESYSTEM_H_
 #define __W3DFILESYSTEM_H_
 
-#include "WWLIB/ffactory.h"
-#include "Common/File.h"
+#include "WWLib/ffactory.h"
+#include "Platform/Paths.h"
+#include "Common/file.h"
 
 //-------------------------------------------------------------------------------------------------
 /** Game file access.  At present this allows us to access test assets, assets from
@@ -76,8 +77,8 @@ protected:
 
 	File					*m_theFile; /// < The file
 	Bool					m_fileExists;		///< TRUE if the file exists
-	char					m_filePath[_MAX_PATH];  ///< the file name *and* path (relative)
-	char					m_filename[_MAX_PATH];	///< The file name only
+	char					m_filePath[Platform::LegacyPathCapacity];  ///< the file name *and* path (relative)
+	char					m_filename[Platform::LegacyPathCapacity];	///< The file name only
 
 };
 

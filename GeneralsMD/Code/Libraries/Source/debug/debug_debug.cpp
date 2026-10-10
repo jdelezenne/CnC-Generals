@@ -26,6 +26,8 @@
 //
 // Debug class implementation
 //////////////////////////////////////////////////////////////////////////////
+#include "Platform/DateTime.h"
+#include "Platform/IntegerText.h"
 #include "_pch.h"
 #if defined(_M_X64)
 #include <intrin.h>
@@ -40,17 +42,8 @@
 extern "C" bool __DebugIncludeInLink1;
 bool __DebugIncludeInLink1;
 
-// This part is a little tricky (and not portable to other compilers).
-// MSVC initializes all static C++ variables by calling a list of 
-// function pointers contained in data segments called .CRT$XCA to
-// .CRT$XCZ. We jam in our own two functions at the very beginning
-// and end of this list (B and Y respectively since the A and Z segments
-// contain list delimiters).
-#pragma data_seg(".CRT$XCB")
-void *Debug::PreStatic=&Debug::PreStaticInit;
-#pragma data_seg(".CRT$XCY")
-void *Debug::PostStatic=&Debug::PostStaticInit;
-#pragma data_seg()
+void* Debug::PreStatic = NULL;
+void* Debug::PostStatic = NULL;
 
 Debug::LogDescription::LogDescription(const char *fileOrGroup, const char *description)
 {
@@ -58,15 +51,21 @@ Debug::LogDescription::LogDescription(const char *fileOrGroup, const char *descr
 }
 
 // our global Debug instance
+#ifdef _MSC_VER
+#pragma init_seg(lib)
+#endif
+#ifdef _WIN32
 Debug Debug::Instance;
+#else
+Debug Debug::Instance __attribute__((init_priority(101)));
+#endif
 
 // more class static members
 std::uintptr_t Debug::curStackFrame;
 
-// this constructor is empty on purpose because all construction
-// work is done in PreStaticInit (and some in PostStaticInit)
 Debug::Debug(void)
 {
+  PreStaticInit();
   // do not put any code in here (but it's good for keeping module global todo's)
   /// @todo what about frame based logging?
   /// @todo have new DLOG with category, add DWARN, DPERF, DERR etc. based on that,
@@ -106,7 +105,14 @@ void Debug::PreStaticInit(void)
   Instance.m_fillChar=' ';
   
   /// install exception handler
+  #ifdef _WIN32
   SetUnhandledExceptionFilter(DebugExceptionhandler::ExceptionFilter);
+#endif
+}
+
+void Debug::Initialize(void)
+{
+  PostStaticInit();
 }
 
 void Debug::PostStaticInit(void)
@@ -124,25 +130,26 @@ void Debug::PostStaticInit(void)
 
   /// exec dbgcmd file
   char ioBuffer[2048];
-  GetModuleFileName(NULL,ioBuffer,sizeof(ioBuffer));
-  char *q=strrchr(ioBuffer,'.');
-  if (q)
-    strcpy(q,".dbgcmd");
-  HANDLE h=CreateFile(ioBuffer,GENERIC_READ,0,NULL,OPEN_EXISTING,
-                      FILE_ATTRIBUTE_NORMAL,NULL);
-  if (h==INVALID_HANDLE_VALUE)
-    h=CreateFile("default.dbgcmd",GENERIC_READ,0,NULL,OPEN_EXISTING,
-                      FILE_ATTRIBUTE_NORMAL,NULL);
-  if (h!=INVALID_HANDLE_VALUE)
+  const std::string executable = Platform::ExecutablePath();
+  const auto separator = executable.find_last_of("/\\");
+  const auto extension = executable.find_last_of('.');
+  const auto stem = extension != std::string::npos &&
+      (separator == std::string::npos || extension > separator)
+      ? executable.substr(0, extension) : executable;
+  Platform::CopyString(ioBuffer, (stem + ".dbgcmd").c_str(), sizeof(ioBuffer));
+  void* h=Platform::OpenRawFile(Platform::ReadPath(ioBuffer).c_str(), Platform::FileMode::Read);
+  if (h==Platform::InvalidFileHandle())
+    h=Platform::OpenRawFile(Platform::ReadPath("default.dbgcmd").c_str(), Platform::FileMode::Read);
+  if (h!=Platform::InvalidFileHandle())
   {
     char cmdBuffer[512];
-    unsigned long ioCur=0,ioUsed=0,cmdCur=0;
-    ReadFile(h,ioBuffer,sizeof(ioBuffer),&ioUsed,NULL);
+    std::uint32_t ioCur=0,ioUsed=0,cmdCur=0;
+    Platform::ReadRawFile(h,ioBuffer,sizeof(ioBuffer),ioUsed);
     for (;;)
     {
       if (ioCur==ioUsed)
       {
-        ReadFile(h,ioBuffer,sizeof(ioBuffer),&ioUsed,NULL);
+        Platform::ReadRawFile(h,ioBuffer,sizeof(ioBuffer),ioUsed);
         ioCur=0;
       }
       if (ioCur==ioUsed||ioBuffer[ioCur]=='\n'||ioBuffer[ioCur]=='\r')
@@ -163,7 +170,7 @@ void Debug::PostStaticInit(void)
         ioCur++;
       }
     }
-    CloseHandle(h);
+    Platform::CloseRawFile(h);
   }
   else
   {
@@ -183,10 +190,11 @@ void Debug::PostStaticInit(void)
   }
 
   // check: are we using an old dbghelp.dll?
+  #ifdef _WIN32
   if (DebugStackwalk::IsOldDbghelp())
   {
     // give a serious hint
-    Instance.StartOutput(DebugIOInterface::Other,"");
+    Instance.StartOutput(DebugIOInterface::StringType::Other,"");
     Instance << RepeatChar('=',79) <<
       "\nYou are using an older version of the DBGHELP.DLL library.\n"
       "Please update to the newest available version in order to\n"
@@ -200,6 +208,7 @@ void Debug::PostStaticInit(void)
     // flush output only if there is already an active I/O class
     Instance.FlushOutput(false);
   }
+#endif
 }
 
 void Debug::StaticExit(void)
@@ -225,7 +234,7 @@ void Debug::StaticExit(void)
     }
 }
 
-Debug& Debug::operator<<(RepeatChar &c)
+Debug& Debug::operator<<(RepeatChar c)
 {
   if (c.m_count>=10)
   {
@@ -243,7 +252,7 @@ Debug::Format::Format(const char *format, ...)
 {
   va_list va;
   va_start(va,format);
-  _vsnprintf(m_buffer,sizeof(m_buffer)-1,format,va);
+  Platform::FormatBytes(m_buffer,sizeof(m_buffer)-1,format,va);
   va_end(va);
 }
 
@@ -252,6 +261,7 @@ Debug::~Debug()
   // again, do not put any code in here
 }
 
+#ifdef _WIN32
 static void LocalSETranslator(unsigned, struct _EXCEPTION_POINTERS *pExPtrs)
 {
   // simply call our regular exception handler
@@ -262,6 +272,7 @@ void Debug::InstallExceptionHandler(void)
 {
   _set_se_translator(LocalSETranslator);
 }
+#endif
 
 bool Debug::SkipNext(void)
 {
@@ -272,7 +283,9 @@ bool Debug::SkipNext(void)
 
   // do not implement this function inline, we do need
   // a valid frame pointer here!
-#if defined(_M_X64)
+#ifndef _WIN32
+  std::uintptr_t help = reinterpret_cast<std::uintptr_t>(__builtin_return_address(0));
+#elif defined(_M_X64)
   std::uintptr_t help = reinterpret_cast<std::uintptr_t>(_ReturnAddress());
 #else
   unsigned help;
@@ -373,27 +386,28 @@ bool Debug::AssertDone(void)
       /// @todo replace MessageBox with custom dialog w/ 4 options: abort, skip 1, skip all, break
 
       // now display message, wait for user input
-      int result=MessageBox(NULL,help,"Assertion failed",
-                            MB_ABORTRETRYIGNORE|MB_ICONSTOP|MB_TASKMODAL|MB_SETFOREGROUND);
+      auto result=Platform::ShowDialog(help,"Assertion failed",Platform::DialogButtons::AbortRetryIgnore,Platform::DialogIcon::Error,Platform::DialogResult::Abort,true);
       switch(result)
       {
-        case IDABORT:
+        case Platform::DialogResult::Abort:
           curFrameEntry=NULL;
           exit(1);
           break;
-        case IDIGNORE:
+        case Platform::DialogResult::Ignore:
           {
             // build 'pattern'
             char help[200];
             __ASSERT(strlen(curFrameEntry->fileOrGroup)<190);
-            wsprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
+            sprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
                                    curFrameEntry->line);
             AddPatternEntry(FrameTypeAssert,false,help);
             curFrameEntry->status=Skip;
           }
           break;
-        case IDRETRY:
-          #if defined(_M_X64)
+        case Platform::DialogResult::Retry:
+          #ifndef _WIN32
+          Platform::BreakDebugger();
+#elif defined(_M_X64)
           __debugbreak();
 #else
           _asm int 0x03
@@ -418,7 +432,7 @@ bool Debug::AssertDone(void)
         // build 'pattern'
         char help[200];
         __ASSERT(strlen(curFrameEntry->fileOrGroup)<190);
-        wsprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
+        sprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
                                curFrameEntry->line);
         AddPatternEntry(FrameTypeAssert,false,help);
 
@@ -502,7 +516,7 @@ bool Debug::CheckDone(void)
       // build 'pattern'
       char help[200];
       __ASSERT(strlen(curFrameEntry->fileOrGroup)<190);
-      wsprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
+      sprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
                              curFrameEntry->line);
       AddPatternEntry(FrameTypeCheck,false,help);
 
@@ -645,27 +659,28 @@ bool Debug::CrashDone(bool die)
         /// @todo replace MessageBox with custom dialog w/ 4 options: abort, skip 1, skip all, break
 
         // now display message, wait for user input
-        int result=MessageBox(NULL,help,"Crash hit",
-                              MB_ABORTRETRYIGNORE|MB_ICONSTOP|MB_TASKMODAL|MB_SETFOREGROUND);
+        auto result=Platform::ShowDialog(help,"Crash hit",Platform::DialogButtons::AbortRetryIgnore,Platform::DialogIcon::Error,Platform::DialogResult::Abort,true);
         switch(result)
         {
-          case IDABORT:
+          case Platform::DialogResult::Abort:
             curFrameEntry=NULL;
             exit(1);
             break;
-          case IDIGNORE:
+          case Platform::DialogResult::Ignore:
             {
               // build 'pattern'
               char help[200];
               __ASSERT(strlen(curFrameEntry->fileOrGroup)<190);
-              wsprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
+              sprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
                                      curFrameEntry->line);
               AddPatternEntry(FrameTypeAssert,false,help);
               curFrameEntry->status=Skip;
             }
             break;
-          case IDRETRY:
-            #if defined(_M_X64)
+          case Platform::DialogResult::Retry:
+            #ifndef _WIN32
+          Platform::BreakDebugger();
+#elif defined(_M_X64)
           __debugbreak();
 #else
           _asm int 0x03
@@ -690,7 +705,7 @@ bool Debug::CrashDone(bool die)
           // build 'pattern'
           char help[200];
           __ASSERT(strlen(curFrameEntry->fileOrGroup)<190);
-          wsprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
+          sprintf(help,"%s(%i)",curFrameEntry->fileOrGroup,
                                  curFrameEntry->line);
           AddPatternEntry(FrameTypeAssert,false,help);
 
@@ -701,10 +716,9 @@ bool Debug::CrashDone(bool die)
     else
 #endif
     {
-      MessageBox(NULL,help,"Game crash",
-                          MB_OK|MB_ICONSTOP|MB_TASKMODAL|MB_SETFOREGROUND);
+      Platform::ShowDialog(help,"Game crash",Platform::DialogButtons::OK,Platform::DialogIcon::Error,Platform::DialogResult::OK,true);
       curFrameEntry=NULL;
-      _exit(1);
+      std::_Exit(1);
     }
   }
 
@@ -756,7 +770,7 @@ Debug& Debug::operator<<(int val)
   // but in this case we know how long it can be at max...
   char help[1+32+1]; // sign, 32 digits (binary), NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _itoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(unsigned val)
@@ -766,7 +780,7 @@ Debug& Debug::operator<<(unsigned val)
   // but in this case we know how long it can be at max...
   char help[32+1]; // 32 digits, NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _ultoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(long val)
@@ -774,9 +788,9 @@ Debug& Debug::operator<<(long val)
   // usually having a fixed size buffer and a function
   // that doesn't check for buffer overflow isn't a good idea
   // but in this case we know how long it can be at max...
-  char help[1+32+1]; // sign, 32 digits, NUL
+  char help[1+sizeof(long)*8+1];
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _itoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(unsigned long val)
@@ -784,9 +798,9 @@ Debug& Debug::operator<<(unsigned long val)
   // usually having a fixed size buffer and a function
   // that doesn't check for buffer overflow isn't a good idea
   // but in this case we know how long it can be at max...
-  char help[32+1]; // 32 digits, NUL
+  char help[sizeof(unsigned long)*8+1];
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _ultoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(bool val)
@@ -798,7 +812,7 @@ Debug& Debug::operator<<(float val)
 {
   /// @todo_opt shouldn't use snprintf here - brings in most of the old C IO lib...
   char help[200];
-  _snprintf(help,sizeof(help),"%f",val);
+  Platform::PrintBytes(help,sizeof(help),"%f",val);
   return (*this) << help;
 }
 
@@ -806,7 +820,7 @@ Debug& Debug::operator<<(double val)
 {
   /// @todo_opt shouldn't use snprintf here - brings in most of the old C IO lib...
   char help[200];
-  _snprintf(help,sizeof(help),"%f",val);
+  Platform::PrintBytes(help,sizeof(help),"%f",val);
   return (*this) << help;
 }
 
@@ -817,7 +831,7 @@ Debug& Debug::operator<<(short val)
   // but in this case we know how long it can be at max...
   char help[1+16+1]; // sign, 16 digits, NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _itoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(unsigned short val)
@@ -827,7 +841,7 @@ Debug& Debug::operator<<(unsigned short val)
   // but in this case we know how long it can be at max...
   char help[16+1]; // 16 digits, NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _itoa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(__int64 val)
@@ -837,7 +851,7 @@ Debug& Debug::operator<<(__int64 val)
   // but in this case we know how long it can be at max...
   char help[1+64+1]; // sign, 64 digits, NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _i64toa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(unsigned __int64 val)
@@ -847,7 +861,7 @@ Debug& Debug::operator<<(unsigned __int64 val)
   // but in this case we know how long it can be at max...
   char help[64+1]; // sign, 64 digits, NUL
   AddOutput(m_prefix,strlen(m_prefix));
-  return (*this) << _ui64toa(val,help,m_radix);
+  return (*this) << Platform::IntegerTextValue(val,help,m_radix);
 }
 
 Debug& Debug::operator<<(const void *ptr)
@@ -856,7 +870,7 @@ Debug& Debug::operator<<(const void *ptr)
   if (ptr)
   {
     char help[2 * sizeof(void*) + 1];
-    (*this) << "0x" << _ui64toa(reinterpret_cast<std::uintptr_t>(ptr),help,16);
+    (*this) << "0x" << Platform::IntegerTextValue(reinterpret_cast<std::uintptr_t>(ptr),help,16);
   }
   else
     (*this) << "NULL";
@@ -893,7 +907,8 @@ Debug& Debug::operator<<(const MemDump &dump)
 
     // items
     const unsigned char *curByte=cur;
-    for (unsigned k=0;k<itemPerLine;k++,curByte+=dump.m_bytePerItem)
+    unsigned k;
+    for ( k=0;k<itemPerLine;k++,curByte+=dump.m_bytePerItem)
     {
       operator<<(" ");
 
@@ -902,7 +917,7 @@ Debug& Debug::operator<<(const MemDump &dump)
         for (unsigned l=dump.m_bytePerItem;l;--l)
           operator<<("  ");
       }
-      else if (IsBadReadPtr(curByte,dump.m_bytePerItem))
+      else if (!Platform::SystemMemoryReadable(curByte,dump.m_bytePerItem))
       {
         for (unsigned l=dump.m_bytePerItem;l;--l)
           operator<<("??");
@@ -927,7 +942,7 @@ Debug& Debug::operator<<(const MemDump &dump)
     {
       if (k+i>=dump.m_numItems)
         break;
-      else if (IsBadReadPtr(curByte,dump.m_bytePerItem))
+      else if (!Platform::SystemMemoryReadable(curByte,dump.m_bytePerItem))
       {
         for (unsigned l=dump.m_bytePerItem;l;--l)
           operator<<("?");
@@ -956,7 +971,7 @@ Debug& Debug::operator<<(HResult hres)
       return *this;
   (*this) << "HResult:0x";
   char help[9];
-  return (*this) << _ultoa(hres.m_hresult,help,16);
+  return (*this) << Platform::IntegerTextValue(static_cast<std::uint32_t>(hres.m_hresult),help,16);
 }
 
 bool Debug::IsLogEnabled(const char *fileOrGroup)
@@ -986,7 +1001,8 @@ void Debug::AddHResultTranslator(unsigned prio, HResultTranslator func, void *us
 
   // now find the right place to insert the translator
   // (slow but this function is not time critical)
-  for (unsigned k=0;k<Instance.numHrTranslators;++k)
+  unsigned k;
+  for ( k=0;k<Instance.numHrTranslators;++k)
     if (Instance.hrTranslators[k].prio<prio)
       break;
 
@@ -1197,7 +1213,7 @@ void Debug::UpdateFrameStatus(FrameHashEntry &entry)
   char help[512];
   if (entry.frameType==FrameTypeAssert||
       entry.frameType==FrameTypeCheck)
-    wsprintf(help,"%s(%i)",entry.fileOrGroup,entry.line);
+    sprintf(help,"%s(%i)",entry.fileOrGroup,entry.line);
   else
     strcpy(help,entry.fileOrGroup);
   
@@ -1235,7 +1251,8 @@ const char *Debug::AddLogGroup(const char *fileOrGroup, const char *descr)
   }
 
   // is that log group known?
-  for (KnownLogGroupList *cur=firstLogGroup;cur;cur=cur->next)
+  KnownLogGroupList * cur;
+  for (cur=firstLogGroup;cur;cur=cur->next)
   {
     if (!strcmp(cur->nameGroup,fileOrGroup))
     {
@@ -1264,7 +1281,7 @@ void Debug::StartOutput(DebugIOInterface::StringType type, const char *fmt, ...)
   // potentially dangerous (fixed string buffer...)
   va_list va;
   va_start(va,fmt);
-  wvsprintf(curSource,fmt,va);
+  Platform::FormatText(curSource,sizeof(curSource),fmt,va);
   va_end(va);
   __ASSERT(curSource[sizeof(curSource)-1]==0);
 }
@@ -1285,12 +1302,11 @@ void Debug::AddOutput(const char *str, unsigned remainingLen)
       // add timestamp now?
       if (ioBuffer[curType].lastWasCR)
       {
-        SYSTEMTIME systime;
-        GetLocalTime(&systime);
+        const auto systime = Platform::LocalCalendarTime();
 
         char ts[40];
-        wsprintf(ts,"[%02i:%02i.%02i.%03i] ",systime.wHour,systime.wMinute,
-                      systime.wSecond,systime.wMilliseconds);
+        sprintf(ts,"[%02i:%02i.%02i.%03i] ",systime.hour,systime.minute,
+                      systime.second,systime.milliseconds);
 
         unsigned tsLen=strlen(ts);
         memcpy(ioBuffer[curType].buffer+ioBuffer[curType].used,ts,tsLen+1);
@@ -1367,12 +1383,8 @@ void Debug::FlushOutput(bool defaultLog)
 #ifdef HAS_LOGS
     // then force output to a very simple default log file
     // (non-Release builds only)
-    HANDLE h=CreateFile(Platform::WritePath("default.log").c_str(),GENERIC_WRITE,0,NULL,
-                        OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
-    SetFilePointer(h,0,NULL,FILE_END);
-    DWORD dwDummy;
-    WriteFile(h,ioBuffer[curType].buffer,strlen(ioBuffer[curType].buffer),&dwDummy,NULL);
-    CloseHandle(h);
+    FILE* file = Platform::OpenStream("default.log", "ab");
+    if (file) { fputs(ioBuffer[curType].buffer,file); fclose(file); }
 #endif
   }
 
@@ -1602,6 +1614,7 @@ void Debug::ExecCommand(const char *cmdstart, const char *cmdend)
 }
 
 // little helper to get app window
+#ifdef _WIN32
 static BOOL CALLBACK EnumThreadWndProc(HWND hwnd, LPARAM lParam)
 {
   *(HWND *)lParam=hwnd;
@@ -1628,6 +1641,13 @@ bool Debug::IsWindowed(void)
   m_isWindowed=(GetWindowLong(appHWnd,GWL_STYLE)&WS_CAPTION)?1:-1;
   return m_isWindowed>0;
 }
+
+#else
+bool Debug::IsWindowed(void)
+{
+  return Platform::GameWindowIsWindowed();
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 

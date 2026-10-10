@@ -104,11 +104,11 @@ class ObjectRepulsorHelper;
 class ObjectWeaponStatusHelper;
 class ObjectDefectionHelper;
 
-enum CommandSourceType;
+#include "Common/CommandSourceType.h"
 enum DamageType;
 enum NameKeyType;
 enum SpecialPowerType;
-enum WeaponBonusConditionType;
+#include "GameLogic/WeaponBonusConditionType.h"
 enum WeaponChoiceCriteria;
 enum WeaponSetConditionType;
 enum WeaponSetType;

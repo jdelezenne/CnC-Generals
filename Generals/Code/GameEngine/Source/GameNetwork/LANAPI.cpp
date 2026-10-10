@@ -22,17 +22,19 @@
 //																																						//
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "Platform/Sockets.h"
+#include "Platform/System.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
 
 #define WIN32_LEAN_AND_MEAN  // only bare bones windows stuff wanted
 
-#include "Common/CRC.h"
+#include "Common/crc.h"
 #include "Common/GameState.h"
 #include "Common/Registry.h"
 #include "GameNetwork/LANAPI.h"
-#include "GameNetwork/NetworkUtil.h"
+#include "GameNetwork/networkutil.h"
 #include "Common/GlobalData.h"
 #include "Common/RandomValue.h"
 #include "GameClient/GameText.h"
@@ -120,21 +122,8 @@ void LANAPI::init( void )
 	
 	m_lastGameopt = "";
 
-	unsigned long bufSize = UNLEN + 1;
-	char userName[UNLEN + 1];
-	if (!GetUserName(userName, &bufSize))
-	{
-		strcpy(userName, "unknown");
-	}
-	m_userName = userName;
-
-	bufSize = MAX_COMPUTERNAME_LENGTH + 1;
-	char computerName[MAX_COMPUTERNAME_LENGTH + 1];
-	if (!GetComputerName(computerName, &bufSize))
-	{
-		strcpy(computerName, "unknown");
-	}
-	m_hostName = computerName;
+	m_userName = Platform::UserName().c_str();
+	m_hostName = Platform::HostName().c_str();
 }
 
 void LANAPI::reset( void )

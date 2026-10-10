@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 
 #define DEFINE_TIME_OF_DAY_NAMES
 
@@ -62,7 +63,7 @@ void INI::parseWaterSettingDefinition( INI* ini )
 	while( timeOfDayName && *timeOfDayName )
 	{
 
-		if( stricmp( *timeOfDayName, name.str() ) == 0 )
+		if( Platform::CompareNoCase( *timeOfDayName, name.str() ) == 0 )
 		{
 
 			waterSetting = &WaterSettings[ timeOfDayIndex ];

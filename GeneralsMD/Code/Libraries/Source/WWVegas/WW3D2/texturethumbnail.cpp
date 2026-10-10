@@ -17,18 +17,20 @@
 */
 
 #include "texturethumbnail.h"
+#include "Platform/StringCompare.h"
 #include "hashtemplate.h"
 #include "missingtexture.h"
-#include "targa.h"
+#include "TARGA.H"
 #include "ww3dformat.h"
 #include "ddsfile.h"
 #include "textureloader.h"
 #include "bitmaphandler.h"
 #include "ffactory.h"
-#include "rawfile.h"
+#include "RAWFILE.H"
 #include "mixfile.h"
 #include "wwprofile.h"
-#include <windows.h>
+#include "Platform/Directory.h"
+#include "Platform/Dialogs.h"
 
 static DLListClass<ThumbnailManagerClass> ThumbnailManagerList;
 static ThumbnailManagerClass* GlobalThumbnailManager;
@@ -41,9 +43,9 @@ static void Create_Hash_Name(StringClass& name, const StringClass& thumb_name)
 {
 	name=thumb_name;
 	int len=name.Get_Length();
-	WWASSERT(!stricmp(&name[len-4],".tga") || !stricmp(&name[len-4],".dds"));
+	WWASSERT(!Platform::CompareNoCase(&name[len-4],".tga") || !Platform::CompareNoCase(&name[len-4],".dds"));
 	name[len-4]='\0';
-	_strlwr(name.Peek_Buffer());
+	Platform::LowerCase(name.Peek_Buffer());
 }
 
 	/*	file_auto_ptr my_tga_file(_TheFileFactory,filename);
@@ -274,7 +276,7 @@ void ThumbnailManagerClass::Create_Thumbnails()
 		mix.Build_Filename_List(list);
 		for (int i=0;i<list.Count();++i) {
 			int len=list[i].Get_Length();
-			if (!stricmp(&list[i][len-4],".tga") || !stricmp(&list[i][len-4],".dds")) {
+			if (!Platform::CompareNoCase(&list[i][len-4],".tga") || !Platform::CompareNoCase(&list[i][len-4],".dds")) {
 				StringClass tex_name(list[i]);
 				if (!Peek_Thumbnail_Instance(tex_name)) {
 					new ThumbnailClass(this,tex_name);
@@ -534,7 +536,7 @@ void ThumbnailManagerClass::Add_Thumbnail_Manager(const char* thumbnail_filename
 	// so we'll do pure string compares here...
 
 	// Must NOT add global manager with this function
-	WWASSERT(stricmp(thumbnail_filename,GLOBAL_THUMBNAIL_MANAGER_FILENAME));
+	WWASSERT(Platform::CompareNoCase(thumbnail_filename,GLOBAL_THUMBNAIL_MANAGER_FILENAME));
 
 	ThumbnailManagerClass* man=Peek_Thumbnail_Manager(thumbnail_filename);
 	if (man) return;
@@ -685,13 +687,13 @@ void ThumbnailManagerClass::Update_Thumbnail_File(const char* mix_file_name,bool
 
 	if (display_message_box && !message_box_displayed) {
 		message_box_displayed=true;
-		::MessageBox(NULL,
+		Platform::ShowDialog(
 			"Some or all texture thumbnails need to be updated.\n"
 			"This will take a while. The update will only be done once\n"
 			"each time a mix file changes and thumb database hasn't been\n"
 			"updated.",
 			"Updating texture thumbnails",
-			MB_OK);
+			Platform::DialogButtons::OK, Platform::DialogIcon::None, Platform::DialogResult::OK, true);
 	}
 
 	// we don't currently have a thumbnail file (either we just deleted it or it never existed, we don't care)
@@ -717,26 +719,9 @@ void ThumbnailManagerClass::Pre_Init(bool display_message_box)
 	// Collect all mix file names
 	DynamicVectorClass<StringClass> mix_names;
 
-	char cur_dir[256];
-	GetCurrentDirectory(sizeof(cur_dir),cur_dir);
-	StringClass new_dir(cur_dir,true);
-	new_dir+="\\Data";
-	SetCurrentDirectory(new_dir);
-
-	WIN32_FIND_DATA find_data;
-	HANDLE handle=FindFirstFile("*.mix",&find_data);
-	if (handle!=INVALID_HANDLE_VALUE) {
-		for (;;) {
-			if (!(find_data.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)) {
-				mix_names.Add(find_data.cFileName);
-			}
-			if (!FindNextFile(handle,&find_data)) {
-				FindClose(handle);
-				break;
-			}
-		}
+	for (const auto& entry : Platform::ListFiles("Data", "*.mix")) {
+		mix_names.Add(entry.name.c_str());
 	}
-	SetCurrentDirectory(cur_dir);
 
 	// First generate thumbnails for always.dat
 	Update_Thumbnail_File("always.dat",display_message_box);

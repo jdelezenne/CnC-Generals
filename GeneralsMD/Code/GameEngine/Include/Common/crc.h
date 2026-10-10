@@ -32,7 +32,6 @@
 #define _CRC_H_
 
 #include "Lib/BaseType.h"
-#include "winsock2.h" // for htonl
 
 #ifdef _DEBUG
 
@@ -85,31 +84,9 @@ public:
     }
     */
 
-#if defined(_M_X64)
     const UnsignedByte* bytes = static_cast<const UnsignedByte*>(buf);
     for (Int i = 0; i < len; ++i)
       crc = (crc << 1) + (crc >> 31) + bytes[i];
-#else
-    // ASM version, verified by comparing resulting data with C++ version data
-    unsigned *crcPtr=&crc;
-    _asm
-    {
-      mov esi,[buf]
-      mov ecx,[len]
-      dec ecx
-      mov edi,[crcPtr]
-      mov ebx,dword ptr [edi]
-      xor eax,eax
-    lp:
-      mov al,byte ptr [esi]
-      shl ebx,1
-      inc esi
-      adc ebx,eax
-      dec ecx
-      jns lp
-      mov dword ptr [edi],ebx
-    };
-#endif
   }
 
   /// Clears the CRC to 0

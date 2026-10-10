@@ -55,7 +55,7 @@ const char *DebugExceptionhandler::GetExceptionType(struct _EXCEPTION_POINTERS *
   switch(exptr->ExceptionRecord->ExceptionCode)
   {
 		case EXCEPTION_ACCESS_VIOLATION:
-      wsprintf(explanation,
+      sprintf(explanation,
              "The thread tried to read from or write to a virtual\n"
              "address for which it does not have the appropriate access.\n"
              "Access address 0x%08x was %s.",
@@ -109,7 +109,7 @@ const char *DebugExceptionhandler::GetExceptionType(struct _EXCEPTION_POINTERS *
 		EX(STACK_OVERFLOW,"The thread used up its stack.")
     case 0xE06D7363: strcpy(explanation,"Microsoft C++ Exception"); return "EXCEPTION_MS";
     default:
-      wsprintf(explanation,"Unknown exception code 0x%08x",exptr->ExceptionRecord->ExceptionCode);
+      sprintf(explanation,"Unknown exception code 0x%08x",exptr->ExceptionRecord->ExceptionCode);
       return "EXCEPTION_UNKNOWN";
   }
 
@@ -403,7 +403,7 @@ LONG __stdcall DebugExceptionhandler::ExceptionFilter(struct _EXCEPTION_POINTERS
   {
     // almost everything we are about to do will generate a second
     // stack overflow... double fault... so give at least a little warning
-    OutputDebugString("EA/DEBUG: EXCEPTION_STACK_OVERFLOW\n");
+    Platform::DebugMonitorOutput("EA/DEBUG: EXCEPTION_STACK_OVERFLOW\n");
   }
 
   // Let's log some info

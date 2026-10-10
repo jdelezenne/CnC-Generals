@@ -37,23 +37,24 @@
 // MBL Update for CNC3 INCURSION - 10.23.2002 - Expanded param handling, Added STOP command
 //
 
-#include <string.h>	// stricmp()
+#include <string.h>	// Platform::CompareNoCase()
+#include "Platform/StringCompare.h"
 #include "animatedsoundmgr.h"
-#include "ini.h"
+#include "INI.H"
 #include "inisup.h"
 #include "ffactory.h"
-#include "wwfile.h"
+#include "WWFILE.H"
 #include <stdio.h>
 #include "definition.h"
 #include "definitionmgr.h"
 #include "definitionclassids.h"
-#include "wwaudio.h"
-#include "audiblesound.h"
+
+
 #include "htree.h"
 #include "hanim.h"
 #include "soundlibrarybridge.h"
 
-#include "WWDebug.h"
+#include "wwdebug.h"
 
 //////////////////////////////////////////////////////////////////////
 //	Static member initialization
@@ -114,7 +115,8 @@ Build_List_From_String
 		//
 		// Determine how many entries there will be in the list
 		//
-		for (const char *entry = buffer;
+		const char *entry;
+		for (entry = buffer;
 			  (entry != NULL) && (entry[1] != 0);
 			  entry = ::strstr (entry, delimiter))
 		{
@@ -122,7 +124,7 @@ Build_List_From_String
 			//
 			// Move past the current delimiter (if necessary)
 			//
-			if ((::strnicmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
+			if ((Platform::CompareNoCase(entry, delimiter, delim_len) == 0) && (count > 0)) {
 				entry += delim_len;
 			}
 
@@ -149,7 +151,7 @@ Build_List_From_String
 				//
 				// Move past the current delimiter (if necessary)
 				//
-				if ((::strnicmp (entry, delimiter, delim_len) == 0) && (count > 0)) {
+				if ((Platform::CompareNoCase(entry, delimiter, delim_len) == 0) && (count > 0)) {
 					entry += delim_len;
 				}
 
@@ -157,7 +159,7 @@ Build_List_From_String
 				// Copy this entry into its own string
 				//
 				StringClass entry_string = entry;
-				char *delim_start = ::strstr (entry_string, delimiter);				
+				char *delim_start = ::strstr (entry_string.Peek_Buffer(), delimiter);
 				if (delim_start != NULL) {
 					delim_start[0] = 0;
 				}
@@ -226,7 +228,7 @@ Is_In_Param_List
 			// OutputDebugString( param_to_check );
 			// OutputDebugString( "\n" );
 
-			// if ( stricmp( string.Peek_Buffer(), param_to_check ) == 0 ) // Breaks with whitespaces
+			// if ( Platform::CompareNoCase( string.Peek_Buffer(), param_to_check ) == 0 ) // Breaks with whitespaces
 			if ( strstr( string.Peek_Buffer(), param_to_check ) != 0 )
 			{
 			 	return( true );
@@ -280,7 +282,7 @@ AnimatedSoundMgrClass::Initialize (const char *ini_filename)
 			//	Get the animation name from the section name
 			//
 			StringClass animation_name = section->Section;
-			::strupr (animation_name.Peek_Buffer ());
+			Platform::UpperCase(animation_name.Peek_Buffer ());
 
 			// OutputDebugString( "MBL Section / animation: " );
 			// OutputDebugString( animation_name.Peek_Buffer()	);
@@ -468,7 +470,7 @@ AnimatedSoundMgrClass::Find_Sound_List (HAnimClass *anim)
 	//
 	//	Make the name uppercase
 	//
-	::strupr (full_name.Peek_Buffer ());
+	Platform::UpperCase(full_name.Peek_Buffer ());
 
 	//
 	//	Lookup the sound list for this animation

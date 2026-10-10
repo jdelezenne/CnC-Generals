@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "dx8fvf.h"
+#include "Platform/Paths.h"
 #include "dx8wrapper.h"
 #include "assetmgr.h"
 
@@ -123,15 +124,15 @@ bool ShdBumpSpecDefClass::Save(ChunkSaveClass &csave)
 		bool retval = true;
 	
 		// only save the file name
-		char fname[_MAX_PATH];
+		char fname[Platform::LegacyPathCapacity];
 
-		_splitpath(TextureName,NULL,NULL,fname,NULL);
+		strcpy(fname, Platform::FileStem(TextureName).c_str());
 		strcat(fname,".tga");
 		TextureName=fname;
 
 		WRITE_MICRO_CHUNK_WWSTRING(csave, VARID_TEXTURE_NAME, TextureName);
 
-		_splitpath(BumpMapName,NULL,NULL,fname,NULL);
+		strcpy(fname, Platform::FileStem(BumpMapName).c_str());
 		strcat(fname,".tga");
 		BumpMapName=fname;
 

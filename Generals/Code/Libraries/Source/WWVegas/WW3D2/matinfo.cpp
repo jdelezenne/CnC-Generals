@@ -36,6 +36,7 @@
 
 
 #include "matinfo.h"
+#include "Platform/StringCompare.h"
 #include "wwdebug.h"
 #include "meshmdl.h"
 #include "texture.h"
@@ -83,7 +84,7 @@ int MaterialInfoClass::Add_Texture(TextureClass * tex)
 int MaterialInfoClass::Get_Texture_Index(const char * name)
 {
 	for (int i=0; i<Textures.Count(); i++) {
-		if (stricmp(name,Textures[i]->Get_Texture_Name()) == 0) {
+		if (Platform::CompareNoCase(name,Textures[i]->Get_Texture_Name()) == 0) {
 			return i;
 		}
 	}

@@ -29,7 +29,10 @@
 //   the game application, it creates all the devices we will use for the game
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "Platform/Clock.h"
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include "Win32Device/Common/Win32GameEngine.h"
 #include "Common/PerfTimer.h"
 #include "Platform/Input.h"
@@ -43,7 +46,9 @@
 Win32GameEngine::Win32GameEngine()
 {
 	// Stop blue screen
+	#ifdef _WIN32
 	m_previousErrorMode = SetErrorMode( SEM_FAILCRITICALERRORS );
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -53,7 +58,9 @@ Win32GameEngine::~Win32GameEngine()
 {
 	// restore it (this isn't really necessary, but feels good.)
 	Platform::ShutdownInput();
+	#ifdef _WIN32
 	SetErrorMode( m_previousErrorMode );
+#endif
 }
 
 
@@ -93,7 +100,7 @@ void Win32GameEngine::update( void )
 		while (Platform::WindowMinimized()) {
 			// We are alt-tabbed out here.  Sleep a bit, & process windows
 			// so that we can become un-alt-tabbed out.
-			Sleep(5);
+			Platform::Delay(5);
 			serviceWindowsOS();
 
 			if (TheLAN != NULL) {

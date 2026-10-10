@@ -27,6 +27,7 @@
 // Author: Michael S. Booth, March 2001
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "Platform/TextFormat.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #define DEFINE_SHADOW_NAMES
@@ -552,7 +553,7 @@ Bool InGameUI::removeSuperweapon(Int playerIndex, const AsciiString& powerName, 
 			{
 				SuperweaponInfo *info = *listIt;
 				swList.erase(listIt);
-				info->deleteInstance();
+				Platform::DeletePoolObject(info);
 				if (swList.size() == 0)
 				{
 					m_superweapons[playerIndex].erase(mapIt);
@@ -692,7 +693,7 @@ void InGameUI::removeNamedTimer( const AsciiString& timerName )
 	if (mapIt != m_namedTimers.end())
 	{
 		TheDisplayStringManager->freeDisplayString( mapIt->second->displayString );
-		mapIt->second->deleteInstance();
+		Platform::DeletePoolObject(mapIt->second);
 		m_namedTimers.erase(mapIt);
 		return;
 	}
@@ -1833,7 +1834,7 @@ void InGameUI::reset( void )
 			for (SuperweaponList::iterator listIt = mapIt->second.begin(); listIt != mapIt->second.end(); ++listIt)
 			{
 				SuperweaponInfo *info = *listIt;
-				info->deleteInstance();
+				Platform::DeletePoolObject(info);
 			}
 			mapIt->second.clear();
 		}
@@ -1844,7 +1845,7 @@ void InGameUI::reset( void )
 	{
 		NamedTimerInfo *info = timerIt->second;
 		TheDisplayStringManager->freeDisplayString(info->displayString);
-		info->deleteInstance();
+		Platform::DeletePoolObject(info);
 	}
 	m_namedTimers.clear();
 	m_namedTimerLastFlashFrame = 0;
@@ -1927,7 +1928,7 @@ void InGameUI::message( AsciiString stringManagerLabel, ... )
 	va_list args;
   va_start( args, stringManagerLabel );
 	WideChar buf[ UnicodeString::MAX_FORMAT_BUF_LEN ];
-  if( _vsnwprintf(buf, sizeof( buf )/sizeof( WideChar ) - 1, stringManagerString.str(), args ) < 0 )
+  if( Platform::FormatText(buf, sizeof( buf )/sizeof( WideChar ) , stringManagerString.str(), args ) < 0 )
 			throw ERROR_OUT_OF_MEMORY;
 	formattedMessage.set( buf );
   va_end(args);
@@ -1949,7 +1950,7 @@ void InGameUI::message( UnicodeString format, ... )
 	va_list args;
   va_start( args, format );
 	WideChar buf[ UnicodeString::MAX_FORMAT_BUF_LEN ];
-  if( _vsnwprintf(buf, sizeof( buf )/sizeof( WideChar ) - 1, format.str(), args ) < 0 )
+  if( Platform::FormatText(buf, sizeof( buf )/sizeof( WideChar ) , format.str(), args ) < 0 )
 			throw ERROR_OUT_OF_MEMORY;
 	formattedMessage.set( buf );
   va_end(args);
@@ -1971,7 +1972,7 @@ void InGameUI::messageColor( const RGBColor *rgbColor, UnicodeString format, ...
 	va_list args;
   va_start( args, format );
 	WideChar buf[ UnicodeString::MAX_FORMAT_BUF_LEN ];
-  if( _vsnwprintf(buf, sizeof( buf )/sizeof( WideChar ) - 1, format.str(), args ) < 0 )
+  if( Platform::FormatText(buf, sizeof( buf )/sizeof( WideChar ) , format.str(), args ) < 0 )
 			throw ERROR_OUT_OF_MEMORY;
 	formattedMessage.set( buf );
   va_end(args);
@@ -4873,7 +4874,7 @@ void InGameUI::updateFloatingText( void )
 			if( a <= 0)
 			{
 				it = m_floatingTextList.erase(it);
-				ftd->deleteInstance();
+				Platform::DeletePoolObject(ftd);
 				continue; // don't do the ++it below
 			}
 
@@ -4935,7 +4936,7 @@ void InGameUI::clearFloatingText( void )
 	{
 		ftd = *it;
 		it = m_floatingTextList.erase(it);
-		ftd->deleteInstance();
+		Platform::DeletePoolObject(ftd);
 	}
 	
 }
@@ -5000,12 +5001,12 @@ void InGameUI::clearPopupMessageData( void )
 	if(m_popupMessageData->layout)
 	{
 		m_popupMessageData->layout->destroyWindows();
-		m_popupMessageData->layout->deleteInstance();
+		Platform::DeletePoolObject(m_popupMessageData->layout);
 		m_popupMessageData->layout = NULL;
 	}
 	if( m_popupMessageData->pause )
 		TheGameLogic->setGamePaused(FALSE, m_popupMessageData->pauseMusic);
-	m_popupMessageData->deleteInstance();
+	Platform::DeletePoolObject(m_popupMessageData);
 	m_popupMessageData = NULL;
 	
 }
@@ -5112,7 +5113,7 @@ void InGameUI::clearWorldAnimations( void )
 		{
 
 			// delete the animation instance
-			wad->m_anim->deleteInstance();
+			Platform::DeletePoolObject(wad->m_anim);
 
 			// delete the world animation data
 			delete wad;
@@ -5155,7 +5156,7 @@ void InGameUI::updateAndDrawWorldAnimations( void )
 			{
 
 				// delete this element and continue
-				wad->m_anim->deleteInstance();
+				Platform::DeletePoolObject(wad->m_anim);
 				delete wad;
 				it = m_worldAnimationList.erase( it );
 				continue;
@@ -5426,7 +5427,7 @@ void InGameUI::recreateControlBar( void )
 {
 	GameWindow *win = TheWindowManager->winGetWindowFromId(NULL, TheNameKeyGenerator->nameToKey(AsciiString("ControlBar.wnd")));
 	if(win)
-		win->deleteInstance();
+		Platform::DeletePoolObject(win);
 	
 	m_idleWorkerWin = NULL;	
 	

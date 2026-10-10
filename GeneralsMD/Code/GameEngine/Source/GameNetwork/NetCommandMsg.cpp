@@ -123,7 +123,7 @@ NetGameCommandMsg::~NetGameCommandMsg() {
 	GameMessageArgument *arg = m_argList;
 	while (arg != NULL) {
 		m_argList = m_argList->m_next;
-		arg->deleteInstance();
+		Platform::DeletePoolObject(arg);
 		arg = m_argList;
 	}
 }

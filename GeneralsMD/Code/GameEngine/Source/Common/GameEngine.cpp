@@ -43,7 +43,7 @@
 #include "Common/INIException.h"
 #include "Common/MessageStream.h"
 #include "Common/ThingFactory.h"
-#include "Common/File.h"
+#include "Common/file.h"
 #include "Common/FileSystem.h"
 #include "Common/ArchiveFileSystem.h"
 #include "Common/LocalFileSystem.h"
@@ -102,11 +102,10 @@
 #include "GameClient/GUICallbacks.h"
 
 #include "GameNetwork/NetworkInterface.h"
-#include "GameNetwork/WOLBrowser/WebBrowser.h"
 #include "GameNetwork/LANAPI.h"
 #include "GameNetwork/GameSpy/GameResultsThread.h"
 
-#include "Common/Version.h"
+#include "Common/version.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -168,8 +167,6 @@ void initSubsystem(SUBSYSTEM*& sysref, AsciiString name, SUBSYSTEM* sys, Xfer *p
 }
 
 //-------------------------------------------------------------------------------------------------
-extern HINSTANCE ApplicationHInstance;  ///< our application instance
-extern CComModule _Module;
 
 //-------------------------------------------------------------------------------------------------
 static void updateTGAtoDDS();
@@ -190,7 +187,6 @@ GameEngine::GameEngine( void )
 	m_quitting = FALSE;
 	m_isActive = FALSE;
 
-	_Module.Init(NULL, ApplicationHInstance);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -228,7 +224,6 @@ GameEngine::~GameEngine()
 
 	Drawable::killStaticImages();
 
-	_Module.Term();
 
 #ifdef PERF_TIMERS
 	PerfGather::termPerfDump();
@@ -518,7 +513,6 @@ void GameEngine::init( int argc, char *argv[] )
 
 
 		initSubsystem(TheActionManager,"TheActionManager", MSGNEW("GameEngineSubsystem") ActionManager(), NULL);
-		//initSubsystem((CComObject<WebBrowser> *)TheWebBrowser,"(CComObject<WebBrowser> *)TheWebBrowser", (CComObject<WebBrowser> *)createWebBrowser(), NULL);
 		initSubsystem(TheGameStateMap,"TheGameStateMap", MSGNEW("GameEngineSubsystem") GameStateMap, NULL, NULL, NULL );
 		initSubsystem(TheGameState,"TheGameState", MSGNEW("GameEngineSubsystem") GameState, NULL, NULL, NULL );
 
@@ -714,7 +708,7 @@ void GameEngine::reset( void )
 	if(background)
 	{
 		background->destroyWindows();
-		background->deleteInstance();
+		Platform::DeletePoolObject(background);
 		background = NULL;
 	}
 }
@@ -771,9 +765,9 @@ extern bool DX8Wrapper_IsWindowed;
 void GameEngine::execute( void )
 {
 	
-	DWORD prevTime = Platform::Milliseconds();
+	std::uint32_t prevTime = Platform::Milliseconds();
 #if defined(_DEBUG) || defined(_INTERNAL)
-	DWORD startTime = Platform::Milliseconds() / 1000;
+	std::uint32_t startTime = Platform::Milliseconds() / 1000;
 #endif
 
 	// pretty basic for now
@@ -848,7 +842,7 @@ void GameEngine::execute( void )
 		// I'm disabling this in internal because many people need alt-tab capability.  If you happen to be
 		// doing performance tuning, please just change this on your local system. -MDC
 		#if defined(_DEBUG) || defined(_INTERNAL)
-					::Sleep(1); // give everyone else a tiny time slice.
+					Platform::Delay(1); // give everyone else a tiny time slice.
 		#endif
 
 
@@ -859,11 +853,11 @@ void GameEngine::execute( void )
 		#endif
           {
             // limit the framerate
-					  DWORD now = Platform::Milliseconds();
-					  DWORD limit = (1000.0f/m_maxFPS)-1;
+					  std::uint32_t now = Platform::Milliseconds();
+					  std::uint32_t limit = (1000.0f/m_maxFPS)-1;
 					  while (TheGlobalData->m_useFpsLimit && (now - prevTime) < limit) 
 					  {
-						  ::Sleep(0);
+						  Platform::Delay(0);
 						  now = Platform::Milliseconds();
 					  }
 					  //Int slept = now - prevTime;
@@ -988,4 +982,8 @@ void updateTGAtoDDS()
 // If we're using the Wide character version of MessageBox, then there's no additional
 // processing necessary. Please note that this is a sleazy way to get this information,
 // but pending a better one, this'll have to do.
-extern const Bool TheSystemIsUnicode = (((void*) (::MessageBox)) == ((void*) (::MessageBoxW)));
+#ifdef UNICODE
+extern const Bool TheSystemIsUnicode = TRUE;
+#else
+extern const Bool TheSystemIsUnicode = FALSE;
+#endif

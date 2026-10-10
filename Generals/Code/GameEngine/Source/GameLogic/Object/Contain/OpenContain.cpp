@@ -31,6 +31,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Platform/IntegerText.h"
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
 
 #include "Common/BitFlagsIO.h"
@@ -850,7 +851,7 @@ void OpenContain::exitObjectViaDoor( Object *exitObj, ExitDoorType exitDoor )
 		if( numberExits > 1 )
 		{
 			char suffix[8];
-			itoa(m_whichExitPath, suffix, 10);
+			Platform::IntegerText(m_whichExitPath, suffix, 10);
 			if( m_whichExitPath < 10 )
 			{
 				startBone.concat('0');
@@ -969,7 +970,7 @@ void OpenContain::exitObjectInAHurry( Object *exitObj )
 		if( numberExits > 1 )
 		{
 			char suffix[8];
-			itoa(m_whichExitPath, suffix, 10);
+			Platform::IntegerText(m_whichExitPath, suffix, 10);
 			if( m_whichExitPath < 10 )
 			{
 				startBone.concat('0');
@@ -1148,7 +1149,7 @@ void OpenContain::putObjAtNextFirePoint( Object *obj )
 		// If our passengers are in our turret, we need to recompute the Matrix.
 		AsciiString firepoint("FIREPOINT");
 		char suffix[8];
-		itoa( m_firePointNext + 1, suffix, 10 );//+1 from bone names starting at 1, not zero like my array
+		Platform::IntegerText( m_firePointNext + 1, suffix, 10 );//+1 from bone names starting at 1, not zero like my array
 		if( m_firePointNext < 10 )
 		{
 			firepoint.concat('0');

@@ -38,7 +38,7 @@
 #include "Common/Thing.h"
 #include "Common/Geometry.h"
 #include "GameClient/Color.h"
-#include "WWMath/Matrix3D.h"
+#include "WWMath/matrix3d.h"
 #include "GameClient/DrawableInfo.h"
 
 // FORWARD REFERENCES /////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ class Shadow;
 class ModuleInfo;
 class Anim2DTemplate;
 class Image;
-enum BodyDamageType;
+#include "GameLogic/BodyDamageType.h"
 
 // this is a very worthwhile performance win. left conditionally defined for now, just 
 // in case, but probably should be made permanent soon. (srj)
@@ -211,17 +211,7 @@ private:
 EMPTY_DTOR(TintEnvelope)
 
 //-----------------------------------------------------------------------------
-enum StealthLookType
-{
-	STEALTHLOOK_NONE,								///< unit is not stealthed at all
-	STEALTHLOOK_VISIBLE_FRIENDLY,		///< unit is stealthed-but-visible due to friendly status
-	STEALTHLOOK_DISGUISED_ENEMY,		///< we can have units that are disguised (instead of invisible)
-	STEALTHLOOK_VISIBLE_DETECTED,		///< unit is stealthed and invisible, but a second material pass
-																						///< is added to reveal the invisible unit as with heat vision
-	STEALTHLOOK_VISIBLE_FRIENDLY_DETECTED,		///< unit is stealthed-but-visible due to being detected, 
-																						///< and rendered in heatvision effect second material pass
-	STEALTHLOOK_INVISIBLE						///< unit is stealthed-and-invisible
-};
+#include "GameClient/StealthLookType.h"
 
 // ------------------------------------------------------------------------------------------------
 /** Drawable status bits */

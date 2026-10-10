@@ -1,5 +1,5 @@
 /*
-**	Command & Conquer Generals(tm)
+**	Command & Conquer Renegade(tm)
 **	Copyright 2025 Electronic Arts Inc.
 **
 **	This program is free software: you can redistribute it and/or modify
@@ -22,13 +22,13 @@
  *                                                                                             *
  *                 Project Name : Commando / G Library                                         *
  *                                                                                             *
- *                     $Archive:: /Commando/Code/wwlib/registry.h                             $*
+ *                     $Archive:: /Commando/Code/wwlib/Settings.h                             $*
  *                                                                                             *
- *                      $Author:: Patrick                                                     $*
+ *                      $Author:: Steve_t                                                     $*
  *                                                                                             *
- *                     $Modtime:: 8/16/01 11:28a                                              $*
+ *                     $Modtime:: 11/21/01 3:42p                                              $*
  *                                                                                             *
- *                    $Revision:: 8                                                           $*
+ *                    $Revision:: 12                                                          $*
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -41,21 +41,24 @@
 #define REGISTRY_H
 
 #ifndef ALWAYS_H
-#include <cstdint>
 #include "always.h"
 #endif
 
-#include "vector.h"
+#include "Vector.H"
 #include "wwstring.h"
 #include "widestring.h"
+
+class INIClass;
 
 /*
 **
 */
 class	RegistryClass {
 public:
+	static bool Exists(const char* sub_key);
+
 	// Constructor & Destructor
-	RegistryClass( const char * sub_key );
+	RegistryClass( const char * sub_key, bool create = true );
 	~RegistryClass( void );
 
 	bool	Is_Valid( void )		{ return IsValid; }
@@ -94,9 +97,26 @@ public:
 	void	Delete_Value( const char * name);
 	void	Deleta_All_Values( void );
 
+	// Read only.
+	static void Set_Read_Only(bool set) {IsLocked = set;}
+
+	//
+	// Bulk settings operations. BE VERY VERY CAREFUL USING THESE
+	//
+	static void Delete_Registry_Tree(char *path);
+	static void Load_Registry(const char *filename, char *old_path, char *new_path);
+	static void Save_Registry(const char *filename, char *path);
+
+
 private:
-	std::intptr_t	Key;
+
+	StringClass Section;
 	bool	IsValid;
+
+	//
+	// Use this to make the settings 'read only'. Useful for running multiple copies of the app.
+	//
+	static bool IsLocked;
 };
 
 #endif // REGISTRY_H

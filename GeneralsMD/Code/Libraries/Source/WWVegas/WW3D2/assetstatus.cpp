@@ -17,9 +17,10 @@
 */
 
 #include "assetstatus.h"
+#include "Platform/StringCompare.h"
 #include "hashtemplate.h"
 #include "wwstring.h"
-#include "rawfile.h"
+#include "RAWFILE.H"
 
 AssetStatusClass AssetStatusClass::Instance;
 
@@ -76,7 +77,7 @@ AssetStatusClass::~AssetStatusClass()
 void AssetStatusClass::Add_To_Report(int index, const char* name)
 {
 	StringClass lower_case_name(name,true);
-	_strlwr(lower_case_name.Peek_Buffer());
+	Platform::LowerCase(lower_case_name.Peek_Buffer());
 	// This is a bit slow - two accesses to the same member, but currently there's no better way to do it.
 	int count=ReportHashTables[index].Get(lower_case_name);
 	count++;

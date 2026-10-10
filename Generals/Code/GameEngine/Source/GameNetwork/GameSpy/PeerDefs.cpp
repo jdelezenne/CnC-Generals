@@ -21,6 +21,7 @@
 // Author: Matthew D. Campbell, June 2002
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 #include "Platform/Clock.h"
 #include "Platform/Paths.h"
 #include <set>
@@ -60,7 +61,7 @@ void deleteNotificationBox( void );
 
 bool AsciiComparator::operator()(AsciiString s1, AsciiString s2) const
 {
-	return stricmp(s1.str(), s2.str()) < 0;
+	return Platform::CompareNoCase(s1.str(), s2.str()) < 0;
 }
 
 GameSpyInfo::GameSpyInfo()
@@ -359,7 +360,7 @@ void GameSpyInfo::addGroupRoom( GameSpyGroupRoom room )
 		groupLabel.format("GUI:%s", room.m_name.str());
 		room.m_translatedName = TheGameText->fetch(groupLabel);
 		m_groupRooms[room.m_groupID] = room;
-		if ( !stricmp("quickmatch", room.m_name.str()) )
+		if ( !Platform::CompareNoCase("quickmatch", room.m_name.str()) )
 		{
 			DEBUG_LOG(("Group room %d (%s) is the QuickMatch room\n", room.m_groupID, room.m_name.str()));
 			TheGameSpyConfig->setQMChannel(room.m_groupID);

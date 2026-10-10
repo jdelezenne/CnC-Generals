@@ -26,10 +26,12 @@
 //
 // Profile module main code
 //////////////////////////////////////////////////////////////////////////////
+#include <algorithm>
+#include "Platform/Memory.h"
 #include "_pch.h"
 #include "Platform/Clock.h"
 #include <new>
-#include "mmsystem.h"
+
 
 #pragma comment (lib,"winmm")
 
@@ -44,51 +46,29 @@ static bool __RegisterDebugCmdGroup_Profile=Debug::AddCommands("profile",&cmd);
 
 void *ProfileAllocMemory(unsigned numBytes)
 {
-  HGLOBAL h=GlobalAlloc(GMEM_FIXED,numBytes);
-  if (!h)
-    DCRASH_RELEASE("Debug mem alloc failed");
-  return (void *)h;
+  void* memory = Platform::AllocateSystemMemory(numBytes, false);
+  if (!memory) DCRASH_RELEASE("Diagnostic memory allocation failed");
+  return memory;
 }
 
 void *ProfileReAllocMemory(void *oldPtr, unsigned newSize)
 {
-  // Windows doesn't like ReAlloc with NULL handle/ptr...
-  if (!oldPtr)
-    return newSize?ProfileAllocMemory(newSize):0;
-
-  // Shrinking to 0 size is basically freeing memory
-  if (!newSize)
-  {
-    GlobalFree((HGLOBAL)oldPtr);
-    return 0;
-  }
-
-  // now try GlobalReAlloc first
-  HGLOBAL h=GlobalReAlloc((HGLOBAL)oldPtr,newSize,0);
-  if (!h)
-  {
-    // this failed (Windows doesn't like ReAlloc'ing larger
-    // fixed memory blocks) - go with Alloc/Free instead
-    h=GlobalAlloc(GMEM_FIXED,newSize);
-    if (!h)
-      DCRASH_RELEASE("Debug mem realloc failed");
-    unsigned oldSize=GlobalSize((HGLOBAL)oldPtr);
-    memcpy((void *)h,oldPtr,oldSize<newSize?oldSize:newSize);
-    GlobalFree((HGLOBAL)oldPtr);
-  }
-
-  return (void *)h;
+  if (!newSize) { Platform::FreeSystemMemory(oldPtr); return NULL; }
+  void* memory = ProfileAllocMemory(newSize);
+  if (oldPtr) memcpy(memory, oldPtr, std::min<std::size_t>(Platform::SystemMemorySize(oldPtr), newSize));
+  Platform::FreeSystemMemory(oldPtr);
+  return memory;
 }
 
 void ProfileFreeMemory(void *ptr)
 {
   if (ptr)
-    GlobalFree((HGLOBAL)ptr);
+    Platform::FreeSystemMemory(ptr);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-static _int64 GetClockCyclesFast(void)
+static __int64 GetClockCyclesFast(void)
 {
   // this is where we're adding our internal result functions
   Profile::AddResultFunction(ProfileResultFileCSV::Create,
@@ -102,7 +82,7 @@ static _int64 GetClockCyclesFast(void)
   
   // measure clock cycles 3 times for 20 msec each
   // then take the 2 counts that are closest, average
-  _int64 n[3];
+  __int64 n[3];
   for (int k=0;k<3;k++)
   {
     // wait for end of current tick
@@ -110,8 +90,8 @@ static _int64 GetClockCyclesFast(void)
     while (Platform::Milliseconds()<timeEnd);
 
     // get cycles
-    _int64 start,startQPC,endQPC;
-    QueryPerformanceCounter((LARGE_INTEGER *)&startQPC);
+    __int64 start,startQPC,endQPC;
+    (startQPC = Platform::PerformanceCounter(), true);
     ProfileGetTime(start);
     timeEnd+=20;
     while (Platform::Milliseconds()<timeEnd);
@@ -119,10 +99,10 @@ static _int64 GetClockCyclesFast(void)
     n[k]-=start;
 
     // convert to 1 second
-    if (QueryPerformanceCounter((LARGE_INTEGER *)&endQPC))
+    if ((endQPC = Platform::PerformanceCounter(), true))
     {
-      _int64 freq;
-      QueryPerformanceFrequency((LARGE_INTEGER *)&freq);
+      __int64 freq;
+      (freq = Platform::PerformanceFrequency(), true);
       n[k]=(n[k]*freq)/(endQPC-startQPC);
     }
     else
@@ -132,11 +112,11 @@ static _int64 GetClockCyclesFast(void)
   }
 
   // find two closest values
-  _int64 d01=n[1]-n[0],d02=n[2]-n[0],d12=n[2]-n[1];
+  __int64 d01=n[1]-n[0],d02=n[2]-n[0],d12=n[2]-n[1];
   if (d01<0) d01=-d01;
   if (d02<0) d02=-d02;
   if (d12<0) d12=-d12;
-  _int64 avg;
+  __int64 avg;
   if (d01<d02)
   {
     avg=d01<d12?n[0]+n[1]:n[1]+n[2];
@@ -155,7 +135,7 @@ unsigned Profile::m_rec;
 char **Profile::m_recNames;
 unsigned Profile::m_names;
 Profile::FrameName *Profile::m_frameNames;
-_int64 Profile::m_clockCycles=GetClockCyclesFast();
+__int64 Profile::m_clockCycles=GetClockCyclesFast();
 Profile::PatternListEntry *Profile::firstPatternEntry;
 Profile::PatternListEntry *Profile::lastPatternEntry;
 
@@ -166,7 +146,8 @@ void Profile::StartRange(const char *range)
     range="frame";
 
   // known name?
-  for (unsigned k=0;k<m_names;++k)
+  unsigned k;
+  for ( k=0;k<m_names;++k)
     if (!strcmp(range,m_frameNames[k].name))
       break;
   if (k==m_names)
@@ -220,7 +201,8 @@ void Profile::AppendRange(const char *range)
     range="frame";
 
   // known name?
-  for (unsigned k=0;k<m_names;++k)
+  unsigned k;
+  for ( k=0;k<m_names;++k)
     if (!strcmp(range,m_frameNames[k].name))
       break;
   if (k==m_names)
@@ -270,7 +252,8 @@ void Profile::StopRange(const char *range)
     range="frame";
 
   // known name?
-  for (unsigned k=0;k<m_names;++k)
+  unsigned k;
+  for ( k=0;k<m_names;++k)
     if (!strcmp(range,m_frameNames[k].name))
       break;
   DFAIL_IF(k==m_names) return;
@@ -294,7 +277,7 @@ void Profile::StopRange(const char *range)
       m_frameNames[k].lastGlobalIndex=m_rec;
       m_recNames=(char **)ProfileReAllocMemory(m_recNames,(m_rec+1)*sizeof(char *));
       m_recNames[m_rec]=(char *)ProfileAllocMemory(strlen(range)+1+6);
-      wsprintf(m_recNames[m_rec++],"%s:%i",range,++m_frameNames[k].frames);
+      sprintf(m_recNames[m_rec++],"%s:%i",range,++m_frameNames[k].frames);
     }
     else
       atIndex=m_frameNames[k].lastGlobalIndex;
@@ -333,7 +316,7 @@ void Profile::ClearTotals(void)
   ProfileId::ClearTotals();
 }
 
-_int64 Profile::GetClockCyclesPerSecond(void)
+__int64 Profile::GetClockCyclesPerSecond(void)
 {
   return m_clockCycles;
 }

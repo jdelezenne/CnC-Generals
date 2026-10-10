@@ -37,8 +37,9 @@
 #define _GAME_LOD_H_
 
 #include "Common/StaticGameLODLevel.h"
+#include "Common/HardwareTypes.h"
 
-enum ParticlePriorityType;
+#include "GameClient/ParticlePriorityType.h"
 
 #define MAX_LOD_PRESETS_PER_LEVEL	32	//number of hardware configs preset for each low,medium,high
 
@@ -56,34 +57,10 @@ enum DynamicGameLODLevel
 };
 
 //Make sure this stays in sync with CPUNames[] in gamelod.cpp
-enum CpuType
-{
-	XX,	//unknown type
-	P3,
-	P4,
-	K7,
-};
+
 
 //Keep this in sync with VideoNames in Gamelod.cpp
-enum ChipsetType
-{	DC_UNKNOWN,
-	DC_VOODOO2,
-	DC_VOODOO3,
-	DC_VOODOO4,
-	DC_VOODOO5,
-	DC_TNT,
-	DC_TNT2,
-	DC_GEFORCE2,
-	DC_RADEON,
-	DC_GENERIC_PIXEL_SHADER_1_1,
-	DC_GEFORCE3,
-	DC_GEFORCE4,
-	DC_GENERIC_PIXEL_SHADER_1_4,
-	DC_RADEON_8500,
-	DC_GENERIC_PIXEL_SHADER_2_0,
-	DC_RADEON_9700,
-	DC_MAX
-};
+
 
 struct StaticGameLODInfo
 {

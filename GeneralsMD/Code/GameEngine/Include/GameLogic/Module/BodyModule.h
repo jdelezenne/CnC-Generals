@@ -64,13 +64,7 @@ static const char* TheBodyDamageTypeNames[] =
 };
 #endif
 
-enum MaxHealthChangeType
-{
-	SAME_CURRENTHEALTH,
-	PRESERVE_RATIO,
-	ADD_CURRENT_HEALTH_TOO,
-	FULLY_HEAL,
-};
+#include "GameLogic/Module/MaxHealthChangeType.h"
 
 #ifdef DEFINE_MAXHEALTHCHANGETYPE_NAMES
 static const char* TheMaxHealthChangeTypeNames[] = 

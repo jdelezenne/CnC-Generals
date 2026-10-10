@@ -94,7 +94,7 @@ void DebugIONet::Execute(class Debug& dbg, const char *cmd, bool structuredCmd,
     const char *machine=argn?argv[0]:".";
 
     char buf[256];
-    wsprintf(buf,"\\\\%s\\pipe\\ea_debug_v1",machine);
+    sprintf(buf,"\\\\%s\\pipe\\ea_debug_v1",machine);
     m_pipe=CreateFile(buf,GENERIC_READ|GENERIC_WRITE, 
                       0,NULL,OPEN_EXISTING,0,NULL);
     if (m_pipe==INVALID_HANDLE_VALUE)
@@ -111,7 +111,7 @@ void DebugIONet::Execute(class Debug& dbg, const char *cmd, bool structuredCmd,
     char comp[128];
     mode=sizeof(comp);
     GetComputerName(comp,&mode);
-    wsprintf(buf,"Client at %s\n",comp);
+    sprintf(buf,"Client at %s\n",comp);
     Write(Other,NULL,buf);
   }
 }

@@ -29,6 +29,7 @@
 
 // INCLDUES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 
 #define DEFINE_BODYDAMAGETYPE_NAMES
 #include "Common/INI.h"
@@ -105,9 +106,9 @@ const FieldParse TerrainRoadType::m_terrainBridgeFieldParseTable[] =
 	// which transition is this
 	Bool damageTransition;
 	token = ini->getNextSubToken( "Transition" );
-	if( stricmp( token, "Damage" ) == 0 )
+	if( Platform::CompareNoCase( token, "Damage" ) == 0 )
 		damageTransition = TRUE;
-	else if( stricmp( token, "Repair" ) == 0 )
+	else if( Platform::CompareNoCase( token, "Repair" ) == 0 )
 		damageTransition = FALSE;
 	else
 	{
@@ -161,9 +162,9 @@ const FieldParse TerrainRoadType::m_terrainBridgeFieldParseTable[] =
 	// which transition is this
 	Bool damageTransition;
 	token = ini->getNextSubToken( "Transition" );
-	if( stricmp( token, "Damage" ) == 0 )
+	if( Platform::CompareNoCase( token, "Damage" ) == 0 )
 		damageTransition = TRUE;
-	else if( stricmp( token, "Repair" ) == 0 )
+	else if( Platform::CompareNoCase( token, "Repair" ) == 0 )
 		damageTransition = FALSE;
 	else
 	{
@@ -258,7 +259,7 @@ TerrainRoadCollection::~TerrainRoadCollection( void )
 		temp = m_roadList->friend_getNext();
 
 		// delete this road
-		m_roadList->deleteInstance();
+		Platform::DeletePoolObject(m_roadList);
 
 		// set the new head of the list
 		m_roadList = temp;
@@ -273,7 +274,7 @@ TerrainRoadCollection::~TerrainRoadCollection( void )
 		temp = m_bridgeList->friend_getNext();
 
 		// delete this bridge
-		m_bridgeList->deleteInstance();
+		Platform::DeletePoolObject(m_bridgeList);
 
 		// set the new head of the list
 		m_bridgeList = temp;

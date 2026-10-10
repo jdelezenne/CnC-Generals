@@ -34,26 +34,13 @@
 #include "WindowsApplication.h"
 #include "Common/Debug.h"
 #include "Common/StackDump.h"
-#include "GameClient/IMEManager.h"
+
 #include <crtdbg.h>
 #include <eh.h>
 
 HINSTANCE ApplicationHInstance = NULL;
 DWORD TheMessageTime = 0;
 
-static bool nativeWindowFeatures(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, LRESULT& result)
-{
-    if (TheIMEManager && TheIMEManager->serviceIMEMessage(hWnd, message, wParam, lParam)) {
-        result = TheIMEManager->result();
-        return true;
-    }
-    if (message == WM_SETCURSOR && TheWin32Mouse && (HWND)wParam == Platform::NativeGameWindow()) {
-        TheWin32Mouse->setCursor(TheWin32Mouse->getMouseCursor());
-        result = TRUE;
-        return true;
-    }
-    return false;
-}
 void InitializeNativeApplicationDiagnostics()
 {
     _set_se_translator(DumpExceptionInfo);
@@ -62,7 +49,6 @@ void InitializeNativeApplicationDiagnostics()
 void InitializeNativeWindowFeatures()
 {
     ApplicationHInstance = GetModuleHandleA(NULL);
-    Platform::SetNativeWindowMessageHandler(nativeWindowFeatures);
 }
 
 bool HandleNativeApplicationCommandLine(int argc, char* argv[])

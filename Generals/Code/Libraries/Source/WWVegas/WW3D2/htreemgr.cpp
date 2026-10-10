@@ -45,6 +45,7 @@
 
 
 #include "htreemgr.h"
+#include "Platform/StringCompare.h"
 #include <string.h>
 #include "htree.h"
 #include "chunkio.h"
@@ -67,7 +68,8 @@
 HTreeManagerClass::HTreeManagerClass(void) :
 	NumTrees(0)
 {
-	for (int treeidx=0; treeidx < MAX_TREES; treeidx++) {
+	int treeidx;
+	for (treeidx=0; treeidx < MAX_TREES; treeidx++) {
 		TreePtr[treeidx] = NULL;
 	}
 }
@@ -120,7 +122,8 @@ void HTreeManagerClass::Free(void)
  *=============================================================================================*/
 void HTreeManagerClass::Free_All_Trees(void)
 {
-	for (int treeidx=0; treeidx < MAX_TREES; treeidx++) {
+	int treeidx;
+	for (treeidx=0; treeidx < MAX_TREES; treeidx++) {
 		if (TreePtr[treeidx] != NULL) {
 			delete TreePtr[treeidx];
 			TreePtr[treeidx] = NULL;
@@ -147,7 +150,8 @@ void HTreeManagerClass::Free_All_Trees_With_Exclusion_List(const W3DExclusionLis
 	// or copying it to the new tail index if it is excluded.
 	int new_tail = 0;
 
-	for (int treeidx=0; treeidx < MAX_TREES; treeidx++) {
+	int treeidx;
+	for (treeidx=0; treeidx < MAX_TREES; treeidx++) {
 		if (TreePtr[treeidx] != NULL) {
 			
 			if (exclusion_list.Is_Excluded(TreePtr[treeidx])) {
@@ -230,7 +234,7 @@ Error:
 int HTreeManagerClass::Get_Tree_ID(const char * name)
 {
 	for (int i=0; i<NumTrees; i++) {
-		if (TreePtr[i] && (stricmp(name,TreePtr[i]->Get_Name()) == 0)) {
+		if (TreePtr[i] && (Platform::CompareNoCase(name,TreePtr[i]->Get_Name()) == 0)) {
 			return i;
 		}
 	}
@@ -277,7 +281,7 @@ char *HTreeManagerClass::Get_Tree_Name(const int idx)
 HTreeClass * HTreeManagerClass::Get_Tree(const char * name)
 {
 	for (int i=0; i<NumTrees; i++) {
-		if (TreePtr[i] && (stricmp(name,TreePtr[i]->Get_Name()) == 0)) {
+		if (TreePtr[i] && (Platform::CompareNoCase(name,TreePtr[i]->Get_Name()) == 0)) {
 
 			return TreePtr[i];
 		}

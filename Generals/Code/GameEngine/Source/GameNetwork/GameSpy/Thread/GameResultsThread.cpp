@@ -27,8 +27,9 @@
 // Author: Matthew D. Campbell, August 2002
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/TextFormat.h"
 
-#include <winsock.h>	// This one has to be here. Prevents collisions with winsock2.h
+#include "Platform/Sockets.h"	// This one has to be here. Prevents collisions with winsock2.h
 
 #include "GameNetwork/GameSpy/GameResultsThread.h"
 #include "mutex.h"
@@ -211,7 +212,7 @@ Bool GameResultsQueue::areGameResultsBeingSent( void )
 
 //-------------------------------------------------------------------------
 // Wrap ladder results in HTTP POST
-static WrapHTTP( const std::string& hostname, std::string& results )
+static void WrapHTTP( const std::string& hostname, std::string& results )
 {
 	const char HEADER[] =
 		"PUT / HTTP/1.1\r\n"
@@ -221,7 +222,7 @@ static WrapHTTP( const std::string& hostname, std::string& results )
 		"\r\n";
 
 	char szHdr[256] = {0};
-	_snprintf( szHdr, 255, HEADER, hostname.c_str(), results.length() );
+	Platform::PrintBytes( szHdr, 255, HEADER, hostname.c_str(), results.length() );
 	results = szHdr + results;
 } //WrapHTTP
 
@@ -231,14 +232,12 @@ static WrapHTTP( const std::string& hostname, std::string& results )
 void GameResultsThreadClass::Thread_Function()
 {
 	try {
-	_set_se_translator( DumpExceptionInfo ); // Hook that allows stack trace.
+	#ifdef _WIN32
+	_set_se_translator( DumpExceptionInfo );
+#endif
 	GameResultsRequest req;
 
-	WSADATA wsaData;
-
-	// Fire up winsock (prob already done, but doesn't matter)
-	WORD wVersionRequested = MAKEWORD(1, 1);
-	WSAStartup( wVersionRequested, &wsaData );
+	Platform::InitializeSockets();
 
 	while ( running )
 	{
@@ -257,7 +256,7 @@ void GameResultsThreadClass::Thread_Function()
 			}
 			else
 			{
-				HOSTENT *hostStruct;
+				hostent *hostStruct;
 				in_addr *hostNode;
 				hostStruct = gethostbyname(hostnameBuffer);
 				if (hostStruct == NULL)
@@ -268,9 +267,11 @@ void GameResultsThreadClass::Thread_Function()
 					//   callback.
 					IP = 0xFFFFFFFF;   // flag for IP resolve failed
 				}
-				hostNode = (in_addr *) hostStruct->h_addr;
-				IP = hostNode->s_addr;
-				DEBUG_LOG(("sending game results to %s IP = %s\n", hostnameBuffer, inet_ntoa(*hostNode) ));
+				if (hostStruct) {
+					hostNode = (in_addr *) hostStruct->h_addr;
+					IP = hostNode->s_addr;
+					DEBUG_LOG(("sending game results to %s IP = %s\n", hostnameBuffer, inet_ntoa(*hostNode) ));
+				}
 			}
 
 			int result = sendGameResults( IP, req.port, req.results );
@@ -285,7 +286,7 @@ void GameResultsThreadClass::Thread_Function()
 		Switch_Thread();
 	}
 
-	WSACleanup();
+	Platform::ShutdownSockets();
 	} catch ( ... ) {
 		DEBUG_CRASH(("Exception in results thread!"));
 	}
@@ -293,6 +294,7 @@ void GameResultsThreadClass::Thread_Function()
 
 //-------------------------------------------------------------------------
 
+#ifdef _WIN32
 #define CASE(x) case (x): return #x;
 
 static const char *getWSAErrorString( Int error )
@@ -357,6 +359,10 @@ static const char *getWSAErrorString( Int error )
 }
 
 #undef CASE
+#else
+static const char* getWSAErrorString(Int error) { return strerror(error); }
+#endif
+
 
 //-------------------------------------------------------------------------
 
@@ -382,29 +388,29 @@ Int GameResultsThreadClass::sendGameResults( UnsignedInt IP, UnsignedShort port,
 	// Start the connection process....
 	if( connect( sock, (struct sockaddr *)&sockAddr, sizeof( sockAddr ) ) == -1 )
 	{
-		error = WSAGetLastError();
+		error = Platform::LastSocketError();
 		DEBUG_LOG(("GameResultsThreadClass::sendGameResults() - connect() returned %d(%s)\n", error, getWSAErrorString(error)));
-		if( ( error == WSAEWOULDBLOCK ) || ( error == WSAEINVAL ) || ( error == WSAEALREADY ) )
+		if( Platform::SocketConnectionPending(error) )
 		{
 			return( -1 );
 		}
 
-		if( error != WSAEISCONN )
+		if( !Platform::SocketAlreadyConnected(error) )
 		{
-			closesocket( sock );
+			Platform::CloseSocket( sock );
 			return( -1 );
 		}
 	}
 
-	if (send( sock, results.c_str(), results.length(), 0 ) == SOCKET_ERROR)
+	if (send( sock, results.c_str(), results.length(), 0 ) == -1)
 	{
-		error = WSAGetLastError();
+		error = Platform::LastSocketError();
 		DEBUG_LOG(("GameResultsThreadClass::sendGameResults() - send() returned %d(%s)\n", error, getWSAErrorString(error)));
-		closesocket(sock);
-		return WSAGetLastError();
+		Platform::CloseSocket(sock);
+		return Platform::LastSocketError();
 	}
 
-	closesocket(sock);
+	Platform::CloseSocket(sock);
 
 	return results.length();
 }

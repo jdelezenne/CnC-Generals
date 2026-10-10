@@ -29,6 +29,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/StringCompare.h"
 
 #include "Common/INI.h"
 #include "Common/MessageStream.h"
@@ -575,7 +576,7 @@ MetaMap::~MetaMap()
 	while (m_metaMaps)
 	{
 		MetaMapRec *next = m_metaMaps->m_next;
-		m_metaMaps->deleteInstance();
+		Platform::DeletePoolObject(m_metaMaps);
 		m_metaMaps = next;
 	}
 }
@@ -584,7 +585,7 @@ MetaMap::~MetaMap()
 GameMessage::Type MetaMap::findGameMessageMetaType(const char* name)
 {
 	for (const LookupListRec* metaNames = GameMessageMetaTypeNames; metaNames->name; metaNames++)
-		if (stricmp(metaNames->name, name) == 0)
+		if (Platform::CompareNoCase(metaNames->name, name) == 0)
 			return (GameMessage::Type)metaNames->value;
 
 	DEBUG_CRASH(("MetaTypeName %s not found -- did you remember to add it to GameMessageMetaTypeNames[] ?", name));

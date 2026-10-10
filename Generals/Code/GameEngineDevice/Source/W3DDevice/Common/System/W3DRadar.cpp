@@ -51,8 +51,8 @@
 #include "W3DDevice/Common/W3DRadar.h"
 #include "W3DDevice/GameClient/HeightMap.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
-#include "WW3D2/Texture.h"
-#include "WW3D2/DX8Caps.h"
+#include "WW3D2/texture.h"
+#include "WW3D2/dx8caps.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -147,7 +147,7 @@ void W3DRadar::deleteResources( void )
 		m_terrainTexture->Release_Ref();
 	m_terrainTexture = NULL;
 	if( m_terrainImage )
-		m_terrainImage->deleteInstance();
+		Platform::DeletePoolObject(m_terrainImage);
 	m_terrainImage = NULL;
 
 	//
@@ -157,7 +157,7 @@ void W3DRadar::deleteResources( void )
 		m_overlayTexture->Release_Ref();
 	m_overlayTexture = NULL;
 	if( m_overlayImage )
-		m_overlayImage->deleteInstance();
+		Platform::DeletePoolObject(m_overlayImage);
 	m_overlayImage = NULL;
 
 	//
@@ -167,7 +167,7 @@ void W3DRadar::deleteResources( void )
 		m_shroudTexture->Release_Ref();
 	m_shroudTexture = NULL;
 	if( m_shroudImage )
-		m_shroudImage->deleteInstance();
+		Platform::DeletePoolObject(m_shroudImage);
 	m_shroudImage = NULL;
 
 }  // end deleteResources

@@ -52,7 +52,7 @@ class ThingTemplate;
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
 
-typedef BitFlags<DAMAGE_NUM_TYPES> DamageTypeFlags;
+#include "GameLogic/DamageTypeFlags.h"
 
 inline Bool getDamageTypeFlag(DamageTypeFlags flags, DamageType dt)
 {

@@ -41,7 +41,7 @@ class SpecialPowerModule;
 class ParticleSystem;
 class FXList;
 class AudioEventRTS;
-enum ParticleSystemID;
+#include "GameClient/ParticleSystemID.h"
 
 //#define MAX_OUTER_NODES 16
 //#define TRACKERS 

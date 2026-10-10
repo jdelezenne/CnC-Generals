@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "Platform/DateTime.h"
 #include "Common/MessageStream.h"
 #include "GameNetwork/GameInfo.h"
 
@@ -88,7 +89,7 @@ public:
 		AsciiString filename;
 		Bool forPlayback;
 		UnicodeString replayName;
-		SYSTEMTIME timeVal;
+		Platform::CalendarTime timeVal;
 		UnicodeString versionString;
 		UnicodeString versionTimeString;
 		UnsignedInt versionNumber;

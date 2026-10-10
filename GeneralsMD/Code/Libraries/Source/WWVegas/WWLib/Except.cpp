@@ -54,9 +54,9 @@
 #include <windows.h>
 #include	"assert.h"
 #include "cpudetect.h"
-#include	"except.h"
+#include	"Except.h"
 //#include "debug.h"
-#include "mpu.h"
+#include "MPU.H"
 //#include "commando\nat.h"
 #include "thread.h"
 #include "wwdebug.h"
@@ -402,7 +402,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 			_SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
 		}
 
-		char module_name[_MAX_PATH];
+		char module_name[Platform::LegacyPathCapacity];
 		GetModuleFileName(NULL, module_name, sizeof(module_name));
 
 		if (_SymLoadModule != NULL) {
@@ -1167,7 +1167,7 @@ void Load_Image_Helper(void)
 				_SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
 			}
 
-			char exe_name[_MAX_PATH];
+			char exe_name[Platform::LegacyPathCapacity];
 			GetModuleFileName(NULL, exe_name, sizeof(exe_name));
 
 			if (_SymLoadModule != NULL) {

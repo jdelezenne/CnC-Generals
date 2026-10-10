@@ -61,7 +61,7 @@
 #include	<assert.h>
 #include	<stdlib.h>
 #include <string.h>
-#include <new.h>
+#include "Platform/Allocation.h"
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4702) // unreachable code, happens with some uses of these templates
@@ -486,7 +486,13 @@ bool VectorClass<T>::Resize(int newsize, T const * array)
 template<class T>
 class DynamicVectorClass : public VectorClass<T>
 {
+protected:
+	using VectorClass<T>::VectorMax;
+	using VectorClass<T>::IsAllocated;
+	using VectorClass<T>::Vector;
+	using VectorClass<T>::IsValid;
 	public:
+		using VectorClass<T>::Length;
 		DynamicVectorClass(unsigned size=0, T const * array=0);
 
 		// Stubbed equality operators so you can have dynamic vectors of dynamic vectors

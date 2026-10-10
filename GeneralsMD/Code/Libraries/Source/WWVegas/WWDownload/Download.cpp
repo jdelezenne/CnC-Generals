@@ -18,11 +18,15 @@
 
 // Download.cpp : Implementation of CDownload
 #include "DownloadDebug.h"
+#include "Platform/StringCompare.h"
 #include "Platform/Clock.h"
-#include "download.h"
-#include <mmsystem.h>
+#include "Platform/Paths.h"
+#include "Platform/FileSystem.h"
+#include "Platform/IntegerMath.h"
+#include "Download.h"
+
 #include <assert.h>
-#include <direct.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -67,7 +71,7 @@ HRESULT CDownload::DownloadFile(LPCSTR server, LPCSTR username, LPCSTR password,
 	}
 
 	// Make sure we have a download directory
-	_mkdir("download");
+	Platform::CreateUserDirectory("download");
 
 	// Copy parameters to member variables.
 	strncpy( m_Server, server, sizeof( m_Server ) );
@@ -277,10 +281,10 @@ HRESULT CDownload::PumpMessages()
 			//   never ever change so this is not a concern.
 			//
 			// We identify patches because they are written into the patches folder.
-			struct _stat statdata;
-			if (	(_stat(m_LocalFile, &statdata) == 0) && 
-					(statdata.st_size == m_FileSize) && 
-					(_strnicmp(m_LocalFile, "patches\\", strlen("patches\\"))==0)) {
+			Platform::FileMetadata statdata;
+			if (	(Platform::ReadFileMetadata(m_LocalFile, statdata)) &&
+					(statdata.size == m_FileSize) &&
+					(Platform::CompareNoCase(m_LocalFile, "patches\\", strlen("patches\\"))==0)) {
 				// OK, no need to download this again....
 
 				m_Status				= DOWNLOADSTATUS_FINDINGFILE;  // ready to find another file
@@ -365,7 +369,7 @@ HRESULT CDownload::PumpMessages()
 		{
 			// Not the first read.
 			int predictionIndex = ( m_predictions++ ) & 0x7;
-			m_predictionTimes[ predictionIndex ] = MulDiv( timetaken, (m_FileSize - m_BytesRead), (m_BytesRead - m_StartPosition) );
+			m_predictionTimes[ predictionIndex ] = Platform::RoundedMultiplyDivide( timetaken, (m_FileSize - m_BytesRead), (m_BytesRead - m_StartPosition) );
 			//__int64 numerator = ( m_FileSize - m_BytesRead )  * timetaken;
 			//__int64 denominator = ( m_BytesRead - m_StartPosition );
 			//m_predictionTimes[ predictionIndex ] = numerator/denominator;

@@ -48,6 +48,16 @@
 //         Includes                                                      
 //-----------------------------------------------------------------------------
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+static void hLineAddLooker(Int x1, Int x2, Int y, void *playerIndexVoid);
+static void hLineRemoveLooker(Int x1, Int x2, Int y, void *playerIndexVoid);
+static void hLineAddShrouder(Int x1, Int x2, Int y, void *playerIndexVoid);
+static void hLineRemoveShrouder(Int x1, Int x2, Int y, void *playerIndexVoid);
+static void hLineAddThreat(Int x1, Int x2, Int y, void *threatValueParms);
+static void hLineRemoveThreat(Int x1, Int x2, Int y, void *threatValueParms);
+static void hLineAddValue(Int x1, Int x2, Int y, void *threatValueParms);
+static void hLineRemoveValue(Int x1, Int x2, Int y, void *threatValueParms);
+
+#include "Platform/MathIntrinsics.h"
 
 #include "Common/ActionManager.h"
 #include "Common/DiscreteCircle.h"
@@ -85,7 +95,7 @@
 #endif
 
 #ifdef PM_CACHE_TERRAIN_HEIGHT
-#include "common/mapobject.h"
+#include "Common/MapObject.h"
 #endif
 
 #ifdef DUMP_PERF_STATS
@@ -2471,7 +2481,7 @@ void PartitionContactList::resetContactList()
 	for (PartitionContactListNode* cd = m_contactList; cd; cd = cdnext)
 	{
 		cdnext = cd->m_next;
-		cd->deleteInstance();
+		Platform::DeletePoolObject(cd);
 	}
 
 	memset(m_contactHash, 0, sizeof(m_contactHash));
@@ -2905,7 +2915,7 @@ void PartitionManager::unRegisterObject( Object* object )
 		m_moduleList = next;
 
 	// delete module
-	mod->deleteInstance();
+	Platform::DeletePoolObject(mod);
 
 }
 
@@ -2963,7 +2973,7 @@ void PartitionManager::unRegisterGhostObject( GhostObject* object )
 		m_moduleList = next;
 
 	// delete module
-	mod->deleteInstance();
+	Platform::DeletePoolObject(mod);
 }
 
 /** 
@@ -4006,7 +4016,7 @@ void PartitionManager::processPendingUndoShroudRevealQueue( Bool considerTimesta
 
 		undoShroudReveal( thisInfo->m_where.x, thisInfo->m_where.y, thisInfo->m_howFar, thisInfo->m_forWhom );
 
-		thisInfo->deleteInstance();
+		Platform::DeletePoolObject(thisInfo);
 		m_pendingUndoShroudReveals.pop();
 	}
 }
@@ -4027,7 +4037,7 @@ void PartitionManager::resetPendingUndoShroudRevealQueue()
 	while( !m_pendingUndoShroudReveals.empty() )
 	{
 		SightingInfo *thisInfo = m_pendingUndoShroudReveals.front();
-		thisInfo->deleteInstance();
+		Platform::DeletePoolObject(thisInfo);
 		m_pendingUndoShroudReveals.pop();
 	}
 }

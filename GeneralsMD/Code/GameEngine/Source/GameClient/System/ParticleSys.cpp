@@ -291,7 +291,8 @@ Particle::Particle( ParticleSystem *system, const ParticleInfo *info )
 	m_sizeRateDamping = info->m_sizeRateDamping;
 
 	// set up alpha
-	for( int i=0; i<MAX_KEYFRAMES; i++ )
+	int i;
+	for( i=0; i<MAX_KEYFRAMES; i++ )
 		m_alphaKey[i] = info->m_alphaKey[i];
 
 	m_alpha = m_alphaKey[0].value;
@@ -1087,7 +1088,8 @@ ParticleSystem::ParticleSystem( const ParticleSystemTemplate *sysTemplate,
 	m_sizeRate = sysTemplate->m_sizeRate;
 	m_sizeRateDamping = sysTemplate->m_sizeRateDamping;
 
-	for( int i=0; i<MAX_KEYFRAMES; i++ )
+	int i;
+	for( i=0; i<MAX_KEYFRAMES; i++ )
 		m_alphaKey[i] = sysTemplate->m_alphaKey[i];
 
 	for( i=0; i<MAX_KEYFRAMES; i++ )
@@ -1213,7 +1215,7 @@ ParticleSystem::~ParticleSystem()
 
 	// destroy all particles "in the air"
 	while (m_systemParticlesHead)
-		m_systemParticlesHead->deleteInstance();
+		Platform::DeletePoolObject(m_systemParticlesHead);
 
 	m_attachedToDrawableID = INVALID_DRAWABLE_ID;
 	m_attachedToObjectID = INVALID_ID;
@@ -1813,7 +1815,8 @@ const ParticleInfo *ParticleSystem::generateParticleInfo( Int particleNum, Int p
 	if( m_accumulatedSizeBonus )
 		m_accumulatedSizeBonus = min( m_accumulatedSizeBonus, (float)MAX_SIZE_BONUS );
 
-	for( int i=0; i<MAX_KEYFRAMES; i++ )
+	int i;
+	for( i=0; i<MAX_KEYFRAMES; i++ )
 	{
 		info.m_alphaKey[i].value = m_alphaKey[i].var.getValue();
 		info.m_alphaKey[i].frame = m_alphaKey[i].frame;
@@ -2070,7 +2073,7 @@ Bool ParticleSystem::update( Int localPlayerIndex  )
 		{
 			oldParticle = p;
 			p = p->m_systemNext;
-			oldParticle->deleteInstance();
+			Platform::DeletePoolObject(oldParticle);
 		} else {
 			p = p->m_systemNext;
 		}
@@ -2324,7 +2327,8 @@ ParticleInfo ParticleSystem::mergeRelatedParticleSystems( ParticleSystem *master
 	mergeInfo.m_angularRateZ = info->m_angularRateZ;
 	mergeInfo.m_angularDamping = info->m_angularDamping;
 
-	for( int i=0; i<MAX_KEYFRAMES; i++ )
+	int i;
+	for( i=0; i<MAX_KEYFRAMES; i++ )
 		mergeInfo.m_alphaKey[i] = info->m_alphaKey[i];
 
 	for( i=0; i<MAX_KEYFRAMES; i++ )
@@ -2857,7 +2861,7 @@ ParticleSystemManager::~ParticleSystemManager()
 	TemplateMap::iterator begin(m_templateMap.begin());
 	TemplateMap::iterator end(m_templateMap.end());
 	for (; begin != end; ++begin) {
-		(*begin).second->deleteInstance();
+		Platform::DeletePoolObject((*begin).second);
 	}
 }
 
@@ -2893,7 +2897,7 @@ void ParticleSystemManager::reset( void )
 {
 	while (getParticleSystemCount()) {
 		if (m_allParticleSystemList.front()) {
-			m_allParticleSystemList.front()->deleteInstance();
+			Platform::DeletePoolObject(m_allParticleSystemList.front());
 		}
 	}
 
@@ -2947,7 +2951,7 @@ void ParticleSystemManager::update( void )
 		if (sys->update(m_localPlayerIndex) == false)
 		{
 			++it;
-			sys->deleteInstance();
+			Platform::DeletePoolObject(sys);
 		} else {
 			++it;
 		}
@@ -3050,7 +3054,7 @@ ParticleSystemTemplate *ParticleSystemManager::newTemplate( const AsciiString &n
 		sysTemplate = newInstance(ParticleSystemTemplate)( name );
 
 		if (! m_templateMap.insert(std::make_pair(name, sysTemplate)).second) {
-			sysTemplate->deleteInstance();
+			Platform::DeletePoolObject(sysTemplate);
 			sysTemplate = NULL;
 		}
 	}
@@ -3211,7 +3215,7 @@ Int ParticleSystemManager::removeOldestParticles( UnsignedInt count,
 		{
 			if( m_allParticlesHead[ i ] ) 
 			{
-				m_allParticlesHead[ i ]->deleteInstance();
+				Platform::DeletePoolObject(m_allParticlesHead[ i ]);
 				break;  // exit for
 			}
 		}

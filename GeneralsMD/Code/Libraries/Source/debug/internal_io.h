@@ -83,7 +83,7 @@ class DebugIOFlat: public DebugIOInterface
     char *m_fileName;
 
     /// output file handle (only if unlimited output buffer size)
-    HANDLE m_fileHandle;
+    void* m_fileHandle;
 
     /// file size limited?
     bool m_limitedFileSize;
@@ -225,7 +225,11 @@ public:
 class DebugIONet: public DebugIOInterface
 {
   /// our pipe handle
-  HANDLE m_pipe;
+  #ifdef _WIN32
+  void* m_pipe;
+#else
+  int m_pipe = -1;
+#endif
   
 public:
   explicit DebugIONet(void);

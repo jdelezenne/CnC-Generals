@@ -35,7 +35,7 @@
 
 LogClass::LogClass(const char *fname)
 {
-	char buffer[ _MAX_PATH ];
+	char buffer[ Platform::LegacyPathCapacity ];
 	GetModuleFileName( NULL, buffer, sizeof( buffer ) );
 	char *pEnd = buffer + strlen( buffer );
 	while( pEnd != buffer )

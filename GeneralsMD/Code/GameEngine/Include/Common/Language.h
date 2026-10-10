@@ -94,7 +94,7 @@ typedef enum
 #define GameStrstr wcsstr 
 #define GameStrchr wcschr
 #define GameIsDigit iswdigit
-#define GameIsAscii iswascii
+#define GameIsAscii(C) (static_cast<unsigned int>(C) < 128)
 #define GameIsAlNum iswalnum
 #define GameIsAlpha iswalpha
 #define GameArrayEnd(array) (array)[(sizeof(array)/sizeof((array)[0]))-1] = 0

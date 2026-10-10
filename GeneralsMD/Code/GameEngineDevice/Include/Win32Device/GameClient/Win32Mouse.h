@@ -78,36 +78,12 @@ public:
 	virtual void releaseCapture( void );						///< release mouse capture
 
 	virtual void setVisibility(Bool visible);
-
-	/// add an event from a win32 window procedure
-	#ifdef _WIN32
-    void addWin32Event( UINT msg, WPARAM wParam, LPARAM lParam, DWORD time );
-#endif
 	void lostFocus (Bool state) { m_lostFocus = state;}
 
 protected:
 
 	/// get the next event available in the buffer
 	virtual UnsignedByte getMouseEvent( MouseIO *result, Bool flush );
-
-	/// translate a win32 mouse event to our own info
-	#ifdef _WIN32
-    void translateEvent( UnsignedInt eventIndex, MouseIO *result );
-
-	struct Win32MouseEvent
-	{
-		UINT msg;				///< WM_* message
-		WPARAM wParam;  ///< WPARAM from the WM_* message
-		LPARAM lParam;  ///< LPARAM from the WM_* message
-		DWORD time;			///< TIME from the WM_* message
-	};
-	/// this is our buffer of events that we receive via a WndProc message
-	Win32MouseEvent m_eventBuffer[ Mouse::NUM_MOUSE_EVENTS ];
-	UnsignedInt m_nextFreeIndex;  ///< insert new events at this index
-	UnsignedInt m_nextGetIndex;  /** events retrieved through getMouseEvent
-															 will come from this index, then it will be
-															 incremented to the next index */
-	#endif
 	MouseCursor m_currentWin32Cursor;	///< keep track of last cursor image sent to D3D.
 	Int m_directionFrame;	///< current frame of directional cursor (frome 0 points up).
 	Bool m_lostFocus;		///< flag if window has lost focues and mouse should stop being updated.	

@@ -1192,12 +1192,7 @@ Render2DSentenceClass::Build_Sentence (const WCHAR *text, int *hkX, int *hkY)
 //
 ////////////////////////////////////////////////////////////////////////////////////
 FontCharsClass::FontCharsClass (void) :
-	OldGDIFont(	NULL ),
-	OldGDIBitmap( NULL ),
-	GDIFont( NULL ),
-	GDIBitmap( NULL ),
-	GDIBitmapBits ( NULL ),
-	MemDC( NULL ),
+	PlatformFont(NULL),
 	CurrPixelOffset( 0 ),
 	PointSize( 0 ),
 	CharHeight( 0 ),
@@ -1348,123 +1343,26 @@ FontCharsClass::Blit_Char (WCHAR ch, uint16 *dest_ptr, int dest_stride, int x, i
 const FontCharsClassCharDataStruct *
 FontCharsClass::Store_GDI_Char (WCHAR ch)
 {
-	int width	= PointSize * 2;
-	int height	= PointSize * 2;
-
-	//
-	//	Draw the character into the memory DC
-	//
-	RECT rect = { 0, 0, width, height };
-	int xOrigin = 0;
-	if (ch == 'W') {
-		xOrigin = 1;
-	}
-	::ExtTextOutW( MemDC, xOrigin, 0, ETO_OPAQUE, &rect, &ch, 1, NULL);
-
-	//
-	//	Get the size of the character we just drew
-	//
-	SIZE char_size = { 0 };
-	::GetTextExtentPoint32W( MemDC, &ch, 1, &char_size );	
-	char_size.cx += PixelOverlap + xOrigin;
-	//
-	//	Get a pointer to the surface that this character should use
-	//
-	Update_Current_Buffer( char_size.cx );
-	uint16* curr_buffer_p = BufferList[BufferList.Count () - 1]->Buffer;
-	curr_buffer_p += CurrPixelOffset;
-	
-	//
-	//	Copy the BMP contents to the buffer
-	//
-	int stride = (((width * 3) + 3) & ~3);
-	for (int row = 0; row < char_size.cy; row ++) {
-		
-		//
-		//	Compute the indices into the BMP and surface
-		//
-		int index = (row * stride);
-
-		//
-		//	Loop over each column
-		//
-		for (int col = 0; col < char_size.cx; col ++) {
-			
-			//
-			//	Get the pixel color at this location
-			//
-			uint8 pixel_value = GDIBitmapBits[index];
-			index += 3;
-#ifdef TEST_PLACEMENT
- 			if (row==CharHeight-1&&col==0) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==CharHeight-2&&col==1) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==0&&col==0) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==1&&col==1) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==CharHeight-1&&col==char_size.cx-1-PixelOverlap) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==CharHeight-2&&col==char_size.cx-2-PixelOverlap) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==0&&col==char_size.cx-1-PixelOverlap) {
- 				pixel_value = 0xff;
- 			}
- 			if (row==1&&col==char_size.cx-2-PixelOverlap) {
- 				pixel_value = 0xff;
- 			}
- 			if (pixel_value == 0x00) {
- 				pixel_value = 0x40;
- 			}
-#endif
-
-			uint16 pixel_color = 0;
-			if (pixel_value != 0) {
-				pixel_color = 0x0FFF;
-			}
-			
-			//
-			//	Convert the pixel intensity from 8bit to 4bit and
-			// store it in our buffer
-			//
-			uint8 alpha_value	= ((pixel_value >> 4) & 0xF);
-			*curr_buffer_p++	= pixel_color | (alpha_value << 12);
-		}
-	}
-
-	//
-	//	Save information about this character in our list
-	//
-	FontCharsClassCharDataStruct *char_data	= W3DNEW FontCharsClassCharDataStruct;
-	char_data->Value				= ch;
-	char_data->Width				= char_size.cx;
-	char_data->Buffer				= BufferList[BufferList.Count () - 1]->Buffer + CurrPixelOffset;
-
-	//
-	//	Insert this character into our array
-	//
-	if ( ch < 256 ) {
-		ASCIICharArray[ch] = char_data;
-	} else {
-		UnicodeCharArray[ch - FirstUnicodeChar] = char_data;
-	}	
-
-	//
-	//	Advance the character position
-	//
-	CurrPixelOffset += ((char_size.cx+PixelOverlap) * CharHeight);
-
-	//
-	//	Return the index of the entry we just added
-	//
-	return char_data;
+    int width = PointSize * 2;
+    int height = PointSize * 2;
+    int origin = ch == 'W' ? 1 : 0;
+    const auto glyph = Platform::RasterizeGlyph(PlatformFont, ch, width, height, origin);
+    int characterWidth = glyph.advance + PixelOverlap + origin;
+    Update_Current_Buffer(characterWidth);
+    uint16* destination = BufferList[BufferList.Count() - 1]->Buffer + CurrPixelOffset;
+    for (int row = 0; row < CharHeight; ++row) {
+        for (int col = 0; col < characterWidth; ++col) {
+            uint8 value = row < height && col < width ? glyph.intensity[row * width + col] : 0;
+            uint16 color = value ? 0x0FFF : 0;
+            *destination++ = color | (((value >> 4) & 0xF) << 12);
+        }
+    }
+    FontCharsClassCharDataStruct* data = W3DNEW FontCharsClassCharDataStruct;
+    data->Value = ch;
+    data->Width = characterWidth;
+    data->Buffer = BufferList[BufferList.Count() - 1]->Buffer + CurrPixelOffset;
+    CurrPixelOffset += ((characterWidth + PixelOverlap) * CharHeight);
+    return data;
 }
 
 
@@ -1512,97 +1410,17 @@ FontCharsClass::Update_Current_Buffer (int char_width)
 void
 FontCharsClass::Create_GDI_Font (const char *font_name)
 {
-	HDC screen_dc = ::GetDC ((HWND)WW3D::Get_Window());
-
-	const char *fontToUseForGenerals = "Arial";
-	bool doingGenerals = false;
-	if (strcmp(font_name, "Generals")==0) {
-		font_name = fontToUseForGenerals;
-		doingGenerals = true;
-	}
-
-	//
-	//	Calculate the height of the font in logical units
-	//
-	const int dotsPerInch = 96; // always use 96.	jba.
-	int font_height = -MulDiv (PointSize, dotsPerInch, 72);
-
-	int fontWidth = 0; // use font default.
-	if (doingGenerals) {
-		//fontWidth = -font_height*0.35f; //2 pixels tighter.
-		fontWidth = -font_height*0.40f; // one pixel tighter
-	}
-	PixelOverlap = (-font_height)/8;
-
-	// Sanity check in case of perversion. :)
-	if (PixelOverlap<0) PixelOverlap = 0;
-	if (PixelOverlap>4) PixelOverlap = 4;
-	//
-	//	Create the Windows font
-	//
-	DWORD bold		= IsBold ? FW_BOLD : FW_NORMAL;
-	DWORD italic	= 0;
-	GDIFont			= ::CreateFont (font_height, fontWidth, 0, 0, bold, italic,
-								FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-								CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-								VARIABLE_PITCH, font_name);
-	
-	//
-	// Set-up the fields of the BITMAPINFOHEADER
-	//	Note: Top-down DIBs use negative height in Win32.
-	//
-	BITMAPINFOHEADER bitmap_info = { 0 };
-	bitmap_info.biSize				= sizeof (BITMAPINFOHEADER);
-	bitmap_info.biWidth				= PointSize * 2;
-	bitmap_info.biHeight				= -(PointSize * 2);
-	bitmap_info.biPlanes				= 1;
-	bitmap_info.biBitCount			= 24;
-	bitmap_info.biCompression		= BI_RGB;
-	bitmap_info.biSizeImage			= ((PointSize * PointSize * 4) * 3);
-	bitmap_info.biXPelsPerMeter	= 0;
-	bitmap_info.biYPelsPerMeter	= 0;
-	bitmap_info.biClrUsed			= 0;
-	bitmap_info.biClrImportant		= 0;
-
-	//
-	// Create a bitmap that we can access the bits directly of
-	//
-	GDIBitmap	= ::CreateDIBSection (	screen_dc,
-													(const BITMAPINFO *)&bitmap_info,
-													DIB_RGB_COLORS,
-													(void **)&GDIBitmapBits,
-													NULL,
-													0L);
-
-	//
-	//	Create a device context we can select the font and bitmap into
-	//
-	MemDC = ::CreateCompatibleDC (screen_dc);
-
-	//
-	// Release our temporary screen DC
-	//
-	::ReleaseDC ((HWND)WW3D::Get_Window(), screen_dc);
-
-	//
-	//	Now select the BMP and font into the DC
-	//
-	OldGDIBitmap	= (HBITMAP)::SelectObject (MemDC, GDIBitmap);
-	OldGDIFont		= (HFONT)::SelectObject (MemDC, GDIFont);
-	::SetBkColor (MemDC, RGB (0, 0, 0));
-	::SetTextColor (MemDC, RGB (255, 255, 255));
-
-	//
-	//	Lookup the pixel height of the font
-	//
-	TEXTMETRIC text_metric = { 0 };
-	::GetTextMetrics (MemDC, &text_metric);
-	CharHeight = text_metric.tmHeight;	
-	CharAscent = text_metric.tmAscent;
-	CharOverhang = text_metric.tmOverhang;
-	if (doingGenerals) {
-		CharOverhang = 0;
-	}
+    bool generals = strcmp(font_name, "Generals") == 0;
+    if (generals) font_name = "Arial";
+    const int pixelHeight = (PointSize * 96 + 36) / 72;
+    const int fontWidth = generals ? static_cast<int>(pixelHeight * 0.40f) : 0;
+    PixelOverlap = pixelHeight / 8;
+    if (PixelOverlap < 0) PixelOverlap = 0;
+    if (PixelOverlap > 4) PixelOverlap = 4;
+    PlatformFont = Platform::OpenFont(font_name, PointSize, IsBold, fontWidth);
+    CharHeight = Platform::FontHeight(PlatformFont);
+    CharAscent = Platform::FontAscent(PlatformFont);
+    CharOverhang = generals ? 0 : Platform::FontOverhang(PlatformFont);
 }
 
 
@@ -1614,35 +1432,8 @@ FontCharsClass::Create_GDI_Font (const char *font_name)
 void
 FontCharsClass::Free_GDI_Font (void)
 {
-	//
-	//	Select the old font back into the DC and delete
-	// our font object
-	//
-	if ( GDIFont != NULL ) {
-		::SelectObject( MemDC, OldGDIFont );
-		::DeleteObject( GDIFont );
-		GDIFont = NULL;
-	}
-
-	//
-	//	Select the old bitmap back into the DC and delete
-	// our bitmap object
-	//
-	if ( GDIBitmap != NULL ) {
-		::SelectObject( MemDC, OldGDIBitmap );
-		::DeleteObject( GDIBitmap );
-		GDIBitmap = NULL;
-	}
-
-	//
-	//	Delete our memory DC
-	//
-	if ( MemDC != NULL ) {		
-		::DeleteDC( MemDC );
-		MemDC = NULL;
-	}
-
-	return ;
+	Platform::CloseFont(PlatformFont);
+	PlatformFont = NULL;
 }
 
 
@@ -1720,8 +1511,8 @@ FontCharsClass::Grow_Unicode_Array (WCHAR ch)
 		return ;
 	} 
 
-	uint16 first_index	= min( FirstUnicodeChar, ch );
-	uint16 last_index		= max( LastUnicodeChar, ch );
+	uint16 first_index	= (FirstUnicodeChar < ch ? FirstUnicodeChar : ch);
+	uint16 last_index		= (LastUnicodeChar > ch ? LastUnicodeChar : ch);
 	uint16 count			= (last_index - first_index) + 1;
 
 	//

@@ -85,7 +85,7 @@ static void closeDownloadWindow( void )
   WindowLayout *menuLayout = parent->winGetLayout();
 	menuLayout->runShutdown();
   menuLayout->destroyWindows();
-	menuLayout->deleteInstance();
+	Platform::DeletePoolObject(menuLayout);
 	menuLayout = NULL;
 
 	GameWindow *mainWin = TheWindowManager->winGetWindowFromId( NULL, NAMEKEY("MainMenu.wnd:MainMenuParent") );

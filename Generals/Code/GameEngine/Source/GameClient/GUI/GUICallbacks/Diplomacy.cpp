@@ -55,7 +55,7 @@
 #include "GameNetwork/GameInfo.h"
 #include "GameNetwork/NetworkInterface.h"
 #include "GameNetwork/GameSpy/BuddyDefs.h"
-#include "GameNetwork/GameSpy/peerDefs.h"
+#include "GameNetwork/GameSpy/PeerDefs.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -290,7 +290,7 @@ void ResetDiplomacy( void )
 	{
 		TheInGameUI->unregisterWindowLayout(theLayout);
 		theLayout->destroyWindows();
-		theLayout->deleteInstance();
+		Platform::DeletePoolObject(theLayout);
 		InitBuddyControls(-1);
 	}
 	theLayout = NULL;

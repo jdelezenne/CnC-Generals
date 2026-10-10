@@ -41,10 +41,11 @@
 #define AGGREGATE_DEF_H
 
 #include "proto.h"
+#include "Platform/StringCompare.h"
 #include "rendobj.h"
 #include "w3d_file.h"
 #include "w3derr.h"
-#include "vector.h"
+#include "Vector.H"
 #include "bittype.h"
 #include <string.h>
 
@@ -110,7 +111,7 @@ class AggregateDefClass
 		virtual WW3DErrorType	Load_W3D (ChunkLoadClass &chunk_load);
 		virtual WW3DErrorType	Save_W3D (ChunkSaveClass &chunk_save);
 		const char *				Get_Name (void) const					{ return m_pName; }
-		void							Set_Name (const char *pname)			{ SAFE_FREE (m_pName); m_pName = ::_strdup (pname); }
+		void							Set_Name (const char *pname)			{ SAFE_FREE (m_pName); m_pName = Platform::DuplicateString(pname); }
 		RenderObjClass *			Create (void);
 		AggregateDefClass *		Clone (void) const						{ return W3DNEW AggregateDefClass (*this); }
 

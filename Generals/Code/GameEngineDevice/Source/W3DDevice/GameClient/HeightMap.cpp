@@ -45,7 +45,9 @@
 //-----------------------------------------------------------------------------
 //         Includes                                                      
 //-----------------------------------------------------------------------------
-#include "W3DDevice/GameClient/heightmap.h"
+#include "Platform/MathIntrinsics.h"
+#include "Platform/System.h"
+#include "W3DDevice/GameClient/HeightMap.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,9 +84,9 @@
 #include "W3DDevice/GameClient/W3DShadow.h"
 #include "W3DDevice/GameClient/W3DWater.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/Light.h"
-#include "WW3D2/Scene.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/light.h"
+#include "WW3D2/scene.h"
 #include "W3DDevice/GameClient/W3DPoly.h"
 #include "W3DDevice/GameClient/W3DCustomScene.h"
 
@@ -2446,7 +2448,8 @@ void HeightMapRenderObjClass::updateShorelineTiles(Int minX, Int minY, Int maxX,
 	//over the same tile and require an extra render pass.
 
 	//First remove any existing extra blend tiles within this partial region
-	for (Int j=0; j<m_numShoreLineTiles; j++)
+	Int j;
+	for (j=0; j<m_numShoreLineTiles; j++)
 	{	Int x = m_shoreLineTilePositions[j].m_xy & 0xffff;
 		Int y = m_shoreLineTilePositions[j].m_xy >> 16;
 		if (x >= minX && x < maxX &&
@@ -3159,7 +3162,7 @@ Int HeightMapRenderObjClass::getStaticDiffuse(Int x, Int y)
 #ifdef _DEBUG
 	char buf[256];
 	sprintf(buf, "(%f,%f) -> mirror (%f, %f)\n", X, Y, vbMirror->x, vbMirror->y);
-	::OutputDebugString(buf);
+	Platform::DebugMonitorOutput(buf);
 #endif
 	return(vbMirror->diffuse);
 #endif
@@ -3966,7 +3969,7 @@ void HeightMapRenderObjClass::Render(RenderInfoClass & rinfo)
 					// Note - m_xformedVertexBuffer should only be used for non T&L hardware.  jba.
 					DX8Wrapper::Apply_Render_State_Changes();
 					int code = DX8Wrapper::_Get_D3D_Device8()->ProcessVertices(0, 0, numVertex, m_xformedVertexBuffer[j*m_numVBTilesX+i], 0); 
-					::OutputDebugString("did process vertex\n");
+					Platform::DebugMonitorOutput("did process vertex\n");
 				}
 				if (m_xformedVertexBuffer) {
 					// Note - m_xformedVertexBuffer should only be used for non T&L hardware.  jba.
@@ -4241,7 +4244,7 @@ void HeightMapRenderObjClass::renderTerrainPass(CameraClass *pCamera)
 				// Note - m_xformedVertexBuffer should only be used for non T&L hardware.  jba.
 				DX8Wrapper::Apply_Render_State_Changes();
 				int code = DX8Wrapper::_Get_D3D_Device8()->ProcessVertices(0, 0, numVertex, m_xformedVertexBuffer[j*m_numVBTilesX+i], 0); 
-				::OutputDebugString("did process vertex\n");
+				Platform::DebugMonitorOutput("did process vertex\n");
 			}
 			if (m_xformedVertexBuffer) {
 				// Note - m_xformedVertexBuffer should only be used for non T&L hardware.  jba.

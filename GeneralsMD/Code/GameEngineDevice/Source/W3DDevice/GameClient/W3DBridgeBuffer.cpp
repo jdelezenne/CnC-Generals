@@ -45,14 +45,16 @@
 //-----------------------------------------------------------------------------
 //         Includes                                                      
 //-----------------------------------------------------------------------------
+#include "Platform/StringCompare.h"
+#include "Platform/Paths.h"
 #include "W3DDevice/GameClient/W3DBridgeBuffer.h"
 
 #include <stdio.h>
 #include <string.h>
 #include "W3DDevice/GameClient/W3DAssetManager.h"
 #include <texture.h>
-#include "common/GlobalData.h"
-#include "common/RandomValue.h"
+#include "Common/GlobalData.h"
+#include "Common/RandomValue.h"
 #include "Common/ThingFactory.h"
 #include "Common/ThingTemplate.h"
 #include "GameClient/TerrainRoads.h"
@@ -65,12 +67,12 @@
 #include "W3DDevice/GameClient/Module/W3DModelDraw.h"
 #include "W3DDevice/GameClient/W3DShaderManager.h"
 #include "W3DDevice/GameClient/W3DShroud.h"
-#include "WW3D2/Camera.h"
-#include "WW3D2/DX8Wrapper.h"
-#include "WW3D2/DX8Renderer.h"
-#include "WW3D2/Mesh.h"
-#include "WW3D2/MeshMdl.h"
-#include "WW3D2/Scene.h"
+#include "WW3D2/camera.h"
+#include "WW3D2/dx8wrapper.h"
+#include "WW3D2/dx8renderer.h"
+#include "WW3D2/mesh.h"
+#include "WW3D2/meshmdl.h"
+#include "WW3D2/scene.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...
@@ -202,8 +204,8 @@ Bool W3DBridge::load(enum BodyDamageType curDamageState)
 	REF_PTR_RELEASE(m_rightMesh);
 
 	Real scale, width, length;
-	char textureFile[_MAX_PATH] = "No Texture";
-	char modelName[_MAX_PATH] = "BRIDGESECTIONAL";
+	char textureFile[Platform::LegacyPathCapacity] = "No Texture";
+	char modelName[Platform::LegacyPathCapacity] = "BRIDGESECTIONAL";
 
 	/// @todo, should these be defaults in INI??? CBD
 	scale = 0.7f;
@@ -237,9 +239,9 @@ Bool W3DBridge::load(enum BodyDamageType curDamageState)
 	}
 
 	WW3DAssetManager *pMgr = W3DAssetManager::Get_Instance();
-	char left[_MAX_PATH];
-	char section[_MAX_PATH];
-	char right[_MAX_PATH];
+	char left[Platform::LegacyPathCapacity];
+	char section[Platform::LegacyPathCapacity];
+	char right[Platform::LegacyPathCapacity];
 
 	strcpy(left, modelName);
 	strcat(left, ".BRIDGE_LEFT");
@@ -259,15 +261,15 @@ Bool W3DBridge::load(enum BodyDamageType curDamageState)
 	for (i=0; i<pObj->Get_Num_Sub_Objects(); i++) {
 		RenderObjClass *pSub = pObj->Get_Sub_Object(i);
 		Matrix3D mtx = pSub->Get_Transform();
-		if (0==strnicmp(left, pSub->Get_Name(), strlen(left))) {
+		if (0==Platform::CompareNoCase(left, pSub->Get_Name(), strlen(left))) {
 			m_leftMtx = mtx;
 			strcpy(left, pSub->Get_Name());
 		}
-		if (0==strnicmp(section, pSub->Get_Name(), strlen(section))) {
+		if (0==Platform::CompareNoCase(section, pSub->Get_Name(), strlen(section))) {
 			m_sectionMtx = mtx;
 			strcpy(section, pSub->Get_Name());
 		}
-		if (0==strnicmp(right, pSub->Get_Name(), strlen(right))) {
+		if (0==Platform::CompareNoCase(right, pSub->Get_Name(), strlen(right))) {
 			m_rightMtx = mtx;
 			strcpy(right, pSub->Get_Name());
 		}

@@ -37,7 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"always.h"
-#include	"lcw.h"
+#include	"LCW.H"
 #if defined(_M_X64)
 #include "Platform/Compression/LCW.h"
 #endif

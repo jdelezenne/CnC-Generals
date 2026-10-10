@@ -23,6 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/IntegerText.h"
 
 #include "GameClient/DisconnectMenu.h"
 #include "GameClient/GUICallbacks.h"
@@ -148,7 +149,7 @@ void DisconnectMenu::setPlayerTimeoutTime(Int playerNum, time_t newTime) {
 	GameWindow *control = TheWindowManager->winGetWindowFromId(NULL, id);
 
 	char str[33]; // itoa uses a max of 33 bytes.
-	itoa(newTime, str, 10);
+	Platform::IntegerText(newTime, str, 10);
 	AsciiString asciiNum;
 	asciiNum.set(str);
 	UnicodeString uninum;
@@ -250,7 +251,7 @@ void DisconnectMenu::setPacketRouterTimeoutTime(time_t newTime) {
 	GameWindow *control = TheWindowManager->winGetWindowFromId(NULL, id);
 
 	char str[33]; // itoa uses a max of 33 bytes.
-	itoa(newTime, str, 10);
+	Platform::IntegerText(newTime, str, 10);
 	AsciiString asciiNum;
 	asciiNum.set(str);
 	UnicodeString uninum;
@@ -304,7 +305,7 @@ void DisconnectMenu::updateVotes(Int slot, Int votes) {
 
 	if (control != NULL) {
 		char votestr[16];
-		itoa(votes, votestr, 10);
+		Platform::IntegerText(votes, votestr, 10);
 		AsciiString asciivotes;
 		asciivotes.set(votestr);
 		UnicodeString unistr;

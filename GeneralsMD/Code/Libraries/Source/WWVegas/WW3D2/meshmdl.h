@@ -45,7 +45,7 @@
 #include "vector2.h"
 #include "vector3.h"
 #include "vector4.h"
-#include "vector3i.h"
+#include "Vector3i.h"
 #include "sharebuf.h"
 #include "shader.h"
 #include "wwdebug.h"
@@ -123,6 +123,8 @@ struct VertexFormatXYZNDUV2;
 ** GapFillerClass
 ** This class is used to generate gap-filling polygons for "N-Patched" meshes
 */
+class MeshModelClass;
+
 class GapFillerClass : public W3DMPO
 {
 	W3DMPO_GLUE(GapFillerClass)

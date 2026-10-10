@@ -1,5 +1,7 @@
 #pragma once
+#include "../PlatformBegin.h"
 #include "../../../../Vendors/GameSpy-2011/GameSpy/GP/gp.h"
+#include "../PlatformEnd.h"
 // The original application predates the namespace and partner arguments.
 inline GPResult gpInitialize(GPConnection *connection, int productID)
 {

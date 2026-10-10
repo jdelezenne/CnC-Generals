@@ -25,24 +25,25 @@
 
 #ifndef __SCOPEDMUTEX_H__
 #define __SCOPEDMUTEX_H__
+#include "Platform/Synchronization.h"
 
 class ScopedMutex
 {
 	private:
-		HANDLE m_mutex;
+		void* m_mutex;
 
 	public:
-		ScopedMutex(HANDLE mutex) : m_mutex(mutex)
+		ScopedMutex(void* mutex) : m_mutex(mutex)
 		{
-			DWORD status = WaitForSingleObject(m_mutex, 500);
-			if (status != WAIT_OBJECT_0) {
-				DEBUG_LOG(("ScopedMutex WaitForSingleObject timed out - status %d\n", status));
+			int status = Platform::LockRecursiveMutex(m_mutex, 500) ? 0 : 1;
+			if (status != 0) {
+				DEBUG_LOG(("ScopedMutex lock failed - status %d\n", status));
 			}
 		}
 
 		~ScopedMutex()
 		{
-			ReleaseMutex(m_mutex);
+			Platform::UnlockRecursiveMutex(m_mutex);
 		}
 };
 

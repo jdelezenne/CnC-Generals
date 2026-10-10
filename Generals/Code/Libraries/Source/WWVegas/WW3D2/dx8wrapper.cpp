@@ -74,7 +74,6 @@
 #include "formconv.h"
 #include "dx8texman.h"
 #include "bound.h"
-#include "dx8webbrowser.h"
 
 #define WW3D_DEVTYPE D3DDEVTYPE_HAL
 
@@ -94,7 +93,7 @@ int DX8Wrapper_PreserveFPU = 0;
 **
 ***********************************************************************************/
 
-static HWND						_Hwnd															= NULL;
+static D3D8WindowHandle						_Hwnd															= NULL;
 bool								DX8Wrapper::IsInitted									= false;	
 bool								DX8Wrapper::_EnableTriangleDraw						= true;
 
@@ -216,7 +215,7 @@ bool DX8Wrapper::Init(void * hwnd)
 	/*
 	** Initialize all variables!
 	*/
-	_Hwnd = (HWND)hwnd;
+	_Hwnd = (D3D8WindowHandle)hwnd;
 	_MainThreadID=ThreadClass::_Get_Current_Thread_ID();
 	CurRenderDevice = -1;
 	ResolutionWidth = DEFAULT_RESOLUTION_WIDTH;
@@ -229,9 +228,9 @@ bool DX8Wrapper::Init(void * hwnd)
 
 	for (int light=0;light<4;++light) CurrentDX8LightEnables[light]=false;
 
-	::ZeroMemory(&old_world, sizeof(D3DMATRIX));
-	::ZeroMemory(&old_view, sizeof(D3DMATRIX));
-	::ZeroMemory(&old_prj, sizeof(D3DMATRIX));
+	::memset(&old_world, 0, sizeof(D3DMATRIX));
+	::memset(&old_view, 0, sizeof(D3DMATRIX));
+	::memset(&old_prj, 0, sizeof(D3DMATRIX));
 
 	//old_vertex_shader; TODO
 	//old_sr_shader;
@@ -426,7 +425,7 @@ bool DX8Wrapper::Create_Device(void)
 		return false;
 	}
 
-	::ZeroMemory(&CurrentAdapterIdentifier, sizeof(D3DADAPTER_IDENTIFIER8));
+	::memset(&CurrentAdapterIdentifier, 0, sizeof(D3DADAPTER_IDENTIFIER8));
 	if (FAILED( D3DInterface->GetAdapterIdentifier(CurRenderDevice,D3DENUM_NO_WHQL_LEVEL,&CurrentAdapterIdentifier))) {
 		return false;
 	}
@@ -544,7 +543,7 @@ void DX8Wrapper::Enumerate_Devices()
 	for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
 		
 		D3DADAPTER_IDENTIFIER8 id;
-		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
+		::memset(&id, 0, sizeof(D3DADAPTER_IDENTIFIER8));
 		HRESULT res = D3DInterface->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
 
 		if (res == D3D_OK) {
@@ -566,10 +565,10 @@ void DX8Wrapper::Enumerate_Devices()
 			
 			char buf[64];
 			sprintf(buf,"%d.%d.%d.%d", //"%04x.%04x.%04x.%04x",
-				HIWORD(id.DriverVersion.HighPart),
-				LOWORD(id.DriverVersion.HighPart),
-				HIWORD(id.DriverVersion.LowPart),
-				LOWORD(id.DriverVersion.LowPart));
+				static_cast<unsigned>((static_cast<unsigned long long>(id.DriverVersion.QuadPart) >> 48) & 0xffff),
+				static_cast<unsigned>((static_cast<unsigned long long>(id.DriverVersion.QuadPart) >> 32) & 0xffff),
+				static_cast<unsigned>((static_cast<unsigned long long>(id.DriverVersion.QuadPart) >> 16) & 0xffff),
+				static_cast<unsigned>(id.DriverVersion.QuadPart & 0xffff));
 
 			desc.set_driver_version(buf);
 
@@ -580,7 +579,7 @@ void DX8Wrapper::Enumerate_Devices()
 			int mode_count = D3DInterface->GetAdapterModeCount(adapter_index);
 			for (int mode_index=0; mode_index<mode_count; mode_index++) {
 				D3DDISPLAYMODE d3dmode;
-				::ZeroMemory(&d3dmode, sizeof(D3DDISPLAYMODE));
+				::memset(&d3dmode, 0, sizeof(D3DDISPLAYMODE));
 				HRESULT res = D3DInterface->EnumAdapterModes(adapter_index,mode_index,&d3dmode);
 				
 				if (res == D3D_OK) {
@@ -623,7 +622,7 @@ bool DX8Wrapper::Set_Any_Render_Device(void)
 	}
 
 	// Then fullscreen
-	for (dev_number = 0; dev_number < _RenderDeviceNameTable.Count(); dev_number++) {
+	for (int dev_number = 0; dev_number < _RenderDeviceNameTable.Count(); dev_number++) {
 		if (Set_Render_Device(dev_number,-1,-1,-1,0,false)) {
 			return true;
 		}
@@ -747,7 +746,7 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	/*
 	** Initialize values for D3DPRESENT_PARAMETERS members. 	
 	*/
-	::ZeroMemory(&_PresentParameters, sizeof(D3DPRESENT_PARAMETERS));
+	::memset(&_PresentParameters, 0, sizeof(D3DPRESENT_PARAMETERS));
 
 	_PresentParameters.BackBufferWidth = ResolutionWidth;
 	_PresentParameters.BackBufferHeight = ResolutionHeight;
@@ -772,7 +771,7 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	if (IsWindowed) {
 
 		D3DDISPLAYMODE desktop_mode;
-		::ZeroMemory(&desktop_mode, sizeof(D3DDISPLAYMODE));
+		::memset(&desktop_mode, 0, sizeof(D3DDISPLAYMODE));
 		D3DInterface->GetAdapterDisplayMode( CurRenderDevice, &desktop_mode );
 
 		DisplayFormat=_PresentParameters.BackBufferFormat = desktop_mode.Format;
@@ -1148,7 +1147,8 @@ bool DX8Wrapper::Find_Color_And_Z_Mode(int resx,int resy,int bitdepth,D3DFORMAT 
 	bool found = false;
 	unsigned int mode = 0;
 
-	for (int format_index=0; format_index < format_count; format_index++) {
+	int format_index;
+	for (format_index=0; format_index < format_count; format_index++) {
 		found |= Find_Color_Mode(format_table[format_index],resx,resy,&mode);
 		if (found) break;
 	}
@@ -1178,7 +1178,7 @@ bool DX8Wrapper::Find_Color_Mode(D3DFORMAT colorbuffer, int resx, int resy, UINT
 	UINT i,j,modemax;
 	UINT rx,ry;
 	D3DDISPLAYMODE dmode;
-	::ZeroMemory(&dmode, sizeof(D3DDISPLAYMODE));
+	::memset(&dmode, 0, sizeof(D3DDISPLAYMODE));
 
 	rx=(unsigned int) resx;
 	ry=(unsigned int) resy;
@@ -1363,7 +1363,6 @@ void DX8Wrapper::Begin_Scene(void)
 	DX8_THREAD_ASSERT();
 	DX8CALL(BeginScene());
 
-	DX8WebBrowser::Update();
 }
 
 void DX8Wrapper::End_Scene(bool flip_frames)
@@ -1371,7 +1370,6 @@ void DX8Wrapper::End_Scene(bool flip_frames)
 	DX8_THREAD_ASSERT();
 	DX8CALL(EndScene());
 
-	DX8WebBrowser::Render(0);
 
 	if (flip_frames) {
 		DX8_Assert();
@@ -2023,7 +2021,7 @@ IDirect3DTexture8 * DX8Wrapper::_Create_DX8_Texture(
 	IDirect3DTexture8 *texture = NULL;
 
 	D3DSURFACE_DESC surface_desc;
-	::ZeroMemory(&surface_desc, sizeof(D3DSURFACE_DESC));
+	::memset(&surface_desc, 0, sizeof(D3DSURFACE_DESC));
 	surface->GetDesc(&surface_desc);
 
 	// This function will create a texture with a different (but similar) format if the surface is
@@ -2219,8 +2217,9 @@ void DX8Wrapper::Set_Light_Environment(LightEnvironmentClass* light_env)
 		}
 
 		D3DLIGHT8 light;		
-		for (int l=0;l<light_count;++l) {
-			::ZeroMemory(&light, sizeof(D3DLIGHT8));
+		int l;
+		for (l=0;l<light_count;++l) {
+			::memset(&light, 0, sizeof(D3DLIGHT8));
 			light.Type=D3DLIGHT_DIRECTIONAL;
 			(Vector3&)light.Diffuse=light_env->Get_Light_Diffuse(l);
 			Vector3 dir=-light_env->Get_Light_Direction(l);
@@ -2489,7 +2488,7 @@ DX8Wrapper::Set_Render_Target(IDirect3DSurface8 *render_target)
 
 
 IDirect3DSwapChain8 *
-DX8Wrapper::Create_Additional_Swap_Chain (HWND render_window)
+DX8Wrapper::Create_Additional_Swap_Chain (D3D8WindowHandle render_window)
 {
 	DX8_Assert();
 
@@ -2572,14 +2571,6 @@ void DX8Wrapper::Set_Gamma(float gamma,float bright,float contrast,bool calibrat
 
 	if (DX8Caps::Support_Gamma())	{
 		DX8Wrapper::_Get_D3D_Device8()->SetGammaRamp(flag,&ramp);
-	} else {
-		HWND hwnd = GetDesktopWindow();
-		HDC hdc = GetDC(hwnd);
-		if (hdc)
-		{
-			SetDeviceGammaRamp (hdc, &ramp);
-			ReleaseDC (hwnd, hdc);
-		}
 	}
 }
 

@@ -29,6 +29,8 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/MathIntrinsics.h"
+#include "Platform/StringCompare.h"
 
 #define DEFINE_DEATH_NAMES
 #define DEFINE_WEAPONBONUSCONDITION_NAMES
@@ -38,7 +40,7 @@
 #define DEFINE_WEAPONRELOAD_NAMES
 #define DEFINE_WEAPONPREFIRE_NAMES
 
-#include "Common/CRC.h"
+#include "Common/crc.h"
 #include "Common/CRCDebug.h"
 #include "Common/GameAudio.h"
 #include "Common/GameState.h"
@@ -333,12 +335,12 @@ WeaponTemplate::WeaponTemplate() : m_nextTemplate(NULL)
 WeaponTemplate::~WeaponTemplate()
 {
 	if (m_nextTemplate) {
-		m_nextTemplate->deleteInstance();
+		Platform::DeletePoolObject(m_nextTemplate);
 	}
 
 	// delete any extra-bonus that's present
 	if (m_extraBonus)
-		m_extraBonus->deleteInstance();
+		Platform::DeletePoolObject(m_extraBonus);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -382,12 +384,12 @@ void WeaponTemplate::reset( void )
 
 	const char* token = ini->getNextTokenOrNull(ini->getSepsColon());
 
-	if( stricmp(token, MIN_LABEL) == 0 )
+	if( Platform::CompareNoCase(token, MIN_LABEL) == 0 )
 	{
 		// Two entry min/max
 		self->m_minDelayBetweenShots = INI::scanInt(ini->getNextToken(ini->getSepsColon()));
 		token = ini->getNextTokenOrNull(ini->getSepsColon());
-		if( stricmp(token, MAX_LABEL) != 0 )
+		if( Platform::CompareNoCase(token, MAX_LABEL) != 0 )
 		{
 			// Messed up double entry
 			self->m_maxDelayBetweenShots = self->m_minDelayBetweenShots;
@@ -1519,7 +1521,7 @@ WeaponStore::~WeaponStore()
 	{
 		WeaponTemplate* wt = m_weaponTemplateVector[i];
 		if (wt)
-			wt->deleteInstance();
+			Platform::DeletePoolObject(wt);
 	}
 	m_weaponTemplateVector.clear();
 }
@@ -1530,7 +1532,7 @@ void WeaponStore::handleProjectileDetonation(const WeaponTemplate* wt, const Obj
 	Weapon* w = TheWeaponStore->allocateNewWeapon(wt, PRIMARY_WEAPON);
 	w->loadAmmoNow(source);
 	w->fireProjectileDetonationWeapon( source, pos, extraBonusFlags, inflictDamage );
-	w->deleteInstance();
+	Platform::DeletePoolObject(w);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1541,7 +1543,7 @@ void WeaponStore::createAndFireTempWeapon(const WeaponTemplate* wt, const Object
 	Weapon* w = TheWeaponStore->allocateNewWeapon(wt, PRIMARY_WEAPON);
 	w->loadAmmoNow(source);
 	w->fireWeapon(source, pos);
-	w->deleteInstance();
+	Platform::DeletePoolObject(w);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1553,13 +1555,13 @@ void WeaponStore::createAndFireTempWeapon(const WeaponTemplate* wt, const Object
 	Weapon* w = TheWeaponStore->allocateNewWeapon(wt, PRIMARY_WEAPON);
 	w->loadAmmoNow(source);
 	w->fireWeapon(source, target);
-	w->deleteInstance();
+	Platform::DeletePoolObject(w);
 }
 
 //-------------------------------------------------------------------------------------------------
 const WeaponTemplate *WeaponStore::findWeaponTemplate( AsciiString name ) const 
 { 
-	if (stricmp(name.str(), "None") == 0)
+	if (Platform::CompareNoCase(name.str(), "None") == 0)
 		return NULL;
 	const WeaponTemplate * wt = findWeaponTemplatePrivate( TheNameKeyGenerator->nameToKey( name ) );
 	DEBUG_ASSERTCRASH(wt != NULL, ("Weapon %s not found!\n",name.str()));
@@ -1618,7 +1620,7 @@ void WeaponStore::update()
 		if (curFrame >= ddi->m_delayDamageFrame)
 		{
 			// we never do projectile-detonation-damage via this code path.
-			const isProjectileDetonation = false;
+			const int isProjectileDetonation = false;
 			ddi->m_delayedWeapon->dealDamageInternal(ddi->m_delaySourceID, ddi->m_delayIntendedVictimID, &ddi->m_delayDamagePos, ddi->m_bonus, isProjectileDetonation);
 			ddi = m_weaponDDI.erase(ddi);
 		}
@@ -1658,7 +1660,7 @@ void WeaponStore::reset()
 		{
 			WeaponTemplate *override = wt;
 			wt = wt->friend_clearNextTemplate();
-			override->deleteInstance();
+			Platform::DeletePoolObject(override);
 		}
 	}
 

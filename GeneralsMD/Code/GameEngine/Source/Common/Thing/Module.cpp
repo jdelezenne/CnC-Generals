@@ -29,6 +29,7 @@
 //				 data and code for specific events, or just to hold data
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
+#include "Platform/StringCompare.h"
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "Common/Module.h"
@@ -275,7 +276,7 @@ Bool UpgradeMuxData::isTriggeredBy(const std::string &upgrade) const
 	for( it = m_triggerUpgradeNames.begin(); it != m_triggerUpgradeNames.end();	++it)
 	{
 		AsciiString trigger = *it;
-		if (stricmp(trigger.str(), upgrade.c_str()) == 0)
+		if (Platform::CompareNoCase(trigger.str(), upgrade.c_str()) == 0)
 		{
 			return TRUE;
 		}

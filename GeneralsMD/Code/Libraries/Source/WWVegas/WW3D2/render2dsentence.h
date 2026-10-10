@@ -43,10 +43,11 @@
 
 #include "render2d.h"
 #include "refcount.h"
-#include "vector.h"
+#include "Vector.H"
 #include "vector2i.h"
 #include "wwstring.h"
 #include "win.h"
+#include "Platform/Fonts.h"
 
 /*
 ** FontCharsClass
@@ -125,12 +126,7 @@ private:
 	int									PixelOverlap;
 	int									PointSize;
 	StringClass							GDIFontName;
-	HFONT									OldGDIFont;
-	HBITMAP								OldGDIBitmap;
-	HBITMAP								GDIBitmap;	
-	HFONT									GDIFont;
-	uint8 *								GDIBitmapBits;
-	HDC									MemDC;
+	Platform::Font* PlatformFont;
 	FontCharsClassCharDataStruct *					ASCIICharArray[256];
 	FontCharsClassCharDataStruct **					UnicodeCharArray;
 	uint16								FirstUnicodeChar;

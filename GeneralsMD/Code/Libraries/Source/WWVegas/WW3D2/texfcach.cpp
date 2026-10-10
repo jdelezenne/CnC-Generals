@@ -50,6 +50,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifdef WW3D_DX8
 #include "texfcach.h"
+#include "Platform/Paths.h"
 #include "mutex.h"
 #include "thread.h"
 #include <assert.h>
@@ -231,8 +232,8 @@ char *TextureFileCache::_Create_File_Name(const char *fileprefix)
 	assert(!_FileNamePtr);
 	_FileNamePtr = W3DNEWARRAY char[strlen(fileprefix) + (addpath ? 256 : 6)];
 			
-   char path[_MAX_PATH];
-   if (addpath && _getcwd(path, _MAX_PATH ))  {
+   char path[Platform::LegacyPathCapacity];
+   if (addpath && _getcwd(path, Platform::LegacyPathCapacity ))  {
 		sprintf(_FileNamePtr, "%s\\%s.tfc", path, fileprefix);
    } else {
 		// Create a file name.

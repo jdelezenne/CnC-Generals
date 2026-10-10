@@ -33,6 +33,7 @@
 #define __THINGTEMPLATE_H_
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/BuildableStatus.h"
 #include "Common/RadarPriorityType.h"
 #include "Common/EditorSortingType.h"
 #include "GameClient/ShadowType.h"
@@ -158,7 +159,7 @@ public:
 	{
 		for (Int i = 0; i < TTAUDIO_COUNT; ++i)
 			if (m_audio[i])
-				m_audio[i]->deleteInstance();
+				Platform::DeletePoolObject(m_audio[i]);
 	}
 
 	AudioArray(const AudioArray& that)
@@ -217,16 +218,7 @@ static const char *BuildCompletionNames[] =
 };
 #endif  // end DEFINE_BUILD_COMPLETION_NAMES
 
-enum BuildableStatus
-{
-	// saved into savegames... do not change or remove values!
-	BSTATUS_YES = 0,
-	BSTATUS_IGNORE_PREREQUISITES,
-	BSTATUS_NO,
-	BSTATUS_ONLY_BY_AI,
 
-	BSTATUS_NUM_TYPES	// leave this last
-};
 
 #ifdef DEFINE_BUILDABLE_STATUS_NAMES
 static const char *BuildableStatusNames[] = 

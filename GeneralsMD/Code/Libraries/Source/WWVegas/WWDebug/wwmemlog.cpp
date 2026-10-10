@@ -45,9 +45,10 @@
 #include "always.h"
 #include "wwmemlog.h"
 #include "wwdebug.h"
-#include "vector.h"
-#include "fastallocator.h"
-#include <windows.h>
+#include "Vector.H"
+#include "FastAllocator.h"
+#include "Platform/Synchronization.h"
+#include "Platform/System.h"
 
 #define USE_FAST_ALLOCATOR
 
@@ -262,7 +263,7 @@ static int							_MemLogLockCounter = 0;
 
 #if MEMLOG_USE_CRITICALSECTION
 static bool							_MemLogCriticalSectionAllocated = false;
-static char							_MemLogCriticalSectionHandle[sizeof(CRITICAL_SECTION)];
+static void* _MemLogCriticalSectionHandle = NULL;
 #endif
 
 #if MEMLOG_USE_FASTCRITICALSECTION
@@ -287,7 +288,7 @@ WWINLINE void * Get_Mem_Log_Mutex(void)
 #if MEMLOG_USE_CRITICALSECTION
 
 	if (_MemLogCriticalSectionAllocated == false) {
-		InitializeCriticalSection((CRITICAL_SECTION*)_MemLogCriticalSectionHandle);
+		_MemLogCriticalSectionHandle = Platform::CreateCriticalSection();
 		_MemLogCriticalSectionAllocated = true;
 	}
 	return _MemLogCriticalSectionHandle;
@@ -311,7 +312,7 @@ WWINLINE void Lock_Mem_Log_Mutex(void)
 #if MEMLOG_USE_CRITICALSECTION
 
 	Get_Mem_Log_Mutex();
-	EnterCriticalSection((CRITICAL_SECTION*)_MemLogCriticalSectionHandle);
+	Platform::EnterCriticalSection(_MemLogCriticalSectionHandle);
 
 #endif
 
@@ -359,7 +360,7 @@ WWINLINE void Unlock_Mem_Log_Mutex(void)
 #if MEMLOG_USE_CRITICALSECTION
 
 	Get_Mem_Log_Mutex();
-	LeaveCriticalSection((CRITICAL_SECTION*)_MemLogCriticalSectionHandle);
+	Platform::LeaveCriticalSection(_MemLogCriticalSectionHandle);
 
 #endif
 
@@ -401,7 +402,7 @@ ActiveCategoryStackClass::operator = (const ActiveCategoryStackClass & that)
 ***************************************************************************************************/
 ActiveCategoryStackClass & ActiveCategoryClass::Get_Active_Stack(void)
 {
-	int current_thread = ::GetCurrentThreadId();
+	int current_thread = Platform::CurrentThreadIdentifier();
 
 	/*
 	** If we already have an allocated category stack for the current thread,

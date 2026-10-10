@@ -30,6 +30,7 @@
 // Author: Matthew D. Campbell, July 2002
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file int the GameEngine
+#include "Platform/TextFormat.h"
 
 #include "Common/UserPreferences.h"
 #include "Common/PlayerTemplate.h"
@@ -816,7 +817,9 @@ static void getPreorderCallback(int localid, int profileid, persisttype_t type, 
 void PSThreadClass::Thread_Function()
 {
 	try {
-	_set_se_translator( DumpExceptionInfo ); // Hook that allows stack trace.
+	#ifdef _WIN32
+	_set_se_translator( DumpExceptionInfo ); // Native MSVC structured-exception reporting.
+#endif
 	/*********
 	First step, set our game authentication info
 	We could do:
@@ -1366,14 +1369,14 @@ std::string GameSpyPSMessageQueueInterface::formatPlayerKVPairs( PSPlayerStats s
 
 	if (stats.options.length())
 	{
-		_snprintf(kvbuf, 256, "\\options\\%s", stats.options.c_str());
+		Platform::PrintBytes(kvbuf, 256, "\\options\\%s", stats.options.c_str());
 		kvbuf[255] = 0;
 		s.append(kvbuf);
 	}
 
 	if (stats.systemSpec.length())
 	{
-		_snprintf(kvbuf, 256, "\\systemSpec\\%s", stats.systemSpec.c_str());
+		Platform::PrintBytes(kvbuf, 256, "\\systemSpec\\%s", stats.systemSpec.c_str());
 		kvbuf[255] = 0;
 		s.append(kvbuf);
 	}
@@ -1470,7 +1473,7 @@ std::string GameSpyPSMessageQueueInterface::formatPlayerKVPairs( PSPlayerStats s
 	}
 	if (stats.lastLadderHost.length())
 	{
-		_snprintf(kvbuf, 256, "\\ladderHost\\%s", stats.lastLadderHost.c_str());
+		Platform::PrintBytes(kvbuf, 256, "\\ladderHost\\%s", stats.lastLadderHost.c_str());
 		kvbuf[255] = 0;
 		s.append(kvbuf);
 	}

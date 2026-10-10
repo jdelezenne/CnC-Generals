@@ -96,7 +96,7 @@ void PrintOffsetsFromControlBarParent( void )
 
 	fclose(fp);
 	layout->destroyWindows();
-	layout->deleteInstance();
+	Platform::DeletePoolObject(layout);
 }
 
 

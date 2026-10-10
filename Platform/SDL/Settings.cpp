@@ -6,6 +6,8 @@
 #include <fstream>
 #include <filesystem>
 #include <string>
+#include <mutex>
+#include <vector>
 
 namespace {
 std::string Trim(std::string text)
@@ -69,4 +71,60 @@ bool Platform::ReadInstallationUnsigned(GameTitle game, const char* section, con
     if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) return false;
     value = parsed;
     return true;
+}
+
+bool Platform::WriteInstallationString(GameTitle game, const char* section, const char* name,
+    const char* value)
+{
+    if (std::strpbrk(section, "\r\n]") || std::strpbrk(name, "\r\n=") ||
+        std::strpbrk(value, "\r\n")) return false;
+    static std::mutex mutex;
+    const std::lock_guard<std::mutex> lock(mutex);
+    const std::string path = UserPath("Settings.ini", game);
+    std::ifstream input{std::filesystem::path(path)};
+    std::vector<std::string> lines;
+    const std::string target = SectionName(section);
+    std::string active, line;
+    bool foundSection = false, written = false;
+    while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        const std::string trimmed = Trim(line);
+        if (!trimmed.empty() && trimmed.front() == '[' && trimmed.back() == ']') {
+            if (!written && !SDL_strcasecmp(active.c_str(), target.c_str())) {
+                lines.push_back(std::string(name) + "=" + value);
+                written = true;
+            }
+            active = Trim(trimmed.substr(1, trimmed.size() - 2));
+            foundSection |= !SDL_strcasecmp(active.c_str(), target.c_str());
+        } else if (!trimmed.empty() && trimmed.front() != '#' && trimmed.front() != ';') {
+            const auto equal = trimmed.find('=');
+            if (equal != std::string::npos && !SDL_strcasecmp(active.c_str(), target.c_str()) &&
+                !SDL_strcasecmp(Trim(trimmed.substr(0, equal)).c_str(), name)) {
+                if (!written) lines.push_back(std::string(name) + "=" + value);
+                written = true;
+                continue;
+            }
+        }
+        lines.push_back(line);
+    }
+    if (input.bad()) return false;
+    input.close();
+    if (!written) {
+        if (!foundSection) lines.push_back("[" + target + "]");
+        lines.push_back(std::string(name) + "=" + value);
+    }
+    const std::string temporary = path + ".tmp";
+    std::ofstream output{std::filesystem::path(temporary), std::ios::trunc};
+    for (const auto& entry : lines) output << entry << '\n';
+    output.close();
+    if (output.fail()) { SDL_RemovePath(temporary.c_str()); return false; }
+    if (SDL_RenamePath(temporary.c_str(), path.c_str())) return true;
+    SDL_RemovePath(temporary.c_str());
+    return false;
+}
+
+bool Platform::WriteInstallationUnsigned(GameTitle game, const char* section, const char* name,
+    unsigned int value)
+{
+    return WriteInstallationString(game, section, name, std::to_string(value).c_str());
 }

@@ -59,7 +59,11 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include	<windows.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include "Platform/Graphics/NativeTypes.h"
+#endif
 //#include <mmsystem.h>
 //#include	<windowsx.h>
 //#include	<winnt.h>

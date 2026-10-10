@@ -93,7 +93,7 @@ XferSave::~XferSave( void )
 		{
 
 			next = m_blockStack->next;
-			m_blockStack->deleteInstance();
+			Platform::DeletePoolObject(m_blockStack);
 			m_blockStack = next;
 
 		}  // end while
@@ -249,7 +249,7 @@ void XferSave::endBlock( void )
 	fseek( m_fileFP, currentFilePos, SEEK_SET );
 
 	// delete the block data as it's all used up now
-	top->deleteInstance();
+	Platform::DeletePoolObject(top);
 
 }  // end endBlock
 

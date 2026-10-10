@@ -37,8 +37,8 @@
 
 // FORWARD REFERENCES /////////////////////////////////////////////////////////////////////////////
 class Thing;
-enum StealthLookType;
-enum EvaMessage;
+#include "GameClient/StealthLookType.h"
+#include "GameClient/EvaMessage.h"
 class FXList;
 
 enum

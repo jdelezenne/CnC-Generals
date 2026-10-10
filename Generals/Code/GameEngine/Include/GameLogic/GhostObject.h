@@ -43,7 +43,7 @@
 
 class Object;
 class PartitionData;
-enum GeometryType;
+#include "Common/GeometryType.h"
 enum ObjectID;
 
 class GhostObject : public Snapshot
